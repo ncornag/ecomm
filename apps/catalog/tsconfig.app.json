@@ -2,9 +2,16 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
-    "module": "commonjs",
+    //"module": "nodenext",
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../libs/AuditLog/src/auditLog.entity.ts",
+    "../../libs/AuditLog/src/auditLog.schemas.ts",
+    "../../libs/AuditLog/src/auditLog.svc.ts",
+    "../../libs/AuditLog/src/auditLog.lstnr.ts",
+    "../../libs/Mongo/src/auditFields.ts"
+  ],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }

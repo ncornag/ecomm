@@ -1,0 +1,1172 @@
+{
+	"info": {
+		"_postman_id": "1b575690-c478-4382-8a25-7d8d77bf8d29",
+		"name": "ecomm",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1390109"
+	},
+	"item": [
+		{
+			"name": "ClassificationAttributes",
+			"item": [
+				{
+					"name": "createAttribute TEST",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}",
+									"if (jsonData.version) {",
+									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"key\": \"1900\",\n    \"label\": \"Test\",\n    \"isRequired\": false,\n    \"type\": \"list\",\n    \"elementType\": \"text\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes?version={{lastCcVersion}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							],
+							"query": [
+								{
+									"key": "version",
+									"value": "{{lastCcVersion}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createAttribute [NUMBER]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"name\": \"number1\",\n        \"label\": \"Number Test\",\n        \"isRequired\": false,\n        \"__t\": \"number\",\n        \"min\": 1,\n        \"max\": 999\n      }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createAttribute [STRING]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"name\": \"string1\",\n        \"label\": \"String Test\",\n        \"isRequired\": false,\n        \"__t\": \"text\",\n        \"minLength\": 1,\n        \"maxLength\": 50\n      }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createAttribute [ENUM]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"name\": \"color\",\n        \"label\": \"Color\",\n        \"isRequired\": false,\n        \"__t\": \"enum\",\n        \"options\": [\n          { \"key\": \"Y\", \"label\": \"Yellow\" },\n          { \"key\": \"O\", \"label\": \"Orange\" },\n          { \"key\": \"G\", \"label\": \"Green\" }\n        ]\n      }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createAttribute [LIST]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"name\": \"fruits\",\n        \"label\": \"Fruits\",\n        \"isRequired\": false,\n        \"__t\": \"list\",\n        \"elementTpe\": \"text\"\n      }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createAttribute [OBJECT]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastCaId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"name\": \"machine-properties\",\n        \"label\": \"Machine Properties\",\n        \"isRequired\": false,\n        \"__t\": \"object\",\n        \"ref\": \"machine-properties\"\n      }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneAttribute",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes/{{lastCaId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes",
+								"{{lastCaId}}"
+							],
+							"query": [
+								{
+									"key": "expand",
+									"value": "classificationSystem",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateAttribute",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"label\": \"Attribute 1 Updated 3\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/attributes/{{lastCaId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"attributes",
+								"{{lastCaId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ClassificationCategories",
+			"item": [
+				{
+					"name": "createCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id!==undefined) {",
+									"  pm.globals.set(\"lastCcId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Root\",\n    \"key\": \"root\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id!==undefined) {",
+									"  pm.globals.set(\"lastCcId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"version\": {{lastCcVersion}}, \"actions\": [ \n    { \"action\": \"changeName\", \"name\": \"Nea2sws sam23\" },\n    { \"action\": \"setKey\", \"key\": \"root-1\" }\n]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createChildCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id!==undefined) {",
+									"  pm.globals.set(\"lastCcId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Child Category\",\n    \"key\": \"childscat01\",\n    \"parent\": \"{{lastCcId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneCategory",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-request-id",
+								"value": "test",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "validate",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"characteristics\": {\n        \"wheels\": 18,\n        \"color\": \"G\"\n    },\n    \"curr\": 220,\n    \"size\": \"big\",\n    \"weight\": 125\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/classificationCategories/{{lastCcId}}/validate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"classificationCategories",
+								"{{lastCcId}}",
+								"validate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ProductCategories",
+			"item": [
+				{
+					"name": "createCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPCId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastPcVersion\", jsonData.version);",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"General Product Category\",\n    \"key\": \"general\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/productCategories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"productCategories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPCId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastPcVersion\", jsonData.version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"version\": {{lastPcVersion}}, \"actions\": [ \n    { \"action\": \"changeName\", \"name\": \"Test-04\" },\n    { \"action\": \"setKey\", \"key\": \"test-02\" }\n]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/productCategories/{{lastPCId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"productCategories",
+								"{{lastPCId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createChildCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPCId\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Child Product Category\",\n    \"key\": \"childscat01\",\n    \"parent\": \"{{lastPCId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/productCategories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"productCategories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneCategory",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/productCategories/{{lastPCId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"productCategories",
+								"{{lastPCId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "validate",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"characteristics\": {\n        \"wheels\": 18,\n        \"color\": \"G\"\n    },\n    \"curr\": 220,\n    \"size\": \"big\",\n    \"weight\": 125,\n    \"speed\": 100,\n    \"cache\": 100\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/productCategories/{{lastPCId}}/validate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"productCategories",
+								"{{lastPCId}}",
+								"validate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Catalog",
+			"item": [
+				{
+					"name": "sync",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"stage-2-online\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/catalogSync/sync",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"catalogSync",
+								"sync"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "createProduct [BASE]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPIdBase\", jsonData.id);",
+									"  pm.globals.set(\"lastPId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastPVersionBase\", jsonData.version);",
+									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"catalog\": \"Stage\",\n    \"name\": {\"en\": \"ADIZERO PRIME X 2 STRUNG RUNNING SHOES\"},\n    \"description\": \"Built with innovative technology and designed without ...\",\n    \"slug\": \"adizero-prime-x-2-strung-running-shoes\",\n    \"searchKeywords\": [\"adizero\", \"prime\", \"x\", \"2\", \"strung\", \"running\", \"shoes\"],\n    \"categories\": [\"shoes\"],\n    \"type\": \"base\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/products?catalog=stage",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"products"
+							],
+							"query": [
+								{
+									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createProduct [VARIANT]",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPIdVariant\", jsonData.id);",
+									"  pm.globals.set(\"lastPId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastPVersionVariant\", jsonData.version);",
+									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"catalog\": \"Stage\",\n    \"name\": {\"en\": \"ADIZERO PRIME X 2 STRUNG RUNNING SHOES - WHITE!!\"},\n    \"sku\": \"HP9708_570\",\n    \"searchKeywords\": [\"white\"],\n    \"parent\": \"{{lastPIdBase}}\",\n    \"attributes\": {\n      \"color\": \"Cloud White\",\n      \"size\": \"M 6/W 7\"\n    },\n    \"type\": \"variant\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/products?catalog=stage",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"products"
+							],
+							"query": [
+								{
+									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneProduct",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/products/{{lastPIdBase}}?catalog=stage",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"products",
+								"{{lastPIdBase}}"
+							],
+							"query": [
+								{
+									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateProduct",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"  pm.globals.set(\"lastPId\", jsonData.id);",
+									"}",
+									"if (jsonData.version!==undefined) {",
+									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"version\": {{lastPVersion}}, \"actions\": [ \n    { \"action\": \"changeName\", \"name\": {\"es\": \"Test-04\"} }\n]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/products/{{lastPId}}?catalog=stage",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"products",
+								"{{lastPId}}"
+							],
+							"query": [
+								{
+									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product Legacy",
+			"item": [
+				{
+					"name": "findOneProduct [LEGACY]",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/v1/products/adizeroPrimeX2-base?catalog=stage",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"v1",
+								"products",
+								"adizeroPrimeX2-base"
+							],
+							"query": [
+								{
+									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

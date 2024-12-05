@@ -11,12 +11,11 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/apps/catalog",
+        "outputPath": "dist",
         "format": ["cjs"],
         "bundle": false,
         "main": "apps/catalog/src/main.ts",
         "tsConfig": "apps/catalog/tsconfig.app.json",
-        "assets": ["apps/catalog/src/assets"],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
@@ -44,7 +43,9 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "catalog:build",
-        "runBuildTargetDependencies": false
+        "runBuildTargetDependencies": false,
+        "runtimeArgs": ["--no-warnings"],
+        "inspect": false
       },
       "configurations": {
         "development": {
@@ -58,6 +59,13 @@
     "docker-build": {
       "dependsOn": ["build"],
       "command": "docker build -f apps/catalog/Dockerfile . -t catalog"
+    },
+    "test": {
+      "options": {
+        "env": {
+          "NODE_ENV": "test"
+        }
+      }
     }
   }
 }
