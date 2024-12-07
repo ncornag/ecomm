@@ -20,6 +20,7 @@ import { type ICatalogSyncRepository } from '../repositories/catalogSync.repo';
 import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
 import patch from 'mongo-update';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 export interface ICatalogSyncService {
@@ -59,7 +60,7 @@ const mongoPatch = function (patch: any) {
       } else if (key === '_id') {
         query[key] = entry;
       } else {
-        let [sub_query, sub_set] = mongoPatch(entry);
+        const [sub_query, sub_set] = mongoPatch(entry);
         query[key] = sub_query;
         if (!sub_set === null) {
           set[key] = sub_set;
@@ -83,7 +84,7 @@ export class CatalogSyncService implements ICatalogSyncService {
     ICatalogSyncRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private log;
   private batchSize = 1000;
 
@@ -99,7 +100,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       ICatalogSyncRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.log = server.log;
   }
 
@@ -120,7 +121,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       ...payload,
     });
     if (result.err) return result;
-    this.messages.publish('global.product.insert', {
+    this.queues.publish('global.product.insert', {
       source: toEntity(result.val),
       metadata: {
         type: 'entityInsert',
@@ -162,7 +163,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish('global.catalogSync.update', {
+      this.queues.publish('global.catalogSync.update', {
         entity: 'catalogSync',
         source: entity,
         difference,
@@ -170,7 +171,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish('global.catalogSync.update.sideEffect', {
+        this.queues.publish('global.catalogSync.update.sideEffect', {
           ...sideEffect.data,
           metadata: { type: sideEffect.action },
         });

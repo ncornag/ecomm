@@ -29,7 +29,7 @@ export class ProductsIndexerListener {
     this.server.log.info(
       `${yellow('ProductIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`,
     );
-    this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
+    this.server.queues.subscribe(this.TOPIC, this.handler.bind(this));
   }
 
   private randomIntFromInterval(min: number, max: number) {

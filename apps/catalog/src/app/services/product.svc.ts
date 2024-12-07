@@ -20,6 +20,7 @@ import { type IProductRepository } from '../repositories/product.repo';
 import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
 import NodeCache from 'node-cache';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -66,7 +67,7 @@ export class ProductService implements IProductService {
     IProductRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private cartProductsCache;
   private cacheCartProducts;
 
@@ -83,7 +84,7 @@ export class ProductService implements IProductService {
       IProductRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;
     this.cartProductsCache = new NodeCache({
       useClones: false,
@@ -111,7 +112,7 @@ export class ProductService implements IProductService {
     } as Product);
     if (result.err) return result;
     // Send new entity via messagging
-    this.messages.publish(`${catalogId}.product.insert`, {
+    this.queues.publish(`${catalogId}.product.insert`, {
       source: toEntity(result.val),
       metadata: {
         catalogId,
@@ -157,7 +158,7 @@ export class ProductService implements IProductService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish(`${catalogId}.product.update`, {
+      this.queues.publish(`${catalogId}.product.update`, {
         source: toEntity(result.val),
         difference: edits,
         metadata: {
@@ -168,7 +169,7 @@ export class ProductService implements IProductService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(`${catalogId}.products.update.sideEffect`, {
+        this.queues.publish(`${catalogId}.products.update.sideEffect`, {
           ...sideEffect.data,
           metadata: { type: sideEffect.action },
         });

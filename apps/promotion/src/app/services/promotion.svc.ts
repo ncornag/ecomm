@@ -12,6 +12,7 @@ import { ChangeNameActionHandler } from './actions';
 import { type Config } from '@ecomm/Config';
 import { green, magenta } from 'kolorist';
 import { CT } from '../lib/ct';
+import { Queues } from '@ecomm/Queues';
 
 class CTAdapter {
   private server;
@@ -158,7 +159,7 @@ export class PromotionService implements IPromotionService {
     IPromotionRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private server;
   private ctAdapter: CTAdapter;
 
@@ -173,7 +174,7 @@ export class PromotionService implements IPromotionService {
       IPromotionRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.ctAdapter = new CTAdapter(server);
   }
 
@@ -194,7 +195,7 @@ export class PromotionService implements IPromotionService {
       ...payload,
     });
     if (result.err) return result;
-    this.messages.publish(`global.promotion.insert`, {
+    this.queues.publish(`global.promotion.insert`, {
       source: toEntity(result.val),
       metadata: {
         type: 'entityInsert',
@@ -236,7 +237,7 @@ export class PromotionService implements IPromotionService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish('global.promotion.update', {
+      this.queues.publish('global.promotion.update', {
         entity: 'promotion',
         source: entity,
         difference,
@@ -244,7 +245,7 @@ export class PromotionService implements IPromotionService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish('global.promotion.update.sideEffects', {
+        this.queues.publish('global.promotion.update.sideEffects', {
           ...sideEffect.data,
           metadata: { type: sideEffect.action },
         });

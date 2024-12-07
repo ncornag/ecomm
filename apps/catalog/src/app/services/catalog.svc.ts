@@ -13,6 +13,7 @@ import {
 import { type ICatalogRepository } from '../repositories/catalog.repo';
 import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 export interface ICatalogService {
@@ -43,7 +44,7 @@ export class CatalogService implements ICatalogService {
     ICatalogRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
 
   private constructor(server: any) {
     this.repo = server.db.repo.catalogRepository as ICatalogRepository;
@@ -56,7 +57,7 @@ export class CatalogService implements ICatalogService {
       ICatalogRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
   }
 
   public static getInstance(server: any): ICatalogService {
@@ -76,7 +77,7 @@ export class CatalogService implements ICatalogService {
       ...payload,
     });
     if (result.err) return result;
-    this.messages.publish(`global.catalog.insert`, {
+    this.queues.publish(`global.catalog.insert`, {
       source: toEntity(result.val),
       metadata: {
         type: 'entityInsert',
@@ -118,7 +119,7 @@ export class CatalogService implements ICatalogService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish(`global.catalog.update`, {
+      this.queues.publish(`global.catalog.update`, {
         entity: 'catalog',
         source: entity,
         difference,
@@ -126,7 +127,7 @@ export class CatalogService implements ICatalogService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish('global.catalog.update.sideEffect', {
+        this.queues.publish('global.catalog.update.sideEffect', {
           ...sideEffect.data,
           metadata: { type: sideEffect.action },
         });

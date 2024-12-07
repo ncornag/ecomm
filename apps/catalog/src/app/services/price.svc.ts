@@ -12,6 +12,7 @@ import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
 import { type Config } from '@ecomm/Config';
 import { type CreatePriceBody } from '../schemas/price.schemas';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 export interface IPriceService {
@@ -90,7 +91,7 @@ export class PriceService implements IPriceService {
   private expressions: Expressions;
   private server;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private promotionsUrl: string;
   private cacheCartPrices;
   private cartPricesCache;
@@ -100,7 +101,7 @@ export class PriceService implements IPriceService {
     this.repo = server.db.repo.priceRepository as IPriceRepository;
     this.productService = ProductService.getInstance(server);
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.expressions = new Expressions(server);
     this.promotionsUrl = server.config.PROMOTIONS_URL;
     this.cacheCartPrices = server.config.CACHE_CART_PRICES;
@@ -151,7 +152,7 @@ export class PriceService implements IPriceService {
     } as Price);
     if (result.err) return result;
     // Send new entity via messagging
-    this.messages.publish(`${catalogId}.price.insert`, {
+    this.queues.publish(`${catalogId}.price.insert`, {
       source: toEntity(result.val),
       metadata: {
         catalogId,

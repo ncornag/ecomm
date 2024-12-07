@@ -1,20 +1,22 @@
 import fp from 'fastify-plugin';
 import { type PublishOptions, JSONCodec, connect } from 'nats';
-import { FastifyPluginAsync, type FastifyInstance } from 'fastify';
+import { FastifyPluginAsync } from 'fastify';
 import { requestContext } from '@fastify/request-context';
 import {
   REQUEST_ID_STORE_KEY,
   PROJECT_ID_STORE_KEY,
 } from '@ecomm/RequestContext';
-import { green, red, yellow, magenta, bold } from 'kolorist';
+import { green, yellow, magenta, bold } from 'kolorist';
 import pino from 'pino';
+
+export type Queues = {
+  publish: (subject: string, payload: any, options?: PublishOptions) => void;
+  subscribe: (subject: string, handler: (data: any) => void) => void;
+};
 
 declare module 'fastify' {
   export interface FastifyInstance {
-    messages: {
-      publish: Function;
-      subscribe: Function;
-    };
+    queues: Queues;
   }
 }
 
@@ -27,9 +29,13 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
   const { NATS_URL: nats_url } = server.config;
 
   if (!nats_url) {
-    server.decorate('messages', {
-      subscribe: (subject: string, handler: Function) => {},
-      publish: (subject: string, payload: any, options?: PublishOptions) => {},
+    server.decorate('queues', {
+      subscribe: () => {
+        return;
+      },
+      publish: () => {
+        return;
+      },
     });
     return;
   }
@@ -49,8 +55,8 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
         await nc.close();
       }
     });
-    server.decorate('messages', {
-      subscribe: (subject: string, handler: Function) => {
+    server.decorate('queues', {
+      subscribe: (subject, handler) => {
         nc.subscribe(subject, {
           callback: (err, msg) => {
             if (err) {
@@ -62,7 +68,7 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
           },
         });
       },
-      publish: (subject: string, payload: any, options?: PublishOptions) => {
+      publish: (subject, payload, options?) => {
         const metadata = payload.metadata || {};
         metadata.projectId =
           metadata.projectId || requestContext.get(PROJECT_ID_STORE_KEY);
@@ -82,9 +88,13 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
     server.log.warn(
       `${yellow('Search')} error connecting to ${JSON.stringify(connectParams)}`,
     );
-    server.decorate('messages', {
-      subscribe: (subject: string, handler: Function) => {},
-      publish: (subject: string, payload: any, options?: PublishOptions) => {},
+    server.decorate('queues', {
+      subscribe: () => {
+        return;
+      },
+      publish: () => {
+        return;
+      },
     });
   }
 };

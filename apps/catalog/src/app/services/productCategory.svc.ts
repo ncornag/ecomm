@@ -19,6 +19,7 @@ import { ChangeParentActionHandler } from '../lib/tree';
 import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
 import { Validator } from '../lib/validator';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 interface IProductCategoryService {
@@ -54,7 +55,7 @@ export class ProductCategoryService implements IProductCategoryService {
     IProductCategoryRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private validator: Validator;
 
   private constructor(server: any) {
@@ -70,7 +71,7 @@ export class ProductCategoryService implements IProductCategoryService {
       IProductCategoryRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.validator = new Validator(server);
   }
 
@@ -101,7 +102,7 @@ export class ProductCategoryService implements IProductCategoryService {
       ...payload,
     });
     if (result.err) return result;
-    this.messages.publish('global.productCategory.insert', {
+    this.queues.publish('global.productCategory.insert', {
       source: toEntity(result.val),
       metadata: {
         type: 'entityInsert',
@@ -143,7 +144,7 @@ export class ProductCategoryService implements IProductCategoryService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish('global.productCategory.update', {
+      this.queues.publish('global.productCategory.update', {
         entity: 'productCategory',
         source: entity,
         difference,
@@ -151,7 +152,7 @@ export class ProductCategoryService implements IProductCategoryService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(sideEffect.action, {
+        this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
           entity: 'productCategory',
           metadata: { type: sideEffect.action },

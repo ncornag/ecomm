@@ -1,6 +1,5 @@
 # Migration TODOS:
 
-FIXME: ! Refactor Messages(Queues) with Interface
 FIXME: ! Promotions Engine plugin
 FIXME: ! Refactor Actions/Expressions
 FIXME: ! Refactor CT

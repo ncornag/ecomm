@@ -22,7 +22,7 @@ export class AuditLogListener {
     this.server.log.info(
       `${yellow('AuditLogService')} ${green('listening to')} [${this.TOPIC}]`,
     );
-    this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
+    this.server.queues.subscribe(this.TOPIC, this.handler.bind(this));
   }
 
   private handler = async (data: any, server: any) => {

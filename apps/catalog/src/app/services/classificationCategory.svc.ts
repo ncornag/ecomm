@@ -24,6 +24,7 @@ import { ChangeParentActionHandler } from '../lib/tree';
 import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
 import { Validator } from '../lib/validator';
+import { Queues } from '@ecomm/Queues';
 
 // SERVICE INTERFACE
 export interface IClassificationCategoryService {
@@ -73,7 +74,7 @@ export class ClassificationCategoryService
     IClassificationCategoryRepository
   >;
   private config: Config;
-  private messages;
+  private queues: Queues;
   private validator: Validator;
 
   private constructor(server: any) {
@@ -89,7 +90,7 @@ export class ClassificationCategoryService
       IClassificationCategoryRepository
     >();
     this.config = server.config;
-    this.messages = server.messages;
+    this.queues = server.queues;
     this.validator = new Validator(server);
   }
 
@@ -121,7 +122,7 @@ export class ClassificationCategoryService
       ...payload,
     });
     if (result.err) return result;
-    this.messages.publish('global.classificationCategory.insert', {
+    this.queues.publish('global.classificationCategory.insert', {
       source: toEntity(result.val),
       metadata: {
         type: 'entityInsert',
@@ -163,7 +164,7 @@ export class ClassificationCategoryService
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish('global.classificationCategory.update', {
+      this.queues.publish('global.classificationCategory.update', {
         entity: 'classificationCategory',
         source: entity,
         difference,
@@ -171,14 +172,11 @@ export class ClassificationCategoryService
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(
-          'global.classificationCategory.update.sideEffect',
-          {
-            ...sideEffect.data,
-            entity: 'classificationCategory',
-            metadata: { type: sideEffect.action },
-          },
-        );
+        this.queues.publish('global.classificationCategory.update.sideEffect', {
+          ...sideEffect.data,
+          entity: 'classificationCategory',
+          metadata: { type: sideEffect.action },
+        });
       });
     }
     // Return udated entity
