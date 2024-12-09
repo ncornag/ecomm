@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { FastifyPluginAsync, type FastifyInstance } from 'fastify';
+import { FastifyPluginAsync } from 'fastify';
 import { Client } from 'typesense';
 import { type CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
 import { green, yellow } from 'kolorist';
@@ -17,13 +17,14 @@ const searchPlugin: FastifyPluginAsync = async (server) => {
     TYPESENSE_API_KEY: ts_key,
   } = server.config;
 
-  if (!ts_host) {
+  if (ts_host === '') {
     return;
   }
 
   // FIXME move this to catalog
   try {
-    let client = new Client({
+    console.log(yellow('Connecting to Typesense...'), ts_host, ts_host === '');
+    const client = new Client({
       nodes: [
         {
           host: ts_host!,
@@ -41,7 +42,7 @@ const searchPlugin: FastifyPluginAsync = async (server) => {
     });
 
     // PRODUCT SCHEMA
-    let productsSchema: CollectionCreateSchema = {
+    const productsSchema: CollectionCreateSchema = {
       name: 'products',
       fields: [
         { name: 'sku', type: 'string' },
@@ -121,12 +122,16 @@ const searchPlugin: FastifyPluginAsync = async (server) => {
       await client
         .collections('products')
         .delete()
-        .catch(function (error) {});
+        .catch(function () {
+          return;
+        });
 
     await client
       .collections('products')
       .retrieve()
-      .then(function (data) {})
+      .then(function () {
+        return;
+      })
       .catch(function (error) {
         server.log.info('Creating search collection [products]', error);
         return client.collections().create(productsSchema);

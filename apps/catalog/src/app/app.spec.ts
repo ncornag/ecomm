@@ -61,8 +61,40 @@ const productShoes = [
 ];
 
 let server: FastifyInstance;
+let mongo: MongoMemoryServer;
 let listeningApp: any;
 const catalogParam = 'stage';
+let q = 0;
+
+/**
+ * Util function to return a promise which is resolved in provided milliseconds
+ */
+function waitFor(millSeconds) {
+  q = q + 1;
+  return new Promise<void>((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, millSeconds);
+  });
+}
+
+/**
+ * Retries a promise n no. of times before rejecting.
+ * Retries a promise after waiting for {delayTime} milliseconds on a reject.
+ */
+async function retryPromiseWithDelay(promise, nthTry, delayTime) {
+  try {
+    const res = await promise;
+    return res;
+  } catch (e) {
+    if (nthTry === 1) {
+      return Promise.reject(e);
+    }
+    console.log('retrying', nthTry, 'time');
+    await waitFor(delayTime);
+    return retryPromiseWithDelay(promise, nthTry - 1, delayTime);
+  }
+}
 
 describe('Product', () => {
   beforeAll(async () => {
@@ -70,7 +102,8 @@ describe('Product', () => {
     const memoryMongo = await MongoMemoryServer.create();
     const uri = memoryMongo.getUri();
     process.env.MONGO_URL = `${uri}test`;
-    (global as any).__MONGOINSTANCE = memoryMongo;
+    //(global as any).__MONGOINSTANCE = memoryMongo;
+    mongo = memoryMongo;
     // App up (& Migrations up)
     server = await serverBuilder(app, envConfig);
     listeningApp = server.server;
@@ -93,8 +126,9 @@ describe('Product', () => {
     // App down
     await server.close();
     // Memory Mongo down
-    const memoryMongo: MongoMemoryServer = (global as any).__MONGOINSTANCE;
-    await memoryMongo.stop();
+    // const memoryMongo: MongoMemoryServer = (global as any).__MONGOINSTANCE;
+    // await memoryMongo.stop();
+    mongo.stop();
   });
 
   test('findOneProduct', async () => {
@@ -215,4 +249,32 @@ describe('Product', () => {
       `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`,
     );
   });
+
+  // Only execute this tests if the NATS url is present
+
+  if (process.env.NATS_URL !== '') {
+    test('auditlog for updateProduct [changeName]', async () => {
+      const pId = 'adizeroPrimeX2-base';
+      const updateChange = [
+        {
+          type: 'update',
+          path: '/name/en',
+          value: 'TestName',
+          oldValue: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
+        },
+      ];
+
+      const auditLogRecords = request(listeningApp)
+        .get(`/auditLogs?catalog=${catalogParam}`)
+        .expect(200);
+
+      const records = await retryPromiseWithDelay(auditLogRecords, 5, 250);
+
+      assert.equal(records.body.length, 1);
+      assert.equal(records.body[0].entity, 'product');
+      assert.equal(records.body[0].entityId, pId);
+      assert.equal(records.body[0].updateType, 'entityUpdate');
+      assert.deepEqual(records.body[0].edits, updateChange);
+    });
+  }
 });

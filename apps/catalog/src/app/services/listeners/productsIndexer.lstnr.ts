@@ -68,6 +68,7 @@ export class ProductsIndexerListener {
   }
 
   private async handler(data: any) {
+    if (!this.server.index) return;
     if (data.metadata.entity !== 'product') return;
     if (data.source.type !== ProductType.VARIANT) return;
     if (!this.catalogs.includes(data.metadata.catalogId)) return;

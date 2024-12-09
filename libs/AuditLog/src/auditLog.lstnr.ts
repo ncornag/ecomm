@@ -1,4 +1,4 @@
-import { green, red, magenta, yellow, bold } from 'kolorist';
+import { green, magenta, yellow, bold } from 'kolorist';
 import { type IAuditLogService, AuditLogService } from './auditLog.svc';
 import pino from 'pino';
 
