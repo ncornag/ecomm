@@ -1,9 +1,6 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError, ErrorCode } from '@ecomm/AppError';
-import {
-  PromotionService,
-  type IPromotionService,
-} from '../../services/promotion.svc';
+import { PromotionService } from '../../services/promotion.svc';
 import { type Promotion, type Then, type When } from '../../entities/promotion';
 import { green, magenta, yellow, gray, reset } from 'kolorist';
 import { EngineActions } from './actions';
@@ -11,7 +8,6 @@ import { Expressions } from './expressions';
 
 export class PromotionsEngine {
   private server: any;
-  private promotionsService: IPromotionService;
   private actions: EngineActions;
   private expressions: Expressions;
 
@@ -19,7 +15,6 @@ export class PromotionsEngine {
     this.server = server;
     this.expressions = new Expressions(this.server);
     this.actions = new EngineActions(this.server, this.expressions);
-    this.promotionsService = PromotionService.getInstance(server);
   }
 
   async evaluateWhen(when: When, facts: any, bindings: any) {
@@ -65,7 +60,7 @@ export class PromotionsEngine {
 
   async evaluateThen(promotionId: any, then: Then, facts: any, bindings: any) {
     for await (const action of then) {
-      let actionName = action.action as keyof typeof this.actions.Actions;
+      const actionName = action.action as keyof typeof this.actions.Actions;
       if (!this.actions.Actions[actionName]) {
         throw new AppError(
           ErrorCode.BAD_REQUEST,
@@ -90,7 +85,9 @@ export class PromotionsEngine {
     if (promotionId) {
       promotionsFilter._id = promotionId;
     }
-    const result = await this.promotionsService.find(promotionsFilter); // Fetch them everytime for now
+    const result = await PromotionService.getInstance(this.server).find(
+      promotionsFilter,
+    ); // Fetch them everytime for now
     if (result.err) throw result.err;
     const promotions: Promotion[] = result.val;
     const securityStopExecutionTimes = 999;
@@ -106,7 +103,7 @@ export class PromotionsEngine {
         this.server.log.debug(magenta(promotion.name));
       let rulesResult = false;
       let executions = 0;
-      let maxExecutions = promotion.times || securityStopExecutionTimes;
+      const maxExecutions = promotion.times || securityStopExecutionTimes;
       do {
         if (this.server.logger.isLevelEnabled('debug'))
           this.server.log.debug(

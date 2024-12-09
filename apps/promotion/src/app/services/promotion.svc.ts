@@ -13,6 +13,8 @@ import { type Config } from '@ecomm/Config';
 import { green, magenta } from 'kolorist';
 import { CT } from '../lib/ct';
 import { Queues } from '@ecomm/Queues';
+import { PromotionsEngine } from '../lib/promotionsEngine/engine';
+import { FastifyInstance } from 'fastify';
 
 class CTAdapter {
   private server;
@@ -160,8 +162,9 @@ export class PromotionService implements IPromotionService {
   >;
   private config: Config;
   private queues: Queues;
-  private server;
+  private server: FastifyInstance;
   private ctAdapter: CTAdapter;
+  private promotionsEngine: PromotionsEngine;
 
   private constructor(server: any) {
     this.server = server;
@@ -176,6 +179,7 @@ export class PromotionService implements IPromotionService {
     this.config = server.config;
     this.queues = server.queues;
     this.ctAdapter = new CTAdapter(server);
+    this.promotionsEngine = new PromotionsEngine(server);
   }
 
   public static getInstance(server: any): IPromotionService {
@@ -212,7 +216,7 @@ export class PromotionService implements IPromotionService {
     actions: UpdatePromotionAction[],
   ): Promise<Result<Promotion, AppError>> {
     // Find the Entity
-    let result = await this.repo.findOne(id, version);
+    const result = await this.repo.findOne(id, version);
     if (result.err) return result;
     const entity: PromotionDAO = result.val;
     const toUpdateEntity = Value.Clone(entity);
@@ -298,7 +302,7 @@ export class PromotionService implements IPromotionService {
         0,
       ); // Added for quick testing
     }
-    const result = await this.server.promotionsEngine.run(facts, promotionId);
+    const result = await this.promotionsEngine.run(facts, promotionId);
     if (result.err) return result;
     // console.log(result.val);
     // if (cartId) {

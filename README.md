@@ -1,6 +1,5 @@
 # Migration TODOS:
 
-FIXME: ! Promotions Engine plugin
 FIXME: ! Refactor Actions/Expressions
 FIXME: ! Refactor CT
 FIXME: ! Refactor as components instead of layers

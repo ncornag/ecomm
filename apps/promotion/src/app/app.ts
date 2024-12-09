@@ -50,11 +50,11 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Load Listeners
   auditLogListener(server);
 
-  // Register plugins
-  server.register(AutoLoad, {
-    dir: path.join(__dirname, 'plugins'),
-    options: { ...opts },
-  });
+  // // Register plugins
+  // server.register(AutoLoad, {
+  //   dir: path.join(__dirname, 'plugins'),
+  //   options: { ...opts },
+  // });
 
   // Register Routes
   server.register(AutoLoad, {

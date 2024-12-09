@@ -1,6 +1,9 @@
 const promotions = [
   {
     _id: 'Buy1SKU1andSKU2for15forVIPs',
+    projectId: 'TestProject',
+    version: 0,
+    createdAt: '2023-01-15T00:00:00.000+00:00',
     name: 'Buy SKU1 and SKU2 for €15 for VIP customers',
     when: {
       baseProduct: "products[sku='SKU1']",
@@ -38,6 +41,9 @@ const promotions = [
   },
   {
     _id: '3x2InSKU4',
+    projectId: 'TestProject',
+    version: 0,
+    createdAt: '2023-01-15T00:00:00.000+00:00',
     name: '3x2 on SKU4',
     when: {
       product: "products[sku='SKU4' and quantity>2]",
@@ -61,6 +67,9 @@ const promotions = [
   },
   {
     _id: 'buy1ShoeGet5OffTrainer',
+    projectId: 'TestProject',
+    version: 0,
+    createdAt: '2023-01-15T00:00:00.000+00:00',
     name: 'Buy 1 Shoe and get €5 off in 1 Trainer',
     when: {
       baseProduct: "products['shoes' in categories][0]",
@@ -89,6 +98,9 @@ const promotions = [
   },
   {
     _id: '10%OffIn1ShirtFor100SpendOnShoes',
+    projectId: 'TestProject',
+    version: 0,
+    createdAt: '2023-01-15T00:00:00.000+00:00',
     name: 'Spend more than €100 in shoes and get 10% off in one shirt',
     when: {
       shoesTotal:
@@ -115,6 +127,9 @@ const promotions = [
   },
   {
     _id: '10%OffFor500PlusSpend',
+    projectId: 'TestProject',
+    version: 0,
+    createdAt: '2023-01-15T00:00:00.000+00:00',
     name: 'Spend more than €500 and get 10% off',
     when: {
       totalAfterDiscounts: 'total + $sum($discounts.centAmount)',
@@ -133,16 +148,6 @@ const promotions = [
 export async function up(params) {
   const db = params.context.server.mongo.db;
   await db.collection('Promotion').insertMany(promotions);
-  await db.collection('Promotion').updateMany(
-    {},
-    {
-      $set: {
-        projectId: 'TestProject',
-        version: 0,
-        createdAt: '2023-01-15T00:00:00.000+00:00',
-      },
-    },
-  );
 }
 
 export async function down(params) {
