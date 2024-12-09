@@ -29,7 +29,8 @@
       "@ecomm/RequestContext": ["libs/RequestContext/src/index.ts"],
       "@ecomm/Search": ["libs/Search/src/index.ts"],
       "@ecomm/Server": ["libs/Server/src/index.ts"],
-      "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"]
+      "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"],
+      "@ecomm/Expressions": ["libs/Expressions/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"],

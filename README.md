@@ -1,6 +1,5 @@
 # Migration TODOS:
 
-FIXME: ! Refactor Actions/Expressions
 FIXME: ! Refactor CT
 FIXME: ! Refactor as components instead of layers
 FIXME: ! Rewrite the Readme

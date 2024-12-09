@@ -4,8 +4,44 @@ import { PromotionService } from '../../services/promotion.svc';
 import { type Promotion, type Then, type When } from '../../entities/promotion';
 import { green, magenta, yellow, gray, reset } from 'kolorist';
 import { EngineActions } from './actions';
-import { Expressions } from './expressions';
+import { Expressions } from '@ecomm/Expressions';
 
+const functions = [
+  {
+    name: 'productInCategory',
+    fn: (items: any, category: string) => {
+      // const e = expression(`products["${category}" in categories][0]`);
+      return items.find(
+        (p: any) => p.categories.find((c: any) => c === category) != undefined,
+      );
+    },
+  },
+  {
+    name: 'lowestPricedProductInCategory',
+    fn: (products: any, category: string) => {
+      // const e = expression(`products['${category}' in categories]^(centAmount)[0]`);
+      let min: number = Number.MAX_SAFE_INTEGER;
+      let result: any;
+      for (const product of products) {
+        if (
+          product.categories.find((c: any) => c === category) != undefined &&
+          product.value.centAmount < min
+        ) {
+          min = product.value.centAmount;
+          result = product;
+        }
+      }
+      return result;
+    },
+  },
+  {
+    name: 'productWithSku',
+    fn: (items: any, sku: string) => {
+      // const e = expression(`products["products[sku='${sku}']`);
+      return items.find((p: any) => p.sku === sku);
+    },
+  },
+];
 export class PromotionsEngine {
   private server: any;
   private actions: EngineActions;
@@ -13,7 +49,7 @@ export class PromotionsEngine {
 
   constructor(server: any) {
     this.server = server;
-    this.expressions = new Expressions(this.server);
+    this.expressions = new Expressions(this.server, { functions });
     this.actions = new EngineActions(this.server, this.expressions);
   }
 

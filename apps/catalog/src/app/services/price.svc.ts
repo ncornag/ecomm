@@ -4,15 +4,16 @@ import { AppError, ErrorCode } from '@ecomm/AppError';
 import { type Value, type Price } from '../entities/price';
 import { type PriceDAO } from '../repositories/price.dao.schema';
 import { type IPriceRepository } from '../repositories/price.repo';
-import { type Cart, type CartItem, type CartProduct } from '../entities/cart';
+import { type Cart, type CartProduct } from '../entities/cart';
 import { type IProductService, ProductService } from './product.svc';
-import { green, magenta, yellow, gray, reset } from 'kolorist';
-import { Expressions } from '../lib/expressions';
+import { green, magenta } from 'kolorist';
 import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
-import { type Config } from '@ecomm/Config';
 import { type CreatePriceBody } from '../schemas/price.schemas';
+import { type Config } from '@ecomm/Config';
 import { Queues } from '@ecomm/Queues';
+import { Expressions } from '@ecomm/Expressions';
+import { FastifyInstance } from 'fastify';
 
 // SERVICE INTERFACE
 export interface IPriceService {
@@ -58,12 +59,12 @@ export const FieldPredicateOperators: any = {
 export function createPredicateExpression(data: any) {
   const surroundByQuotes = (value: any) =>
     typeof value === 'string' ? `'${value}'` : value;
-  let predicate = Object.entries(data).reduce((acc, [key, value]) => {
+  const predicate = Object.entries(data).reduce((acc, [key, value]) => {
     if (acc) acc += ' and ';
-    let op = FieldPredicateOperators[key]
+    const op = FieldPredicateOperators[key]
       ? FieldPredicateOperators[key].operator
       : '=';
-    let field = FieldPredicateOperators[key]
+    const field = FieldPredicateOperators[key]
       ? FieldPredicateOperators[key].field
       : key;
     let val: any = value;
@@ -88,10 +89,10 @@ export class PriceService implements IPriceService {
   private static instance: IPriceService;
   private repo: IPriceRepository;
   private productService: IProductService;
-  private expressions: Expressions;
-  private server;
+  private server: FastifyInstance;
   private config: Config;
   private queues: Queues;
+  private expressions: Expressions;
   private promotionsUrl: string;
   private cacheCartPrices;
   private cartPricesCache;
@@ -103,6 +104,7 @@ export class PriceService implements IPriceService {
     this.config = server.config;
     this.queues = server.queues;
     this.expressions = new Expressions(server);
+
     this.promotionsUrl = server.config.PROMOTIONS_URL;
     this.cacheCartPrices = server.config.CACHE_CART_PRICES;
     this.cartPricesCache = new NodeCache({

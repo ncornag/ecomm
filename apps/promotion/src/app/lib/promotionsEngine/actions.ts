@@ -1,4 +1,4 @@
-import { Expressions } from './expressions';
+import { Expressions } from '@ecomm/Expressions';
 import { green, yellow } from 'kolorist';
 
 export class EngineActions {
