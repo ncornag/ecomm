@@ -11,7 +11,7 @@ import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { ChangeNameActionHandler } from './actions';
 import { type Config } from '@ecomm/Config';
 import { green, magenta } from 'kolorist';
-import { CT } from '../lib/ct';
+import { CT } from '@ecomm/CT';
 import { Queues } from '@ecomm/Queues';
 import { PromotionsEngine } from '../lib/promotionsEngine/engine';
 import { FastifyInstance } from 'fastify';

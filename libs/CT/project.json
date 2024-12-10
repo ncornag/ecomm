@@ -1,0 +1,9 @@
+{
+  "name": "CT",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/CT/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project CT --web",
+  "targets": {}
+}

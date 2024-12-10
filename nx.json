@@ -37,7 +37,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/promotion-e2e/**/*"]
+      "exclude": []
     }
   ]
 }

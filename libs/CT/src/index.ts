@@ -1,11 +1,14 @@
 import fetch from 'node-fetch';
-import { createApiBuilderFromCtpClient, ByProjectKeyRequestBuilder } from '@commercetools/platform-sdk';
+import {
+  createApiBuilderFromCtpClient,
+  ByProjectKeyRequestBuilder,
+} from '@commercetools/platform-sdk';
 import { Value } from '@sinclair/typebox/value';
 import {
   ClientBuilder,
   // Import middlewares
   type AuthMiddlewareOptions, // Required for auth
-  type HttpMiddlewareOptions // Required for sending HTTP requests
+  type HttpMiddlewareOptions, // Required for sending HTTP requests
 } from '@commercetools/sdk-client-v2';
 
 export class CT {
@@ -14,12 +17,12 @@ export class CT {
 
   public PriceMode = {
     STANDALONE: 'Standalone',
-    EMBEDDED: 'Embedded'
+    EMBEDDED: 'Embedded',
   };
 
   public Catalog = {
     STAGED: 'staged',
-    CURRENT: 'current'
+    CURRENT: 'current',
   };
 
   public constructor(server: any) {
@@ -34,7 +37,7 @@ export class CT {
       CT_PROJECTKEY: projectKey,
       CT_SCOPE: scopes,
       CT_CLIENTID: clientId,
-      CT_CLIENTSECRET: clientSecret
+      CT_CLIENTSECRET: clientSecret,
     } = this.server.config;
 
     // Configure authMiddlewareOptions
@@ -43,16 +46,16 @@ export class CT {
       projectKey,
       credentials: {
         clientId,
-        clientSecret
+        clientSecret,
       },
       scopes,
-      fetch
+      fetch,
     };
 
     // Configure httpMiddlewareOptions
     const httpMiddlewareOptions: HttpMiddlewareOptions = {
       host: `https://${httpHost}`,
-      fetch
+      fetch,
     };
 
     // Return the ClientBuilder
@@ -62,7 +65,9 @@ export class CT {
       .withHttpMiddleware(httpMiddlewareOptions)
       .build();
 
-    return createApiBuilderFromCtpClient(ctpClient).withProjectKey({ projectKey });
+    return createApiBuilderFromCtpClient(ctpClient).withProjectKey({
+      projectKey,
+    });
   };
 
   public toCTProduct(stagedProduct: any, onlineProduct: any): any {
@@ -78,29 +83,31 @@ export class CT {
         // TODO: Get the first Classification Category of the first Product Category
         productType: {
           typeId: 'product-type',
-          id: 'xxx-yyy-zzz'
+          id: 'xxx-yyy-zzz',
         },
         masterData: {
           current: op,
           staged: sp,
           published: op.name ? true : false,
-          hasStagedChanges
-        }
+          hasStagedChanges,
+        },
       },
       stagedProduct.key && { key: stagedProduct.key },
       {
         // Unsupported right now, faking data
         taxCategory: {
           typeId: 'tax-category',
-          id: stagedProduct.taxCategory
+          id: stagedProduct.taxCategory,
         },
-        priceMode: stagedProduct.priceMode
-      }
+        priceMode: stagedProduct.priceMode,
+      },
     );
   }
 
   private toCTProductVersion(productVersion: any) {
-    let masterVariantIndex = productVersion.variants.findIndex((v: any) => v.attributes.isMasterVariant === true);
+    let masterVariantIndex = productVersion.variants.findIndex(
+      (v: any) => v.attributes.isMasterVariant === true,
+    );
     if (masterVariantIndex == -1) masterVariantIndex = 0;
     return Object.assign({
       name: productVersion.name,
@@ -113,8 +120,11 @@ export class CT {
       masterVariant: this.toCTVariant(
         productVersion.variants[masterVariantIndex],
         productVersion.priceMode === this.PriceMode.EMBEDDED
-          ? productVersion.prices.filter((p: any) => p.sku === productVersion.variants[masterVariantIndex].sku)
-          : []
+          ? productVersion.prices.filter(
+              (p: any) =>
+                p.sku === productVersion.variants[masterVariantIndex].sku,
+            )
+          : [],
       ),
       variants: productVersion.variants
         .toSpliced(masterVariantIndex, 1)
@@ -123,18 +133,20 @@ export class CT {
             v,
             productVersion.priceMode === this.PriceMode.EMBEDDED
               ? productVersion.prices.filter((p: any) => p.sku === v.sku)
-              : []
-          )
+              : [],
+          ),
         ),
-      searchKeywords: productVersion.searchKeywords
+      searchKeywords: productVersion.searchKeywords,
     });
   }
 
   private toCTVariant(variant: any, prices: any) {
     return Object.assign(
       {
-        id: variant._id.split('#')[1] ? parseInt(variant._id.split('#')[1]) : variant._id,
-        sku: variant.sku
+        id: variant._id.split('#')[1]
+          ? parseInt(variant._id.split('#')[1])
+          : variant._id,
+        sku: variant.sku,
       },
       variant.key && { key: variant.key },
       {
@@ -148,48 +160,59 @@ export class CT {
         // Unsupported right now, faking data
         assets: [],
         // Unsupported right now, faking data
-        availability: {}
-      }
+        availability: {},
+      },
     );
   }
 
   private toCTPrices(pricesSource: any) {
     return pricesSource.map((price: any) => {
-      const basePrice = price.predicates.find((p: any) => p.constraints.minimumQuantity === undefined);
+      const basePrice = price.predicates.find(
+        (p: any) => p.constraints.minimumQuantity === undefined,
+      );
       const tiers =
         price.predicates.length > 1
           ? price.predicates
-            .filter((p: any) => p.constraints.minimumQuantity !== undefined)
-            .sort((a: any, b: any) => a.constraints.minimumQuantity > b.constraints.minimumQuantity)
-            .map((p: any) => {
-              return {
-                minimumQuantity: p.constraints.minimumQuantity,
-                value: p.value
-              };
-            })
+              .filter((p: any) => p.constraints.minimumQuantity !== undefined)
+              .sort(
+                (a: any, b: any) =>
+                  a.constraints.minimumQuantity > b.constraints.minimumQuantity,
+              )
+              .map((p: any) => {
+                return {
+                  minimumQuantity: p.constraints.minimumQuantity,
+                  value: p.value,
+                };
+              })
           : undefined;
       return Object.assign(
         {
           id: price._id,
-          value: basePrice.value
+          value: basePrice.value,
         },
         price.key && { key: price.key },
-        basePrice.constraints.country && { country: basePrice.constraints.country[0] },
+        basePrice.constraints.country && {
+          country: basePrice.constraints.country[0],
+        },
         basePrice.constraints.customerGroup && {
           customerGroup: {
             typeId: 'customer-group',
-            id: basePrice.constraints.customerGroup[0]
-          }
+            id: basePrice.constraints.customerGroup[0],
+          },
         },
         basePrice.constraints.channel && {
           channel: {
             typeId: 'channel',
-            id: basePrice.constraints.channel[0]
-          }
+            id: basePrice.constraints.channel[0],
+          },
         },
-        basePrice.constraints.validFrom && { validFrom: basePrice.constraints.validFrom },
-        basePrice.constraints.validUntil && { validUntil: basePrice.constraints.validUntil },
-        tiers && { tiers }
+        basePrice.constraints.validFrom && {
+          validFrom: basePrice.constraints.validFrom,
+        },
+        basePrice.constraints.validUntil && {
+          validUntil: basePrice.constraints.validUntil,
+        },
+        tiers && { tiers },
       );
     });
   }

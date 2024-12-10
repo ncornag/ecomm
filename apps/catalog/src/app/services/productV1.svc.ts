@@ -1,7 +1,7 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError, ErrorCode } from '@ecomm/AppError';
+import { type Result, Ok } from 'ts-results';
+import { AppError } from '@ecomm/AppError';
 import { type IProductRepository } from '../repositories/product.repo';
-import { CT } from '../lib/ct';
+import { CT } from '@ecomm/CT';
 
 // SERVICE INTERFACE
 export interface IProductServiceV1 {
@@ -13,7 +13,7 @@ export class ProductServiceV1 implements IProductServiceV1 {
   private static instance: IProductServiceV1;
   private repo: IProductRepository;
   private cols;
-  private ct: any;
+  private ct: CT;
   private Catalog = {
     STAGE: 'stage',
     ONLINE: 'online',
