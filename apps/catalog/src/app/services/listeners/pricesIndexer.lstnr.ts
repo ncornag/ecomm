@@ -19,6 +19,12 @@ export class PricesIndexerListener {
   }
 
   public start() {
+    if (!this.server.index) {
+      this.server.log.warn(
+        `${yellow('PricesIndexingService not active because the indexing service is not available')}`,
+      );
+      return;
+    }
     this.server.log.info(
       `${yellow('PricesIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`,
     );
@@ -26,6 +32,7 @@ export class PricesIndexerListener {
   }
 
   private async handler(data: any) {
+    if (!this.server.index) return;
     if (data.metadata.entity !== 'price') return;
     if (!this.catalogs.includes(data.metadata.catalogId)) return;
     await this.lim();
@@ -37,7 +44,7 @@ export class PricesIndexerListener {
       // TODO: update Product on Price Update
       // const updates = Value.Patch({}, data.difference);
       // updates.id = data.source.id;
-      // this.server.index.client.collections('products').documents().update(updates);
+      // this.server.index.collections('products').documents().update(updates);
     } else if (data.metadata.type === 'entityInsert') {
       const productResult = await this.productService.findProducts(
         data.metadata.catalogId,
@@ -51,12 +58,12 @@ export class PricesIndexerListener {
         );
         return;
       }
-      // await this.server.index.client
+      // await this.server.index
       //   .collections('products')
       //   .documents(productResult.val[0].id)
       //   .update({ prices: data.source });
       await this.retryWithDelay(async () => {
-        await this.server.index.client
+        await this.server.index
           .collections('products')
           .documents(productResult.val[0].id)
           .update({

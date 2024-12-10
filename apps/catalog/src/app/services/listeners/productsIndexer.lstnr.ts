@@ -26,6 +26,12 @@ export class ProductsIndexerListener {
   }
 
   public start() {
+    if (!this.server.index) {
+      this.server.log.warn(
+        `${yellow('ProductIndexingService not active because the indexing service is not available')}`,
+      );
+      return;
+    }
     this.server.log.info(
       `${yellow('ProductIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`,
     );
@@ -80,10 +86,7 @@ export class ProductsIndexerListener {
     if (data.metadata.type === 'entityUpdate') {
       const updates = Value.Patch({}, data.difference);
       updates.id = data.source.id;
-      this.server.index.client
-        .collections('products')
-        .documents()
-        .update(updates);
+      this.server.index.collections('products').documents().update(updates);
     } else if (data.metadata.type === 'entityInsert') {
       // TODO: filter what to index, including fields and locales
 
@@ -101,7 +104,7 @@ export class ProductsIndexerListener {
         return;
       }
       // Index the Variant as a serch document
-      await this.server.index.client
+      await this.server.index
         .collections('products')
         .documents()
         .upsert(this.toIndexDocument(productResult.val))

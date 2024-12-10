@@ -32,6 +32,7 @@ import {
 import { productsIndexerListener } from './services/listeners/productsIndexer.lstnr';
 import { pricesIndexerListener } from './services/listeners/pricesIndexer.lstnr';
 import { updateChildAncestorsForIdListener } from './services/listeners/updateChildAncestorsForId.lstnr';
+import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
 
 /* eslint-disable-next-line */
 export interface AppOptions {}
@@ -111,6 +112,104 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
     );
   });
   await Promise.all(indexes);
+
+  // Load Indexer Schemas
+  const productsSchema: CollectionCreateSchema = {
+    name: 'products',
+    fields: [
+      { name: 'sku', type: 'string' },
+      { name: 'catalog', type: 'string' },
+      { name: 'name', type: 'string' },
+      { name: 'description', type: 'string', optional: true },
+      {
+        name: 'searchKeywords',
+        type: 'string[]',
+        optional: true,
+        facet: true,
+      },
+      { name: 'attributes', type: 'object', optional: true, facet: true },
+      { name: 'categories', type: 'string[]', optional: true, facet: true },
+      { name: 'prices', type: 'object', optional: true, facet: true },
+      // Compatibility
+      {
+        name: 'brand',
+        type: 'string',
+        facet: true,
+      },
+      {
+        name: 'categories.lvl0',
+        type: 'string[]',
+        facet: true,
+      },
+      {
+        name: 'categories.lvl1',
+        type: 'string[]',
+        facet: true,
+        optional: true,
+      },
+      {
+        name: 'categories.lvl2',
+        type: 'string[]',
+        facet: true,
+        optional: true,
+      },
+      {
+        name: 'categories.lvl3',
+        type: 'string[]',
+        facet: true,
+        optional: true,
+      },
+      {
+        name: 'price',
+        type: 'float',
+        facet: true,
+        optional: true,
+      },
+      {
+        name: 'popularity',
+        type: 'int32',
+        facet: false,
+      },
+      {
+        name: 'free_shipping',
+        type: 'bool',
+        facet: true,
+      },
+      {
+        name: 'rating',
+        type: 'int32',
+        facet: true,
+      },
+      {
+        name: 'vectors',
+        type: 'float[]',
+        num_dim: 384,
+        optional: true,
+      },
+    ],
+    enable_nested_fields: true,
+  };
+
+  if (server.index) {
+    if (process.env.DROP_PRODUCT_INDEX === 'YES')
+      await server.index
+        .collections('products')
+        .delete()
+        .catch(function () {
+          return;
+        });
+
+    await server.index
+      .collections('products')
+      .retrieve()
+      .then(function () {
+        return;
+      })
+      .catch(function (error) {
+        server.log.info('Creating search collection [products]', error);
+        return server.index!.collections().create(productsSchema);
+      });
+  }
 
   // Load Listeners
   auditLogListener(server);
