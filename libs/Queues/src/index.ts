@@ -82,11 +82,11 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
       },
     });
     server.log.info(
-      `${yellow('Search')} ${green('starting in')} [${nats_url}]`,
+      `${yellow('Queues')} ${green('starting in')} [${nats_url}]`,
     );
   } catch (err) {
     server.log.warn(
-      `${yellow('Search')} error connecting to ${JSON.stringify(connectParams)}`,
+      `${yellow('Queues')} error connecting to ${JSON.stringify(connectParams)}`,
     );
     server.decorate('queues', {
       subscribe: () => {
