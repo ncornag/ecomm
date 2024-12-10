@@ -11,10 +11,13 @@ function updateProduct(product: any): any {
     updateOne: {
       filter: { _id: product._id },
       update: {
-        $set: { 'name.en': faker.commerce.productName(), lastModifiedAt: new Date().toISOString() },
-        $inc: { version: 1 }
-      }
-    }
+        $set: {
+          'name.en': faker.commerce.productName(),
+          lastModifiedAt: new Date().toISOString(),
+        },
+        $inc: { version: 1 },
+      },
+    },
   };
 }
 
@@ -33,10 +36,10 @@ async function main() {
   const collection = db.collection(colName);
 
   let count = 0;
-  let start = new Date().getTime();
+  const start = new Date().getTime();
 
-  let productsToUpdate = await collection.find().limit(productsToModify);
-  let updates = [];
+  const productsToUpdate = await collection.find().limit(productsToModify);
+  let updates: any[] = [];
   for await (const product of productsToUpdate) {
     const update = updateProduct(product);
     updates.push(update);
@@ -44,17 +47,25 @@ async function main() {
     if (count % logCount === 0) {
       await collection.bulkWrite(updates);
       updates = [];
-      let end = new Date().getTime();
+      const end = new Date().getTime();
       console.log(`Updated ${count} products in ${end - start} ms`);
     }
   }
   if (updates.length > 0) {
     await collection.bulkWrite(updates);
   }
-  let end = new Date().getTime();
+  const end = new Date().getTime();
   console.log(`Updated ${count} products in ${end - start} ms`);
 
   console.log('Database seeded! :)');
+}
+
+if (process.argv.length < 3 || process.argv.length > 3) {
+  console.log(
+    'Usage: nx run updateProducts:serve --args="[<productsToUpdate>]"',
+  );
+  console.log('> nx run updateProducts:serve --args="[5]"');
+  process.exit(0);
 }
 
 main()

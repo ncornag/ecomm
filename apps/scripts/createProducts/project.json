@@ -1,0 +1,61 @@
+{
+  "name": "createProducts",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/scripts/createProducts/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/scripts/createProducts",
+        "format": ["cjs"],
+        "bundle": false,
+        "main": "apps/scripts/createProducts/src/main.ts",
+        "tsConfig": "apps/scripts/createProducts/tsconfig.app.json",
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "generateLockfile": true,
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "createProducts:build",
+        "runBuildTargetDependencies": false,
+        "runtimeArgs": ["--no-warnings"],
+        "inspect": false,
+        "watch": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "createProducts:build:development"
+        },
+        "production": {
+          "buildTarget": "createProducts:build:production"
+        }
+      }
+    }
+  }
+}

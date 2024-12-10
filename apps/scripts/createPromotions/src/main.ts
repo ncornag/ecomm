@@ -6,7 +6,7 @@ let promCounter = 1;
 function createRandomPromotion(projectId: string): any {
   const cat1 = 'category-' + catCounter++;
   const cat2 = 'category-' + catCounter++;
-  let result: any = {
+  const result: any = {
     _id: `prom${promCounter++}`,
     projectId,
     version: 0,
@@ -19,22 +19,22 @@ function createRandomPromotion(projectId: string): any {
       // minPrice: `$min(items['${cat2}' in categories].value.centAmount)`,
       // secondProduct: `items['${cat2}' in categories and value.centAmount=$minPrice][0]`
       baseProduct: `$productInCategory(items, '${cat1}')`,
-      secondProduct: `$lowestPricedProductInCategory(items, '${cat2}')`
+      secondProduct: `$lowestPricedProductInCategory(items, '${cat2}')`,
     },
     then: [
       {
         action: 'createLineDiscount',
         sku: '$secondProduct.sku',
-        discount: '$secondProduct.value.centAmount * 0.1'
+        discount: '$secondProduct.value.centAmount * 0.1',
       },
       {
         action: 'tagAsUsed',
         items: [
           { productId: '$baseProduct.id', quantity: '1' },
-          { productId: '$secondProduct.id', quantity: '1' }
-        ]
-      }
-    ]
+          { productId: '$secondProduct.id', quantity: '1' },
+        ],
+      },
+    ],
   };
   return result;
 }
@@ -45,13 +45,15 @@ async function writeAndLog(
   start: number,
   collection: any,
   promotions: any[],
-  force: boolean = false
+  force = false,
 ) {
   if (count % logCount === 0 || force) {
     await collection.insertMany(promotions);
     promotions.splice(0, promotions.length);
-    let end = new Date().getTime();
-    console.log(`Inserted ${count} promotions at ${((count * 1000) / (end - start)).toFixed()} items/s`);
+    const end = new Date().getTime();
+    console.log(
+      `Inserted ${count} promotions at ${((count * 1000) / (end - start)).toFixed()} items/s`,
+    );
   }
 }
 
@@ -70,12 +72,14 @@ async function main() {
   const collection = db.collection(colName);
   try {
     await collection.drop();
-  } catch {}
+  } catch {
+    return;
+  }
 
   let count = 0;
-  let start = new Date().getTime();
+  const start = new Date().getTime();
 
-  let promotions: any = [];
+  const promotions: any = [];
   for (let i = 0; i < promotionsToInsert; i++) {
     const p = createRandomPromotion('TestProject');
     promotions.push(p);
@@ -88,7 +92,15 @@ async function main() {
   console.log('Database seeded! :)');
 }
 
-await main()
+if (process.argv.length < 3 || process.argv.length > 3) {
+  console.log(
+    'Usage: nx run createPromotions:serve --args="[<promotionsToInsert>]"',
+  );
+  console.log('> nx run createPromotions:serve --args="[10]"');
+  process.exit(0);
+}
+
+main()
   .then(console.log)
   .catch(console.error)
   .finally(() => client.close());
