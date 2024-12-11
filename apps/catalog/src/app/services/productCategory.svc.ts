@@ -8,15 +8,11 @@ import {
 } from '../entities/productCategory';
 import { type CreateProductCategoryBody } from '../schemas/productCategory.schemas';
 import { type ProductCategoryDAO } from '../repositories/productCategory.dao.schema';
-import {
-  ActionHandlerResult,
-  type ActionHandlersList,
-  ChangeNameActionHandler,
-  SetKeyActionHandler,
-} from '../services/actions';
-import { type IProductCategoryRepository } from '../repositories/productCategory.repo';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
+import { SetKeyActionHandler } from './actions/setKey.handler';
 import { ChangeParentActionHandler } from '../lib/tree';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
+import { type IProductCategoryRepository } from '../repositories/productCategory.repo';
 import { type Config } from '@ecomm/Config';
 import { Validator } from '../lib/validator';
 import { Queues } from '@ecomm/Queues';
@@ -50,7 +46,7 @@ export class ProductCategoryService implements IProductCategoryService {
   private static instance: IProductCategoryService;
   private repo: IProductCategoryRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
+  private actionsRunner: ActionsRunner<
     ProductCategoryDAO,
     IProductCategoryRepository
   >;
@@ -66,7 +62,7 @@ export class ProductCategoryService implements IProductCategoryService {
       changeName: new ChangeNameActionHandler(server),
       changeParent: new ChangeParentActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
+    this.actionsRunner = new ActionsRunner<
       ProductCategoryDAO,
       IProductCategoryRepository
     >();

@@ -10,14 +10,11 @@ import {
 import { type CartProduct } from '../entities/cart';
 import { type CreateProductBody } from '../schemas/product.schemas';
 import { type ProductDAO } from '../repositories/product.dao.schema';
-import {
-  type ActionHandlersList,
-  ChangeNameActionHandler,
-  ChangeDescriptionActionHandler,
-  ChangeKeywordsActionHandler,
-} from './actions';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
+import { ChangeKeywordsActionHandler } from './actions/changeKeywords.handler';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
 import { type IProductRepository } from '../repositories/product.repo';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
 import { type Config } from '@ecomm/Config';
 import NodeCache from 'node-cache';
 import { Queues } from '@ecomm/Queues';
@@ -62,10 +59,7 @@ export class ProductService implements IProductService {
   private repo: IProductRepository;
   private cols;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
-    ProductDAO,
-    IProductRepository
-  >;
+  private actionsRunner: ActionsRunner<ProductDAO, IProductRepository>;
   private config: Config;
   private queues: Queues;
   private cartProductsCache;
@@ -79,10 +73,7 @@ export class ProductService implements IProductService {
       changeDescription: new ChangeDescriptionActionHandler(server),
       changeKeywords: new ChangeKeywordsActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
-      ProductDAO,
-      IProductRepository
-    >();
+    this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
     this.config = server.config;
     this.queues = server.queues;
     this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;

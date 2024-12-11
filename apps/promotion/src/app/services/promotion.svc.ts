@@ -5,10 +5,9 @@ import { nanoid } from 'nanoid';
 import { type Promotion, UpdatePromotionAction } from '../entities/promotion';
 import { type CreatePromotionBody } from '../schemas/promotion.schemas';
 import { type PromotionDAO } from '../repositories/promotion.dao.schema';
-import { type ActionHandlersList } from '../services/actions/index';
 import { type IPromotionRepository } from '../repositories/promotion.repo';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
-import { ChangeNameActionHandler } from './actions';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
 import { type Config } from '@ecomm/Config';
 import { green, magenta } from 'kolorist';
 import { CT } from '@ecomm/CT';
@@ -156,10 +155,7 @@ export class PromotionService implements IPromotionService {
   private static instance: IPromotionService;
   private repo: IPromotionRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
-    PromotionDAO,
-    IPromotionRepository
-  >;
+  private actionsRunner: ActionsRunner<PromotionDAO, IPromotionRepository>;
   private config: Config;
   private queues: Queues;
   private server: FastifyInstance;
@@ -172,7 +168,7 @@ export class PromotionService implements IPromotionService {
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
+    this.actionsRunner = new ActionsRunner<
       PromotionDAO,
       IPromotionRepository
     >();

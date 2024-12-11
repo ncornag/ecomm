@@ -14,14 +14,10 @@ import { type ClassificationCategoryPayload } from '../schemas/classificationCat
 import { type ClassificationAttributePayload } from '../schemas/classificationAttribute.schemas';
 import { type ClassificationCategoryDAO } from '../repositories/classificationCategory.dao.schema';
 import { type IClassificationCategoryRepository } from '../repositories/classificationCategory.repo';
-import {
-  ActionHandlerResult,
-  type ActionHandlersList,
-  SetKeyActionHandler,
-  ChangeNameActionHandler,
-} from './actions';
+import { SetKeyActionHandler } from './actions/setKey.handler';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
 import { ChangeParentActionHandler } from '../lib/tree';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
 import { type Config } from '@ecomm/Config';
 import { Validator } from '../lib/validator';
 import { Queues } from '@ecomm/Queues';
@@ -69,7 +65,7 @@ export class ClassificationCategoryService
   private static instance: IClassificationCategoryService;
   private repo: IClassificationCategoryRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
+  private actionsRunner: ActionsRunner<
     ClassificationCategoryDAO,
     IClassificationCategoryRepository
   >;
@@ -85,7 +81,7 @@ export class ClassificationCategoryService
       changeName: new ChangeNameActionHandler(server),
       changeParent: new ChangeParentActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
+    this.actionsRunner = new ActionsRunner<
       ClassificationCategoryDAO,
       IClassificationCategoryRepository
     >();

@@ -20,6 +20,7 @@
     "experimentalDecorators": true,
     "lib": ["ESNext", "dom"],
     "paths": {
+      "@ecomm/ActionsRunner": ["libs/ActionsRunner/src/index.ts"],
       "@ecomm/AppError": ["libs/AppError/src/index.ts"],
       "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"],
       "@ecomm/CT": ["libs/CT/src/index.ts"],

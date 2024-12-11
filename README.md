@@ -1,8 +1,5 @@
 # Migration TODOS:
 
-FIXME: ! Refactor updateEntityActionsRunner
-FIXME: ! Refactor findBigCarts/createBigCarts
-
 FIXME: ! Refactor as components instead of layers
 FIXME: ! Rewrite the Readme
 

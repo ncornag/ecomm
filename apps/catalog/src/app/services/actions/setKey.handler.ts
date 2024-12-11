@@ -1,7 +1,7 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
+import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { type UpdateClassificationCategorySetKey } from '../../entities/classificationCategory';
-import { type ActionHandlerResult } from './index';
 
 interface DAOwithKey {
   [key: string]: any;

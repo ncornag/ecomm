@@ -5,13 +5,10 @@ import { nanoid } from 'nanoid';
 import { type Catalog, UpdateCatalogAction } from '../entities/catalog';
 import { type CreateCatalogBody } from '../schemas/catalog.schemas';
 import { type CatalogDAO } from '../repositories/catalog.dao.schema';
-import {
-  type ActionHandlersList,
-  ChangeNameActionHandler,
-  ChangeDescriptionActionHandler,
-} from './actions';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
 import { type ICatalogRepository } from '../repositories/catalog.repo';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
 import { type Config } from '@ecomm/Config';
 import { Queues } from '@ecomm/Queues';
 
@@ -39,10 +36,7 @@ export class CatalogService implements ICatalogService {
   private static instance: ICatalogService;
   private repo: ICatalogRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
-    CatalogDAO,
-    ICatalogRepository
-  >;
+  private actionsRunner: ActionsRunner<CatalogDAO, ICatalogRepository>;
   private config: Config;
   private queues: Queues;
 
@@ -52,10 +46,7 @@ export class CatalogService implements ICatalogService {
       changeName: new ChangeNameActionHandler(server),
       changeDescription: new ChangeDescriptionActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
-      CatalogDAO,
-      ICatalogRepository
-    >();
+    this.actionsRunner = new ActionsRunner<CatalogDAO, ICatalogRepository>();
     this.config = server.config;
     this.queues = server.queues;
   }

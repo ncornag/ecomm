@@ -1,7 +1,7 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
+import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { type UpdateProductChangeKeywords } from '../../entities/product';
-import { type ActionHandlerResult } from './index';
 
 interface DAOwithKeywords {
   [key: string]: any;

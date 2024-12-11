@@ -1,6 +1,6 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
-import { type ActionHandlerResult } from './index';
+import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { type UpdateProductChangeDescription } from '../../entities/product';
 
 interface DAOwithDescription {

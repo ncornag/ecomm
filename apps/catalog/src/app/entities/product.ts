@@ -99,8 +99,16 @@ export const ProductSchema = Type.Object(
     attributes: Type.Any({ default: {} }),
     type: Type.Enum(ProductType), // BASE, VARIANT, COMPOSITE...
     parent: Type.Optional(Type.String()), // If this is a variant, the parent product id
-    //status: Type.Optional(Type.String()), // TODO: implement workflow: Active, Inactive... Approved, Pending, Rejected
     taxCategory: Type.Optional(Type.String()), // TODO: implement taxes
+    //status: Type.Optional(Type.String()), // TODO: implement workflow: Active, Inactive... Approved, Pending, Rejected
+    //images: Type.Optional(Type.Array(Type.String())),
+    //productType: Type.Optional(Type.String()),
+    //? versionModifiedAt: '2024-12-09T22:55:12.970Z',
+    //? lastMessageSequenceNumber: 1,
+    //? lastModifiedBy: { isPlatformClient: true},
+    //? createdBy: {isPlatformClient: true},
+    //? availability
+    //? lastVariantId
     ...AuditFields,
   },
   { additionalProperties: false },

@@ -1,6 +1,6 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError, ErrorCode } from '@ecomm/AppError';
-import { type ActionHandlerResult } from '../services/actions/index';
+import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { Type, type Static } from '@sinclair/typebox';
 
 export const TreeFieldsSchema = {

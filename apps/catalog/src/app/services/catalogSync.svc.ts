@@ -11,13 +11,10 @@ import {
   type CreateCatalogSyncBody,
 } from '../schemas/catalogSync.schemas';
 import { type CatalogSyncDAO } from '../repositories/catalogSync.dao.schema';
-import {
-  type ActionHandlersList,
-  ChangeNameActionHandler,
-  ChangeDescriptionActionHandler,
-} from './actions';
+import { ChangeNameActionHandler } from './actions/changeName.handler';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
 import { type ICatalogSyncRepository } from '../repositories/catalogSync.repo';
-import { UpdateEntityActionsRunner } from '../lib/updateEntityActionsRunner';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
 import { type Config } from '@ecomm/Config';
 import patch from 'mongo-update';
 import { Queues } from '@ecomm/Queues';
@@ -48,10 +45,10 @@ const toEntity = ({ _id, ...remainder }: CatalogSyncDAO): CatalogSync => ({
 
 const mongoPatch = function (patch: any) {
   const query: any = {};
-  let set: any = {};
+  const set: any = {};
 
   if ('object' === typeof patch) {
-    for (var key in patch) {
+    for (const key in patch) {
       const entry = patch[key];
 
       if (entry['@op'] == 'SwapValue') {
@@ -79,10 +76,7 @@ export class CatalogSyncService implements ICatalogSyncService {
   private repo: ICatalogSyncRepository;
   private cols;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: UpdateEntityActionsRunner<
-    CatalogSyncDAO,
-    ICatalogSyncRepository
-  >;
+  private actionsRunner: ActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>;
   private config: Config;
   private queues: Queues;
   private log;
@@ -95,7 +89,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       changeName: new ChangeNameActionHandler(server),
       changeDescription: new ChangeDescriptionActionHandler(server),
     };
-    this.actionsRunner = new UpdateEntityActionsRunner<
+    this.actionsRunner = new ActionsRunner<
       CatalogSyncDAO,
       ICatalogSyncRepository
     >();
@@ -138,7 +132,7 @@ export class CatalogSyncService implements ICatalogSyncService {
     actions: UpdateCatalogSyncAction[],
   ): Promise<Result<CatalogSync, AppError>> {
     // Find the Entity
-    let result = await this.repo.findOne(id, version);
+    const result = await this.repo.findOne(id, version);
     if (result.err) return result;
     const entity: CatalogSyncDAO = result.val;
     const toUpdateEntity = Value.Clone(entity);
@@ -270,7 +264,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       }
       if (count % this.batchSize === 0 && count > 0) {
         const result = await targetCol.bulkWrite(updates);
-        let end = new Date().getTime();
+        const end = new Date().getTime();
         this.log.info(
           `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
             (this.batchSize * 1000) /
@@ -283,7 +277,7 @@ export class CatalogSyncService implements ICatalogSyncService {
     }
     if (updates.length > 0) {
       const result = await targetCol.bulkWrite(updates);
-      let end = new Date().getTime();
+      const end = new Date().getTime();
       this.log.info(
         `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
           (this.batchSize * 1000) /

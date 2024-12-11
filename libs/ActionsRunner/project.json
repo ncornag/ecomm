@@ -1,0 +1,9 @@
+{
+  "name": "ActionsRunner",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ActionsRunner/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project ActionsRunner --web",
+  "targets": {}
+}
