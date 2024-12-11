@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Db, MongoClient } from 'mongodb';
+import args from 'args';
 
 const server = {
   config: process.env,
@@ -72,21 +73,30 @@ class ProductUpdater {
   }
 }
 
-if (process.argv.length < 3 || process.argv.length > 3) {
-  console.log('Usage: nx run updateProducts:run --args="[<productsToUpdate>]"');
-  console.log('> nx run updateProducts:run --args="[5]"');
+args.option('products', 'The quantity of products to update');
+
+const argv = [
+  process.argv[0],
+  'nx run updateProducts:run --args="',
+  ...(process.argv[2] || '').split(' '),
+];
+
+const flags = args.parse(argv, {
+  value: args.printMainColor.reset.yellow('"'),
+});
+
+if (!flags.products) {
+  args.showHelp();
   process.exit(0);
 }
 
-const productsToUpdate = parseInt(process.argv[2]) || 1;
+console.log(`Updating ${flags.products} products`);
 
-console.log(`Updateing ${productsToUpdate} products`);
-
-const promotionsCreator = new ProductUpdater(server);
+const productUpdater = new ProductUpdater(server);
 
 async function main() {
   try {
-    await promotionsCreator.updateProducts(productsToUpdate);
+    await productUpdater.updateProducts(flags.products);
     console.log('Done!');
     process.exit(0);
   } catch (e) {

@@ -5,6 +5,7 @@ import { Db, MongoClient } from 'mongodb';
 import { CT } from '@ecomm/CT';
 import fetch from 'node-fetch';
 import { Sema } from 'async-sema';
+import args from 'args';
 
 const server = {
   config: process.env,
@@ -86,7 +87,6 @@ class ProductCreator {
         `${this.pricesCollectionName}${currentSufix}`,
       ),
     };
-    this.mongoClient.close();
     fakerEN.seed(7);
     fakerES.seed(7);
   }
@@ -185,7 +185,7 @@ class ProductCreator {
     return { en: keywordsEN, es: keywordsES };
   }
 
-  public createProduct(projectId: string, catalog: string): any {
+  private createProduct(projectId: string, catalog: string): any {
     return {
       type: 'base',
       name: {
@@ -210,10 +210,11 @@ class ProductCreator {
     };
   }
 
-  public createVariant(
+  private createVariant(
     projectId: string,
     parent: any,
     pricesPerVariant: number,
+    productsToInsert: number,
   ): any {
     const sku = fakerEN.commerce.isbn(13);
     let order = 1;
@@ -259,7 +260,7 @@ class ProductCreator {
     ];
   }
 
-  public createPrice(
+  private createPrice(
     projectId: string,
     catalog: string,
     sku: string,
@@ -311,6 +312,10 @@ class ProductCreator {
     variantsPerProduct = 1,
     pricesPerVariant = 1,
   ) {
+    // console.log(`Connexting to ${this.server.config.MONGO_URL}`);
+    // await this.mongoClient.connect();
+    // console.log('Connected successfully to server');
+
     let productsCount = 0;
     let variantsCount = 0;
     let pricesCount = 0;
@@ -341,6 +346,7 @@ class ProductCreator {
             this.projectId,
             baseResult.val,
             pricesPerVariant,
+            productsToInsert,
           );
           variantsCount++;
           const variantsResult = await this.writeAndLogAPI({
@@ -369,33 +375,48 @@ class ProductCreator {
   }
 }
 
-if (process.argv.length < 3 || process.argv.length > 7) {
-  console.log(
-    `Usage: nx run createProducts:run --args="<productsToInsert>, <variantsPerProduct>|1, <pricesPerVariant|1>, <[stageSufix|'${CatalogNames.STAGE}'>, <currentSufix|'${CatalogNames.ONLINE}'>"`,
+args
+  .option('products', 'The quantity of products to create')
+  .option('variants', 'The quantity of variants per product to create', 1)
+  .option('prices', 'The quantity of prices per variant to create', 1)
+  .option(
+    'stage',
+    'The stage suffix for the Products collection',
+    CatalogNames.STAGE,
+  )
+  .option(
+    'current',
+    'The current suffix for the Products collection',
+    CatalogNames.ONLINE,
   );
-  console.log(`Usage: nx run createProducts:run --args="[10]"`);
-  console.log(`Usage: nx run createProducts:run --args="10, 5, 5"`);
+
+const argv = [
+  process.argv[0],
+  'nx run createProducts:run --args="',
+  ...(process.argv[2] || '').split(' '),
+];
+
+const flags = args.parse(argv, {
+  value: args.printMainColor.reset.yellow('"'),
+});
+
+if (!flags.products) {
+  args.showHelp();
   process.exit(0);
 }
 
-const productsToInsert = parseInt(process.argv[2]) || 1;
-const variantsPerProduct = parseInt(process.argv[3]) || 1;
-const pricesPerVariant = parseInt(process.argv[4]) || 1;
-const stageSufix = process.argv[5] || CatalogNames.STAGE;
-const currentSufix = process.argv[6] || CatalogNames.ONLINE;
-
 console.log(
-  `Creating ${productsToInsert} products with ${variantsPerProduct} variants and ${pricesPerVariant} prices`,
+  `Creating ${flags.products} products with ${flags.variants} variants and ${flags.prices} prices in ${flags.stage} and ${flags.current} collections`,
 );
 
-const productCreator = new ProductCreator(server, stageSufix, currentSufix);
+const productCreator = new ProductCreator(server, flags.stage, flags.current);
 
 async function main() {
   try {
     await productCreator.createProducts(
-      productsToInsert,
-      variantsPerProduct,
-      pricesPerVariant,
+      flags.products,
+      flags.variants,
+      flags.prices,
     );
     console.log('Done!');
     process.exit(0);

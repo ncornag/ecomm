@@ -1,4 +1,5 @@
 import { Db, MongoClient } from 'mongodb';
+import args from 'args';
 
 const server = {
   config: process.env,
@@ -110,28 +111,34 @@ class PromotionsCreator {
         true,
       );
     }
-    this.mongoClient.close();
     console.log('Database seeded! :)');
   }
 }
 
-if (process.argv.length < 3 || process.argv.length > 3) {
-  console.log(
-    'Usage: nx run createPromotions:run --args="[<promotionsToInsert>]"',
-  );
-  console.log('> nx run createPromotions:run --args="[10]"');
+args.option('promotions', 'The quantity of promotions to create');
+
+const argv = [
+  process.argv[0],
+  'nx run createPromotions:run --args="',
+  ...(process.argv[2] || '').split(' '),
+];
+
+const flags = args.parse(argv, {
+  value: args.printMainColor.reset.yellow('"'),
+});
+
+if (!flags.promotions) {
+  args.showHelp();
   process.exit(0);
 }
 
-const promotionsToInsert = parseInt(process.argv[2]) || 1;
-
-console.log(`Creating ${promotionsToInsert} promotions`);
+console.log(`Creating ${flags.promotions} promotions`);
 
 const promotionsCreator = new PromotionsCreator(server);
 
 async function main() {
   try {
-    await promotionsCreator.createPromotions(promotionsToInsert);
+    await promotionsCreator.createPromotions(flags.promotions);
     console.log('Done!');
     process.exit(0);
   } catch (e) {

@@ -6,6 +6,7 @@ import {
   ProductVariant,
   StandalonePricePagedQueryResponse,
 } from '@commercetools/platform-sdk';
+import args from 'args';
 
 const server = {
   config: process.env,
@@ -455,32 +456,44 @@ class ProductImporter {
   }
 }
 
-if (process.argv.length < 3 || process.argv.length > 6) {
-  console.log(
-    `Usage: nx run importProducts:run --args="<firstProductToImport>, <productsToImport>|1, <[stageSufix|'${CatalogNames.STAGE}'>, <currentSufix|'${CatalogNames.ONLINE}'>"`,
+args
+  .option('first', 'The first product to import', 0)
+  .option('products', 'The quantity of products to import', 1)
+  .option(
+    'stage',
+    'The stage suffix for the Products collection',
+    CatalogNames.STAGE,
+  )
+  .option(
+    'current',
+    'The current suffix for the Products collection',
+    CatalogNames.ONLINE,
   );
-  console.log(`Usage: nx run importProducts:run --args="[0]"`);
-  console.log(`Usage: nx run importProducts:run --args="0, 1"`);
+
+const argv = [
+  process.argv[0],
+  'nx run importProducts:run --args="',
+  ...(process.argv[2] || '').split(' '),
+];
+
+const flags = args.parse(argv, {
+  value: args.printMainColor.reset.yellow('"'),
+});
+
+if (!flags.first) {
+  args.showHelp();
   process.exit(0);
 }
 
-const firstProductToImport = parseInt(process.argv[2]) || 0;
-const productsToImport = parseInt(process.argv[3]) || 1;
-const stageSufix = process.argv[4] || CatalogNames.STAGE;
-const currentSufix = process.argv[5] || CatalogNames.ONLINE;
-
 console.log(
-  `Importing ${productsToImport} products starting at ${firstProductToImport}`,
+  `Importing ${flags.products} products starting at ${flags.first} in ${flags.stage} and ${flags.current} collections`,
 );
 
-const productImporter = new ProductImporter(server, stageSufix, currentSufix);
+const productImporter = new ProductImporter(server, flags.stage, flags.current);
 
 async function main() {
   try {
-    await productImporter.importProducts(
-      firstProductToImport,
-      productsToImport,
-    );
+    await productImporter.importProducts(flags.first, flags.products);
     console.log('Done!');
     process.exit(0);
   } catch (e) {
