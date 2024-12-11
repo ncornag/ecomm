@@ -6,61 +6,6 @@ import { CT } from '@ecomm/CT';
 import fetch from 'node-fetch';
 import { Sema } from 'async-sema';
 
-const FieldPredicateOperators: any = {
-  country: { operator: 'in', field: 'country', type: 'array' },
-  customerGroup: {
-    operator: 'in',
-    field: 'customerGroup',
-    type: 'array',
-    typeId: 'customer-group',
-  },
-  channel: {
-    operator: 'in',
-    field: 'channel',
-    type: 'array',
-    typeId: 'channel',
-  },
-  validFrom: { operator: '>=', field: 'date', type: 'date' },
-  validUntil: { operator: '<=', field: 'date', type: 'date' },
-  minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' },
-};
-
-function createPredicateExpression(data: any) {
-  const surroundByQuotes = (value: any) =>
-    typeof value === 'string' ? `'${value}'` : value;
-  const predicate = Object.entries(data).reduce((acc, [key, value]) => {
-    if (acc) acc += ' and ';
-    const op = FieldPredicateOperators[key]
-      ? FieldPredicateOperators[key].operator
-      : '=';
-    const field = FieldPredicateOperators[key]
-      ? FieldPredicateOperators[key].field
-      : key;
-    let val: any = value;
-    if (op === 'in') {
-      if (!Array.isArray(val)) val = [val];
-      if (val.length > 1) acc += '(';
-      for (let i = 0; i < val.length; i++) {
-        if (i > 0) acc += ' or ';
-        acc += `${surroundByQuotes(val[i])} in ${field}`;
-      }
-      if (val.length > 1) acc += ')';
-    } else {
-      acc += `${field}${op}${surroundByQuotes(val)}`;
-    }
-    return acc;
-  }, '');
-  return predicate === '' ? undefined : predicate;
-}
-
-fakerEN.seed(7);
-fakerES.seed(7);
-
-function randomIntFromInterval(min: number, max: number) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
 const server = {
   config: process.env,
 };
@@ -106,7 +51,24 @@ class ProductCreator {
     customerGroup: this.customerGroups,
   };
   private predicatesOrder = [['country'], ['channel'], ['customerGroup']];
-
+  private FieldPredicateOperators: any = {
+    country: { operator: 'in', field: 'country', type: 'array' },
+    customerGroup: {
+      operator: 'in',
+      field: 'customerGroup',
+      type: 'array',
+      typeId: 'customer-group',
+    },
+    channel: {
+      operator: 'in',
+      field: 'channel',
+      type: 'array',
+      typeId: 'channel',
+    },
+    validFrom: { operator: '>=', field: 'date', type: 'date' },
+    validUntil: { operator: '<=', field: 'date', type: 'date' },
+    minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' },
+  };
   constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
     this.ct = new CT(this.server);
@@ -124,8 +86,43 @@ class ProductCreator {
         `${this.pricesCollectionName}${currentSufix}`,
       ),
     };
+    this.mongoClient.close();
+    fakerEN.seed(7);
+    fakerES.seed(7);
   }
 
+  private createPredicateExpression(data: any) {
+    const surroundByQuotes = (value: any) =>
+      typeof value === 'string' ? `'${value}'` : value;
+    const predicate = Object.entries(data).reduce((acc, [key, value]) => {
+      if (acc) acc += ' and ';
+      const op = this.FieldPredicateOperators[key]
+        ? this.FieldPredicateOperators[key].operator
+        : '=';
+      const field = this.FieldPredicateOperators[key]
+        ? this.FieldPredicateOperators[key].field
+        : key;
+      let val: any = value;
+      if (op === 'in') {
+        if (!Array.isArray(val)) val = [val];
+        if (val.length > 1) acc += '(';
+        for (let i = 0; i < val.length; i++) {
+          if (i > 0) acc += ' or ';
+          acc += `${surroundByQuotes(val[i])} in ${field}`;
+        }
+        if (val.length > 1) acc += ')';
+      } else {
+        acc += `${field}${op}${surroundByQuotes(val)}`;
+      }
+      return acc;
+    }, '');
+    return predicate === '' ? undefined : predicate;
+  }
+
+  private randomIntFromInterval(min: number, max: number) {
+    // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min);
+  }
   private async writeAndLogAPI(params: any): Promise<Result<any, AppError>> {
     if (
       (params.base && params.productsCount % this.logCount === 0) ||
@@ -180,7 +177,7 @@ class ProductCreator {
   public searchKeywords(min: number, max: number): any {
     const keywordsEN: any[] = [];
     const keywordsES: any[] = [];
-    const m = randomIntFromInterval(min, max);
+    const m = this.randomIntFromInterval(min, max);
     for (let i = 0; i < m; i++) {
       keywordsEN.push({ text: fakerEN.commerce.productAdjective() });
       keywordsES.push({ text: fakerES.commerce.productAdjective() });
@@ -205,7 +202,9 @@ class ProductCreator {
         es: fakerES.lorem.slug(),
       },
       categories: [
-        this.categories[randomIntFromInterval(1, this.categories.length - 1)],
+        this.categories[
+          this.randomIntFromInterval(1, this.categories.length - 1)
+        ],
       ],
       //priceMoes: this.ct.PriceMode.EMBEDDED
     };
@@ -244,16 +243,16 @@ class ProductCreator {
           size: fakerEN.string.numeric({ length: 1 }),
           brand:
             this.brands[
-              randomIntFromInterval(
+              this.randomIntFromInterval(
                 0,
                 productsToInsert / 5 > this.brands.length
                   ? this.brands.length - 1
                   : productsToInsert / 5,
               )
             ],
-          popularity: randomIntFromInterval(1000, 5000),
+          popularity: this.randomIntFromInterval(1000, 5000),
           free_shipping: Math.random() < 0.1,
-          rating: randomIntFromInterval(1, 5),
+          rating: this.randomIntFromInterval(1, 5),
         },
       },
       prices,
@@ -267,7 +266,7 @@ class ProductCreator {
     order: number,
     predicatesOrder: any,
   ): any {
-    const centAmount = randomIntFromInterval(1000, 10000);
+    const centAmount = this.randomIntFromInterval(1000, 10000);
     const constraintsAcc = {};
     return {
       order,
@@ -278,7 +277,10 @@ class ProductCreator {
           (acc: any, curr: any) => {
             acc[curr] = [
               this.predicateValues[curr][
-                randomIntFromInterval(0, this.predicateValues[curr].length - 1)
+                this.randomIntFromInterval(
+                  0,
+                  this.predicateValues[curr].length - 1,
+                )
               ],
             ];
             constraintsAcc[curr] = acc[curr];
@@ -286,7 +288,7 @@ class ProductCreator {
           },
           Object.assign({}, constraintsAcc),
         );
-        const expression = createPredicateExpression(predicates);
+        const expression = this.createPredicateExpression(predicates);
         return Object.assign(
           {
             order: predicatesOrder.length - i,
