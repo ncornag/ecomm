@@ -1,8 +1,4 @@
-import { CT } from '../../src/core/lib/ct';
-import {
-  FieldPredicateOperators,
-  createPredicateExpression,
-} from '../../src/core/services/price.svc';
+import { CT } from '@ecomm/CT';
 import { Db, MongoClient } from 'mongodb';
 import {
   Product,
@@ -10,7 +6,6 @@ import {
   ProductVariant,
   StandalonePricePagedQueryResponse,
 } from '@commercetools/platform-sdk';
-import { green, magenta, yellow, gray, reset } from 'kolorist';
 
 const server = {
   config: process.env,
@@ -31,6 +26,24 @@ class ProductImporter {
   private col: any = {};
   private logCount = 100;
   private projectId = 'TestProject';
+  private FieldPredicateOperators: any = {
+    country: { operator: 'in', field: 'country', type: 'array' },
+    customerGroup: {
+      operator: 'in',
+      field: 'customerGroup',
+      type: 'array',
+      typeId: 'customer-group',
+    },
+    channel: {
+      operator: 'in',
+      field: 'channel',
+      type: 'array',
+      typeId: 'channel',
+    },
+    validFrom: { operator: '>=', field: 'date', type: 'date' },
+    validUntil: { operator: '<=', field: 'date', type: 'date' },
+    minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' },
+  };
 
   constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
@@ -51,6 +64,34 @@ class ProductImporter {
     };
   }
 
+  private createPredicateExpression(data: any) {
+    const surroundByQuotes = (value: any) =>
+      typeof value === 'string' ? `'${value}'` : value;
+    const predicate = Object.entries(data).reduce((acc, [key, value]) => {
+      if (acc) acc += ' and ';
+      const op = this.FieldPredicateOperators[key]
+        ? this.FieldPredicateOperators[key].operator
+        : '=';
+      const field = this.FieldPredicateOperators[key]
+        ? this.FieldPredicateOperators[key].field
+        : key;
+      let val: any = value;
+      if (op === 'in') {
+        if (!Array.isArray(val)) val = [val];
+        if (val.length > 1) acc += '(';
+        for (let i = 0; i < val.length; i++) {
+          if (i > 0) acc += ' or ';
+          acc += `${surroundByQuotes(val[i])} in ${field}`;
+        }
+        if (val.length > 1) acc += ')';
+      } else {
+        acc += `${field}${op}${surroundByQuotes(val)}`;
+      }
+      return acc;
+    }, '');
+    return predicate === '' ? undefined : predicate;
+  }
+
   private async writeAndLog(params: any) {
     if (params.count % this.logCount === 0 || params.force === true) {
       await this.col.products.staged.insertMany(params.stagedProducts);
@@ -64,7 +105,7 @@ class ProductImporter {
       params.stagedPrices.splice(0, params.stagedPrices.length);
       params.currentProducts.splice(0, params.currentProducts.length);
       params.currentPrices.splice(0, params.currentPrices.length);
-      let end = new Date().getTime();
+      const end = new Date().getTime();
       console.log(
         `Inserted ${params.productsCount} products at ${(
           (params.productsCount * 1000) /
@@ -83,8 +124,8 @@ class ProductImporter {
         projectId,
         catalog:
           catalog === this.ct.Catalog.STAGED
-            ? this.Catalog.STAGE
-            : this.Catalog.ONLINE,
+            ? CatalogNames.STAGE
+            : CatalogNames.ONLINE,
         type: 'base',
         createdAt: p.createdAt,
         name: c.name,
@@ -135,7 +176,7 @@ class ProductImporter {
   private createConstraints(data: any, tier: any, price: any) {
     return Object.entries(data).reduce(
       (acc: any, [key, value]: [string, any]) => {
-        let dataValue = price[key] || tier[key];
+        const dataValue = price[key] || tier[key];
         if (!dataValue) return acc;
         if (value.type === 'array' && value.typeId) {
           acc[key] = [dataValue.id];
@@ -168,8 +209,8 @@ class ProductImporter {
         projectId,
         catalog:
           catalog === this.ct.Catalog.STAGED
-            ? this.Catalog.STAGE
-            : this.Catalog.ONLINE,
+            ? CatalogNames.STAGE
+            : CatalogNames.ONLINE,
         createdAt: p.createdAt,
         sku: v.sku,
         active: true,
@@ -178,12 +219,12 @@ class ProductImporter {
             return a.minimumQuantity < b.minimumQuantity;
           })
           .map((tier: any) => {
-            let constraints = this.createConstraints(
-              FieldPredicateOperators,
+            const constraints = this.createConstraints(
+              this.FieldPredicateOperators,
               tier,
               price,
             );
-            let expression = createPredicateExpression(constraints);
+            const expression = this.createPredicateExpression(constraints);
             return Object.assign(
               {
                 order: order++,
@@ -205,7 +246,7 @@ class ProductImporter {
     projectId: string,
     catalog: string,
   ): any {
-    let order = 1;
+    const order = 1;
     return v.prices?.map((price: any) => {
       return this.createPrice(price, order, v, p, projectId, catalog);
     });
@@ -221,16 +262,16 @@ class ProductImporter {
     const pageSize = 100;
     let limit = pageSize;
     let offset = 0;
-    let body: StandalonePricePagedQueryResponse = {
+    const body: StandalonePricePagedQueryResponse = {
       limit: 0,
       offset: 0,
       count: 0,
       results: [],
     };
-    let pricesCount = 0;
+    const pricesCount = 0;
     let lastId: any = null;
 
-    let queryArgs: any = {
+    const queryArgs: any = {
       limit,
       offset,
       withTotal: false,
@@ -242,7 +283,7 @@ class ProductImporter {
         queryArgs.where = `id > "${lastId}'`;
         delete queryArgs.offset;
       }
-      let body = (
+      const body = (
         await this.ct.api.standalonePrices().get({ queryArgs }).execute()
       ).body;
       // console.log(
@@ -250,7 +291,7 @@ class ProductImporter {
       //     queryArgs
       //   )}`
       // );
-      let order = 1;
+      const order = 1;
       for (let p = 0; p < body.results.length; p++) {
         prices.push(
           this.createPrice(
@@ -312,10 +353,7 @@ class ProductImporter {
     }
   }
 
-  public async importProducts(
-    firstProductToImport: number = 0,
-    productsToImport: number = 1,
-  ) {
+  public async importProducts(firstProductToImport = 0, productsToImport = 1) {
     const stagedProducts: any[] = [];
     const stagedPrices: any[] = [];
     const currentProducts: any[] = [];
@@ -329,19 +367,27 @@ class ProductImporter {
 
     try {
       await this.col.products.staged.drop();
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
     try {
       await this.col.products.current.drop();
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
     try {
       await this.col.prices.staged.drop();
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
     try {
       await this.col.prices.current.drop();
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
 
-    let start = new Date().getTime();
-    let queryArgs: any = {
+    const start = new Date().getTime();
+    const queryArgs: any = {
       limit,
       offset,
       withTotal: false,
@@ -409,14 +455,37 @@ class ProductImporter {
   }
 }
 
-const firstPriceToImport = parseInt(process.argv[2]) || 0;
+if (process.argv.length < 3 || process.argv.length > 6) {
+  console.log(
+    `Usage: nx run importProducts:run --args="<firstProductToImport>, <productsToImport>|1, <[stageSufix|'${CatalogNames.STAGE}'>, <currentSufix|'${CatalogNames.ONLINE}'>"`,
+  );
+  console.log(`Usage: nx run importProducts:run --args="[0]"`);
+  console.log(`Usage: nx run importProducts:run --args="0, 1"`);
+  process.exit(0);
+}
+
+const firstProductToImport = parseInt(process.argv[2]) || 0;
 const productsToImport = parseInt(process.argv[3]) || 1;
 const stageSufix = process.argv[4] || CatalogNames.STAGE;
 const currentSufix = process.argv[5] || CatalogNames.ONLINE;
 
+console.log(
+  `Importing ${productsToImport} products starting at ${firstProductToImport}`,
+);
+
 const productImporter = new ProductImporter(server, stageSufix, currentSufix);
 
-await productImporter.importProducts(firstPriceToImport, productsToImport);
-
-console.log('Done!');
-process.exit(0);
+async function main() {
+  try {
+    await productImporter.importProducts(
+      firstProductToImport,
+      productsToImport,
+    );
+    console.log('Done!');
+    process.exit(0);
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
+}
+void main();
