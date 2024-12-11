@@ -6,32 +6,32 @@ import queues from '@ecomm/Queues';
 import {
   ClassificationCategoryRepository,
   getClassificationCategoryCollection,
-} from './repositories/classificationCategory.repo';
+} from './classificationCategory/classificationCategory.repo';
 import {
   getProductCategoryCollection,
   ProductCategoryRepository,
-} from './repositories/productCategory.repo';
+} from './productCategory/productCategory.repo';
 import {
   ProductRepository,
   getProductCollection,
-} from './repositories/product.repo';
-import { getPriceCollection, PriceRepository } from './repositories/price.repo';
+} from './product/product.repo';
+import { getPriceCollection, PriceRepository } from './price/price.repo';
 import {
   CatalogRepository,
   getCatalogCollection,
-} from './repositories/catalog.repo';
+} from './catalog/catalog.repo';
 import {
   CatalogSyncRepository,
   getCatalogSyncCollection,
-} from './repositories/catalogSync.repo';
+} from './catalogSync/catalogSync.repo';
 import {
   AuditLogRepository,
   getAuditLogCollection,
   auditLogListener,
 } from '@ecomm/AuditLog';
-import { productsIndexerListener } from './services/listeners/productsIndexer.lstnr';
-import { pricesIndexerListener } from './services/listeners/pricesIndexer.lstnr';
-import { updateChildAncestorsForIdListener } from './services/listeners/updateChildAncestorsForId.lstnr';
+import { productsIndexerListener } from './product/productsIndexer.lstnr';
+import { pricesIndexerListener } from './price/pricesIndexer.lstnr';
+import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr';
 import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
 
 /* eslint-disable-next-line */

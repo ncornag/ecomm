@@ -6,7 +6,7 @@ import {
   type FastifyRequest,
 } from 'fastify';
 import { AppError } from '@ecomm/AppError';
-import { CatalogSyncService } from '../../services/catalogSync.svc';
+import { CatalogSyncService } from '../../catalogSync/catalogSync.svc';
 import {
   syncCatalogSchema,
   type SyncCatalogBody,
@@ -15,8 +15,8 @@ import {
   type FindCatalogSyncParms,
   type UpdateCatalogSyncBody,
   updateCatalogSyncSchema,
-} from '../../schemas/catalogSync.schemas';
-import { type CatalogSync } from '../../entities/catalogSync';
+} from '../../catalogSync/catalogSync.schemas';
+import { type CatalogSync } from '../../catalogSync/catalogSync';
 
 export default async function (
   server: FastifyInstance,

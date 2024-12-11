@@ -12,9 +12,9 @@ import {
   type FindProductCategoryParms,
   postProductCategorySchema,
   updateProductCategorySchema,
-} from '../../schemas/productCategory.schemas';
-import { ProductCategoryService } from '../../services/productCategory.svc';
-import { type ProductCategory } from '../../entities/productCategory';
+} from '../../productCategory/productCategory.schemas';
+import { ProductCategoryService } from '../../productCategory/productCategory.svc';
+import { type ProductCategory } from '../../productCategory/productCategory';
 
 export default async function (
   server: FastifyInstance,

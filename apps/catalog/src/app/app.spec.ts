@@ -5,9 +5,9 @@ import { MongoDBStorage, Umzug } from 'umzug';
 import assert from 'node:assert';
 import { default as request } from 'supertest';
 import { Value } from '@sinclair/typebox/value';
-import { type ProductDAO } from './repositories/product.dao.schema';
-import { type Product } from './entities/product';
-import { toEntity as toProductEntity } from './services/product.svc';
+import { type ProductDAO } from './product/product.dao.schema';
+import { type Product } from './product/product';
+import { toEntity as toProductEntity } from './product/product.svc';
 import { envConfig } from './lib/env';
 import { app } from './app';
 const productShoes = [

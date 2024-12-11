@@ -10,7 +10,7 @@ import {
 import {
   getPromotionCollection,
   PromotionRepository,
-} from './repositories/promotion.repo';
+} from './promotion/promotion.repo';
 
 /* eslint-disable-next-line */
 export interface AppOptions {}

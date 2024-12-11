@@ -6,8 +6,8 @@ import {
   type FastifyRequest,
 } from 'fastify';
 import { AppError } from '@ecomm/AppError';
-import { PriceService as CartService } from '../../services/price.svc';
-import { type Cart } from '../../entities/cart';
+import { PriceService as CartService } from '../../price/price.svc';
+import { type Cart } from '../../cart/cart';
 
 export default async function (
   server: FastifyInstance,

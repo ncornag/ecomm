@@ -10,9 +10,9 @@ import {
   type FindProductParms,
   FindProductParmsSchema,
   FindProductQueryStringSchema,
-} from '../../../schemas/product.schemas';
-import { ProductServiceV1 } from '../../../services/productV1.svc';
-import { type Product } from '../../../entities/product';
+} from '../../../product/product.schemas';
+import { ProductServiceV1 } from '../../../product/productV1.svc';
+import { type Product } from '../../../product/product';
 
 export default async function (
   server: FastifyInstance,

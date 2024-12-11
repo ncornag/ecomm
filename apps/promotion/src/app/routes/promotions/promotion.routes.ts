@@ -6,7 +6,7 @@ import type {
   FastifyRequest,
 } from 'fastify';
 import { AppError } from '@ecomm/AppError';
-import { PromotionService } from '../../services/promotion.svc';
+import { PromotionService } from '../../promotion/promotion.svc';
 import {
   postPromotionSchema,
   updatePromotionSchema,
@@ -14,8 +14,8 @@ import {
   type FindPromotionParms,
   type UpdatePromotionBody,
   type CalculatePromotionQueryString,
-} from '../../schemas/promotion.schemas';
-import { type Promotion } from '../../entities/promotion';
+} from '../../promotion/promotion.schemas';
+import { type Promotion } from '../../promotion/promotion';
 
 export default async function (
   server: FastifyInstance,

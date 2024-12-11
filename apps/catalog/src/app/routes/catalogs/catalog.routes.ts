@@ -6,15 +6,15 @@ import {
   type FastifyRequest,
 } from 'fastify';
 import { AppError } from '@ecomm/AppError';
-import { CatalogService } from '../../services/catalog.svc';
+import { CatalogService } from '../../catalog/catalog.svc';
 import {
   postCatalogSchema,
   type CreateCatalogBody,
   type FindCatalogParms,
   type UpdateCatalogBody,
   updateCatalogSchema,
-} from '../../schemas/catalog.schemas';
-import { type Catalog } from '../../entities/catalog';
+} from '../../catalog/catalog.schemas';
+import { type Catalog } from '../../catalog/catalog';
 
 export default async function (
   server: FastifyInstance,

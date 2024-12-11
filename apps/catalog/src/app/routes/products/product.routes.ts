@@ -14,9 +14,9 @@ import {
   updateProductSchema,
   type FindProductQueryString,
   FindProductQueryStringSchema,
-} from '../../schemas/product.schemas';
-import { ProductService } from '../../services/product.svc';
-import { type Product } from '../../entities/product';
+} from '../../product/product.schemas';
+import { ProductService } from '../../product/product.svc';
+import { type Product } from '../../product/product';
 
 export default async function (
   server: FastifyInstance,

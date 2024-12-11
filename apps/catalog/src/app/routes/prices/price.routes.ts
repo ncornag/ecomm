@@ -6,13 +6,13 @@ import {
   type FastifyRequest,
 } from 'fastify';
 import { AppError } from '@ecomm/AppError';
-import { PriceService as PriceService } from '../../services/price.svc';
-import { type Price } from '../../entities/price';
+import { PriceService as PriceService } from '../../price/price.svc';
+import { type Price } from '../../price/price';
 import {
   type CreatePriceBody,
   type FindPriceQueryString,
   postPriceSchema,
-} from '../../schemas/price.schemas';
+} from '../../price/price.schemas';
 
 export default async function (
   server: FastifyInstance,

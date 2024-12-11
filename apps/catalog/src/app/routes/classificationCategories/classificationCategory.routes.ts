@@ -12,14 +12,14 @@ import {
   type UpdateClassificationCategoryParms,
   postClassificationCategorySchema,
   updateClassificationCategorySchema,
-} from '../../schemas/classificationCategory.schemas';
+} from '../../classificationCategory/classificationCategory.schemas';
 import {
   type ClassificationAttributePayload,
   postClassificationAttributeSchema,
-} from '../../schemas/classificationAttribute.schemas';
-import { ClassificationCategoryService } from '../../services/classificationCategory.svc';
-import { type ClassificationCategory } from '../../entities/classificationCategory';
-import { type ClassificationAttribute } from '../../entities/classificationAttribute';
+} from '../../classificationCategory/classificationAttribute.schemas';
+import { ClassificationCategoryService } from '../../classificationCategory/classificationCategory.svc';
+import { type ClassificationCategory } from '../../classificationCategory/classificationCategory';
+import { type ClassificationAttribute } from '../../classificationCategory/classificationAttribute';
 
 export default async function (
   server: FastifyInstance,

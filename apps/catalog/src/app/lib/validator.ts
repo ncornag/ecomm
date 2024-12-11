@@ -4,10 +4,10 @@ import { AppError, ErrorCode } from '@ecomm/AppError';
 import {
   type ClassificationAttribute,
   ClassificationAttributeType,
-} from '../entities/classificationAttribute';
+} from '../classificationCategory/classificationAttribute';
 import { Type } from '@sinclair/typebox';
-import { type IProductCategoryRepository } from '../repositories/productCategory.repo';
-import { type IClassificationCategoryRepository } from '../repositories/classificationCategory.repo';
+import { type IProductCategoryRepository } from '../productCategory/productCategory.repo';
+import { type IClassificationCategoryRepository } from '../classificationCategory/classificationCategory.repo';
 
 export class Validator {
   private server: any;
