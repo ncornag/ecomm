@@ -340,7 +340,10 @@ class ProductImporter {
         this.createVariant(variant, product, projectId, catalog, base._id),
       );
       // Import Prices
-      if (product.priceMode === this.ct.PriceMode.EMBEDDED) {
+      if (
+        !product.priceMode ||
+        product.priceMode === this.ct.PriceMode.EMBEDDED
+      ) {
         prices.push(...this.createPrices(variant, product, projectId, catalog));
       } else if (product.priceMode === this.ct.PriceMode.STANDALONE) {
         const standAlonePrices = await this.createStandalonePrices(
@@ -479,11 +482,6 @@ const argv = [
 const flags = args.parse(argv, {
   value: args.printMainColor.reset.yellow('"'),
 });
-
-if (!flags.first) {
-  args.showHelp();
-  process.exit(0);
-}
 
 console.log(
   `Importing ${flags.products} products starting at ${flags.first} in ${flags.stage} and ${flags.current} collections`,
