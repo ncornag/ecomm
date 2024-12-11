@@ -94,9 +94,9 @@ async function main() {
 
 if (process.argv.length < 3 || process.argv.length > 3) {
   console.log(
-    'Usage: nx run createPromotions:serve --args="[<promotionsToInsert>]"',
+    'Usage: nx run createPromotions:run --args="[<promotionsToInsert>]"',
   );
-  console.log('> nx run createPromotions:serve --args="[10]"');
+  console.log('> nx run createPromotions:run --args="[10]"');
   process.exit(0);
 }
 

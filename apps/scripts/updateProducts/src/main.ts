@@ -61,10 +61,8 @@ async function main() {
 }
 
 if (process.argv.length < 3 || process.argv.length > 3) {
-  console.log(
-    'Usage: nx run updateProducts:serve --args="[<productsToUpdate>]"',
-  );
-  console.log('> nx run updateProducts:serve --args="[5]"');
+  console.log('Usage: nx run updateProducts:run --args="[<productsToUpdate>]"');
+  console.log('> nx run updateProducts:run --args="[5]"');
   process.exit(0);
 }
 
