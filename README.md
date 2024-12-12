@@ -1,357 +1,114 @@
-# Migration TODOS:
+# e-commerce platform PoC
 
-FIXME: ! Rewrite the Readme
+This project focuses on developing a **proof of concept** for an e-commerce platform, emphasizing two key systems: **Catalog Management** and **Promotion Management**.
+It lays the groundwork for an advanced e-commerce platform capable of managing complex product data, implementing promotional strategies, and maintaining synchronization across various environments.
 
-# Catalog
+### 1. **Catalog Management System**
 
-This project is a product management system that handles catalog imports, updates, and synchronization, using MongoDB for data storage. It includes tools for managing products, categories, classifications, and catalog synchronization with an emphasis on dynamic data manipulation and validation.
+- A comprehensive solution for handling product catalogs, their classifications, and synchronization between different stages (e.g., `stage` and `online`).
+- Supports importing, creating, updating, and synchronizing products with MongoDB as the primary database.
+- Provides API endpoints for managing:
+  - Products (with attributes, variants, and prices)
+  - Categories
+  - Classifications
+  - Synchronization processes
 
-## Overview
+### 2. **Promotion Management System**
 
-The project provides an API-driven system to manage product catalogs, classifications, and their synchronization between staged and online environments. It includes features for importing, creating, updating, and validating products and their associated data structures.
+- Manages promotional campaigns, including their creation, updates, and application to customer carts.
+- Includes audit logging to track all changes and actions performed.
+- Features a **Promotion Evaluation Engine** that applies discounts and tracks promotions based on cart data, integrating with commercetools for cart management.
 
-## Main Features
+## Tech Stack
 
-- **Product Importing:** Import products from external sources into a MongoDB database, supporting staged and online catalogs.
-- **Product Creation:** Create products with multiple attributes, variants, and prices, including standalone pricing.
-- **Product Updating:** Update product data dynamically using scripts and bulk operations.
-- **Classification Management:** Create and manage classification attributes for products, with support for various data types.
-- **Catalog Synchronization:** Sync product data between stage and online catalogs.
-- **API Documentation:** A comprehensive Postman collection for API requests to manage products, categories, and classifications.
+- **Server**: [Node.js](https://nodejs.org/en)
+- **Backend Framework**: [Fastify](https://fastify.dev/)
+- **Database**: [MongoDB](https://www.mongodb.com/)
+- **Messaging**: [NATS](https://nats.io/)
+- **Search Engine**: [TypeSense](https://typesense.org/)
+- **Type Validation**: [TypeBox](https://github.com/sinclairzx81/typebox)
 
-## Project Structure
+## Key Features
 
-The codebase is organized into the following directories:
+- Transparent record versioning
+- Transparent audit fields recording
+- Event Store for audit logs
+- Multitenant
+- i18n text fields
+- Events for indexing and auditlogging with NATS
 
-- **data/**: Scripts for importing, creating, and updating product data.
-- **doc/**: Documentation and Postman collection for API requests.
-- **src/**: Core application code, organized into `core`, `infrastructure`, and `repositories`:
-  - **core/**: Core services, entities, and business logic.
-  - **infrastructure/**: MongoDB and HTTP configurations.
-  - **repositories/**: Data access layers for product and category management.
-- **tests/**: Test specifications for the product management system.
+**[Catalog System](apps/catalog/README.md)**
 
-# Promotions
+- Import, create, and update products with dynamic attributes.
+- Synchronize catalogs between staged and live environments.
+- Handle classifications, categories, and validations.
+- Automatic Product indexing with TypeSense
 
-This project is a scalable promotion management system that includes audit logging and cart management capabilities. It leverages MongoDB for data storage and integrates with commercetools for handling cart data.
+**[Promotions System](apps/promotion/README.md)**
 
-## Overview
-
-The project provides a robust system for managing promotions, including creation, updates, and synchronization with external services. It also includes audit logging for tracking changes to promotions and an engine for evaluating and applying promotions to customer carts.
-
-## Main Features
-
-- **Promotion Management**: Create, update, and manage promotions with actions like discounts and tagging products.
-- **Audit Logging**: Track changes to promotions and other entities with an extensive audit logging system.
-- **Cart Management**: Integrate with commercetools to manage customer carts and apply promotions.
-- **Promotion Evaluation Engine**: Evaluate promotions based on cart items, applying discounts and tracking promotions.
-- **API Documentation**: Fully documented API for managing promotions, audit logs, and carts.
-
-## Project Structure
-
-- **data/**: Contains scripts for creating and managing large datasets (e.g., promotions and carts).
-- **src/**: Core application logic.
-  - **core/entities/**: Entity definitions for audit logs, promotions, etc.
-  - **core/lib/**: Core libraries, including the promotion engine, expressions evaluator, and custom error handling.
-  - **core/repositories/**: Data access layer for MongoDB.
-  - **core/services/**: Services for managing promotions and audit logs.
-  - **infrastructure/**: Database and HTTP configurations, and plugins.
-  - **queues/**: Integration with message queues for asynchronous operations.
-- **tests/**: Contains test specifications for various functionalities.
-- **doc/**: Documentation, including API details.
-
-# Stack
-
-- Fastify
-- Typebox
-- Mongodb
-- NATS
-- TypeSense
+- Create and evaluate promotions with customizable logic.
+- Integration with commercetools for real-time cart data.
 
 # Setup Instructions
 
-## Prerequisites
+1. **Install nx**
 
-- **Node.js** (v22 or higher)
-- **MongoDB** (v4.4 or higher)
-- **NATS**
-- **TypeSense**
+   ```bash
+   npm i -g npx
+   ```
 
-## Installation
-
-1. **Clone the repository**:
+2. **Clone the repository**:
 
    ```bash
    git clone <repository_url>
    cd <repository_directory>
    ```
 
-2. **Install dependencies**:
+3. **Install project dependencies**:
 
    ```bash
-   npm install
+   npm i
    ```
 
-3. **Set up MongoDB**:
-   Ensure MongoDB is running and configured with the necessary databases as specified in the `.env` file.
+4. **Install Mandatory Infrastructure**
+
+   ```bash
+   brew install mongodb/brew/mongodb-community@7.0
+   ```
+
+5. **Install Optional Infrastructure**
+
+   ```bash
+   brew install typesense/tap/typesense-server@27.1
+   brew install nats-server
+   ```
 
 ## Configuration
 
-- Rename `.env.template` to `.env` and set the values for:
-  - `MONGO_URL`: MongoDB connection string.
-  - Other environment variables as needed for your setup.
+Create `.env` and `.test.env` files using the supplied `.template` files, both in the `<projectRoot>` dir, and the `<projectRoot>/apps/<project>` folders.
 
-## Running the Application
+## Running the Application(s)
 
 ### Catalog
-
-- **To import products**:
-
-  ```bash
-  node data/ct/importProducts.ts <firstProductToImport> <productsToImport> <stageSuffix> <currentSuffix>
-  ```
-
-- **To create products**:
-
-  ```bash
-  node data/createProducts.ts <productsToInsert> <variantsPerProduct> <pricesPerVariant> <stageSuffix> <currentSuffix>
-  ```
-
-- **To update products**:
-
-  ```bash
-  node data/updateProducts.ts <productsToModify>
-  ```
-
-- **To start the server**:
-  ```bash
-  npm start
-  ```
-
-### Promotions
-
-- **To create promotions**:
-
-  ```bash
-  node data/createPromotions.ts <number_of_promotions>
-  ```
-
-- **To evaluate promotions on a cart**:
-
-  ```bash
-  node src/core/lib/promotionsEngine/engine.ts <cart_id>
-  ```
-
-- **To run the server**:
-  ```bash
-  npm start
-  # or
-  yarn start
-  ```
-
-## Usage Examples
-
-### Catalog
-
-- **Creating a New Product**:
-  Example usage with the Postman collection in `doc/ecomm.postman_collection.json` for creating a product with classifications and categories.
-
-- **Synchronizing Catalogs**:
-  Use the API to synchronize products between the `stage` and `online` catalogs, ensuring data consistency across environments.
-
-### Promotions
-
-- **API Endpoints**:
-
-  - **Create Promotion**: `POST /promotions`
-  - **Get Promotion by ID**: `GET /promotions/:id`
-  - **Update Promotion**: `PUT /promotions/:id`
-  - **Fetch Audit Logs**: `GET /audit-logs`
-
-- **Promotions Management**:
-
-  - Refer to `doc/ecomm.postman_collection.json` for a detailed list of API endpoints and usage examples.
-
-- **Cart Management with commercetools**:
-  - Fetch a cart by ID and apply promotions using `CartTools` and the `PromotionService`.
-
-#### Example Promotion
-
-```
-{
-  _id: "10%OffIn1ShirtFor100SpendOnShoes",
-  projectId: "TestProject",
-  name: "Spend more than €100 in shoes and get 10% off in one shirt",
-  when: {
-    shoesTotal: "$sum(products['shoes' in categories].(centAmount*quantity))>10000",
-    shirt: "products['shirts' in categories]^(centAmount)[0]",
-  },
-  then: [{
-      action: "createLineDiscount",
-      sku: "$shirt.sku",
-      discount: "$shirt.centAmount * 0.1"
-  },{
-      action: "tagAsUsed",
-      products: [{ productId: "$shirt.id", quantity: "1" }]
-  }],
-  times: 1,
-  version: 0,
-  createdAt: "2023-01-15T00:00:00.000+00:00"
-}
-```
-
-## Performance
-
-### Promotions
-
-environment:
-project:
-cart:
-
-- 1000 lines
-- 11 MB REST, 170KB GraphQL
-  promotions:
-- 500
-- all false
-  results (GraphQL fetch):
-- PromotionsEngine.run in 77.500ms. 500 promotions checked at 6.45 promotions/ms. in a cart with 1000 lines and 5532 products. 0 discounts created.
-
-  - Get cart took 979.828ms
-  - 2023-12-18 09:40:47.029 info: #E0Z9l →POST:/promotions/calculate?cartId=21248cde-b22e-4000-b19a-ce6e014f1b4f response with a 200-status took 1096.659ms
-
-- PromotionsEngine.run in 19.814ms. 500 promotions checked at 25.23 promotions/ms. in a cart with 1000 lines and 5532 products. 0 discounts created.
-  - Get cart took 798.057ms
-  - 2023-12-18 09:43:28.857 info: #UysY8 →POST:/promotions/calculate?cartId=21248cde-b22e-4000-b19a-ce6e014f1b4f response with a 200-status took 830.872ms
-
-## Testing
-
-Run tests using Jest:
 
 ```bash
-npm test
+nx run catalog:serve
 ```
 
-## Documentation
+### Promotions
 
-Refer to the [Postman Collection](doc/ecomm.postman_collection.json) for detailed API documentation and usage examples for product management operations.
+```bash
+nx run promotions:serve
+```
 
-## Contributing
+## Using the API
 
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/new-feature`).
-3. Commit your changes (`git commit -am 'Add new feature'`).
-4. Push to the branch (`git push origin feature/new-feature`).
-5. Open a pull request.
+Refer to the [Postman Collection](docs/ecomm.postman_collection.json) for detailed API documentation and usage examples for product management operations.
+
+## Older projects
+
+This project is a big refactor of the old [Catalog](https://github.com/ncornag/catalog) and [Promotion](https://github.com/ncornag/promotions) projects
 
 ## License
 
 This project is UNLICENSED.
-
----
-
-# Todos
-
-- [x] Versions
-- [x] Timestamps
-- [x] Server wide Project field
-- [x] Separate base/variants in their own documents
-- [x] Separate stage/online (Catalogs)
-- [x] Add Catalog sync
-- [x] AuditLog
-- [x] Catalog Sync
-- [x] i18n Strings fields
-- [x] Search
-- [x] Prices
-- [x] commercetools layer
-  - [/] Import Products with Prices
-  - [x] v1/getProduct endpoint
-- [x] Create Random Products & Prices
-- [x] Promotions
-- [ ] Review Enum/List/Set attribute types
-- [ ] Images/Assets fields
-- [ ] Reference fields
-- [ ] User defined Product relations (upsell, crossell..)
-- [ ] Reference expansions
-
-## Others
-
-- Define attributes as mandatory for a given channel/store (without forcing it in the data model)
-- Publish only some variants
-- Product groups (labels?)
-  - Variants groups (?)
-- Attribute groups
-- Composite products (Pizza, cars, presentation cards)
-- Storing variants and products separately will make querying products more difficult (AQ problem will be back) (AQ problem?)
-- Other ways of adding data to product than attributes (?)
-- Store-based category trees and categorization of products
-- Dynamic variants (?)
-- Product bundles..
-- Extra dimensions
-  - Channels
-  - Stores
-- Show/Query Atributes per location (per store?)
-- Show/Query only a specific group of variants (i.e.: from 500, i.e.: only in stock)
-- Separate staged and current
-- Contextualisation management
-
-- Search full data model
-  - Faceted search and filtering
-- Import/export
-- Sizes conversion
-- Discounts
-
----
-
-# Ecomm
-
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
-
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
-
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/node?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-
-## Run tasks
-
-To run the dev server for your app, use:
-
-```sh
-npx nx serve catalog
-```
-
-To create a production bundle:
-
-```sh
-npx nx build catalog
-```
-
-To see all available targets to run for a project, run:
-
-```sh
-npx nx show project catalog
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/node:app demo
-```
-
-To generate a new library, use:
-
-```sh
-npx nx g @nx/node:lib mylib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
