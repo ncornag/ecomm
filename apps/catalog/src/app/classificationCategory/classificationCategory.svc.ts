@@ -62,6 +62,9 @@ const toEntity = ({
 export class ClassificationCategoryService
   implements IClassificationCategoryService
 {
+  private ENTITY = 'classificationCategory';
+  private TOPIC_CREATE: string;
+  private TOPIC_UPDATE: string;
   private static instance: IClassificationCategoryService;
   private repo: IClassificationCategoryRepository;
   private actionHandlers: ActionHandlersList;
@@ -88,6 +91,8 @@ export class ClassificationCategoryService
     this.config = server.config;
     this.queues = server.queues;
     this.validator = new Validator(server);
+    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IClassificationCategoryService {
@@ -118,11 +123,12 @@ export class ClassificationCategoryService
       ...payload,
     });
     if (result.err) return result;
-    this.queues.publish('global.classificationCategory.insert', {
+    // Send new entity via messagging
+    this.queues.publish(this.TOPIC_CREATE, {
       source: toEntity(result.val),
       metadata: {
-        type: 'entityInsert',
-        entity: 'classificationCategory',
+        type: 'entityCreated',
+        entity: this.ENTITY,
       },
     });
     return new Ok(toEntity(result.val));
@@ -160,18 +166,22 @@ export class ClassificationCategoryService
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.queues.publish('global.classificationCategory.update', {
-        entity: 'classificationCategory',
-        source: entity,
+      this.queues.publish(this.TOPIC_UPDATE, {
+        source: { id: result.val._id },
         difference,
-        metadata: { type: 'entityUpdate' },
+        metadata: {
+          type: 'entityUpdated',
+          entity: this.ENTITY,
+        },
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish('global.classificationCategory.update.sideEffect', {
+        this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
-          entity: 'classificationCategory',
-          metadata: { type: sideEffect.action },
+          metadata: {
+            type: sideEffect.action,
+            entity: this.ENTITY,
+          },
         });
       });
     }

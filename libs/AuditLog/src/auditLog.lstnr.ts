@@ -22,10 +22,35 @@ export class AuditLogListener {
     this.server.log.info(
       `${yellow('AuditLogService')} ${green('listening to')} [${this.TOPIC}]`,
     );
-    this.server.queues.subscribe(this.TOPIC, this.handler.bind(this));
+    this.server.queues.subscribe(
+      `*.*.${this.server.config.TOPIC_CREATE_SUFIX}`,
+      this.CreateEntityHandler.bind(this),
+    );
+    this.server.queues.subscribe(
+      `*.*.${this.server.config.TOPIC_UPDATE_SUFIX}`,
+      this.UpdateEntityHandler.bind(this),
+    );
   }
 
-  private handler = async (data: any, server: any) => {
+  private CreateEntityHandler = async (data: any, server: any) => {
+    if (!data.metadata.entity) return;
+    if (this.logger.isLevelEnabled('debug')) {
+      const txt = `${data.metadata.projectId}:${data.metadata.catalogId}:${data.metadata.entity}:${data.source.id}`;
+      this.logger.debug(
+        `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} logging ${green(txt)}`,
+      );
+    }
+
+    this.service.createAuditLog({
+      entity: data.metadata.entity,
+      entityId: data.source.id,
+      catalogId: data.metadata.catalogId,
+      updateType: data.metadata.type,
+      source: data.source,
+      edits: data.difference,
+    });
+  };
+  private UpdateEntityHandler = async (data: any, server: any) => {
     if (!data.metadata.entity) return;
     if (this.logger.isLevelEnabled('debug')) {
       const txt = `${data.metadata.projectId}:${data.metadata.catalogId}:${data.metadata.entity}:${data.source.id} ${JSON.stringify(data.difference)}`;
@@ -39,7 +64,6 @@ export class AuditLogListener {
       entityId: data.source.id,
       catalogId: data.metadata.catalogId,
       updateType: data.metadata.type,
-      source: data.source,
       edits: data.difference,
     });
   };

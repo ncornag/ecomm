@@ -26,4 +26,8 @@ export const envConfig = Type.Object({
   CT_PROJECTKEY: Type.Optional(Type.String()),
   CT_CLIENTID: Type.Optional(Type.String()),
   CT_CLIENTSECRET: Type.Optional(Type.String()),
+  // Internal
+  TOPIC_CREATE_SUFIX: Type.Optional(Type.String({ default: 'create' })),
+  TOPIC_UPDATE_SUFIX: Type.Optional(Type.String({ default: 'update' })),
+  TOPIC_DELETE_SUFIX: Type.Optional(Type.String({ default: 'delete' })),
 });

@@ -83,11 +83,11 @@ export class ProductsIndexerListener {
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`,
       );
-    if (data.metadata.type === 'entityUpdate') {
+    if (data.metadata.type === 'entityUpdated') {
       const updates = Value.Patch({}, data.difference);
       updates.id = data.source.id;
       this.server.index.collections('products').documents().update(updates);
-    } else if (data.metadata.type === 'entityInsert') {
+    } else if (data.metadata.type === 'entityCreated') {
       // TODO: filter what to index, including fields and locales
 
       // Get the materialized Variant

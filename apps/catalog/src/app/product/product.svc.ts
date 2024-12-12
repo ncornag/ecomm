@@ -51,6 +51,9 @@ export const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
 
 // SERVICE IMPLEMENTATION
 export class ProductService implements IProductService {
+  private ENTITY = 'product';
+  private TOPIC_CREATE: string;
+  private TOPIC_UPDATE: string;
   private static instance: IProductService;
   private repo: IProductRepository;
   private cols;
@@ -78,6 +81,8 @@ export class ProductService implements IProductService {
       stdTTL: 60 * 60,
       checkperiod: 60,
     });
+    this.TOPIC_CREATE = `${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IProductService {
@@ -99,12 +104,12 @@ export class ProductService implements IProductService {
     } as Product);
     if (result.err) return result;
     // Send new entity via messagging
-    this.queues.publish(`${catalogId}.product.insert`, {
+    this.queues.publish(`${catalogId}.${this.TOPIC_CREATE}`, {
       source: toEntity(result.val),
       metadata: {
         catalogId,
-        type: 'entityInsert',
-        entity: 'product',
+        type: 'entityCreated',
+        entity: this.ENTITY,
       },
     });
     // Return new entity
@@ -133,8 +138,8 @@ export class ProductService implements IProductService {
     );
     if (actionRunnerResults.err) return actionRunnerResults;
     // Compute difference, and save if needed
-    const edits = Value.Diff(entity, toUpdateEntity);
-    if (edits.length > 0) {
+    const difference = Value.Diff(entity, toUpdateEntity);
+    if (difference.length > 0) {
       // Save the entity
       const saveResult = await this.repo.updateOne(
         catalogId,
@@ -145,20 +150,24 @@ export class ProductService implements IProductService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.queues.publish(`${catalogId}.product.update`, {
-        source: toEntity(result.val),
-        difference: edits,
+      this.queues.publish(`${catalogId}.${this.TOPIC_UPDATE}`, {
+        source: { id: result.val._id },
+        difference,
         metadata: {
           catalogId,
-          type: 'entityUpdate',
-          entity: 'product',
+          type: 'entityUpdated',
+          entity: this.ENTITY,
         },
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish(`${catalogId}.products.update.sideEffect`, {
+        this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
-          metadata: { type: sideEffect.action },
+          metadata: {
+            catalogId,
+            type: sideEffect.action,
+            entity: this.ENTITY,
+          },
         });
       });
     }

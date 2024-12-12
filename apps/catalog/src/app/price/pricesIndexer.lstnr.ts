@@ -40,12 +40,12 @@ export class PricesIndexerListener {
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`,
       );
-    if (data.metadata.type === 'entityUpdate') {
+    if (data.metadata.type === 'entityUpdated') {
       // TODO: update Product on Price Update
       // const updates = Value.Patch({}, data.difference);
       // updates.id = data.source.id;
       // this.server.index.collections('products').documents().update(updates);
-    } else if (data.metadata.type === 'entityInsert') {
+    } else if (data.metadata.type === 'entityCreated') {
       const productResult = await this.productService.findProducts(
         data.metadata.catalogId,
         { sku: data.source.sku },

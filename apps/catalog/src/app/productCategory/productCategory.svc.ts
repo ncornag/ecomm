@@ -43,6 +43,9 @@ const toEntity = ({
 
 // SERVICE IMPLEMENTATION
 export class ProductCategoryService implements IProductCategoryService {
+  private ENTITY = 'productCategory';
+  private TOPIC_CREATE: string;
+  private TOPIC_UPDATE: string;
   private static instance: IProductCategoryService;
   private repo: IProductCategoryRepository;
   private actionHandlers: ActionHandlersList;
@@ -69,6 +72,8 @@ export class ProductCategoryService implements IProductCategoryService {
     this.config = server.config;
     this.queues = server.queues;
     this.validator = new Validator(server);
+    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IProductCategoryService {
@@ -98,11 +103,12 @@ export class ProductCategoryService implements IProductCategoryService {
       ...payload,
     });
     if (result.err) return result;
-    this.queues.publish('global.productCategory.insert', {
+    // Send new entity via messagging
+    this.queues.publish(this.TOPIC_CREATE, {
       source: toEntity(result.val),
       metadata: {
-        type: 'entityInsert',
-        entity: 'productCategory',
+        type: 'entityCreated',
+        entity: this.ENTITY,
       },
     });
     return new Ok(toEntity(result.val));
@@ -140,18 +146,22 @@ export class ProductCategoryService implements IProductCategoryService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.queues.publish('global.productCategory.update', {
-        entity: 'productCategory',
-        source: entity,
+      this.queues.publish(this.TOPIC_UPDATE, {
+        source: { id: result.val._id },
         difference,
-        metadata: { type: 'entityUpdate' },
+        metadata: {
+          type: 'entityUpdated',
+          entity: this.ENTITY,
+        },
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
-          entity: 'productCategory',
-          metadata: { type: sideEffect.action },
+          metadata: {
+            type: sideEffect.action,
+            entity: this.ENTITY,
+          },
         });
       });
     }

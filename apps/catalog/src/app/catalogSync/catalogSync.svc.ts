@@ -69,6 +69,9 @@ const mongoPatch = function (patch: any) {
 
 // SERVICE IMPLEMENTATION
 export class CatalogSyncService implements ICatalogSyncService {
+  private ENTITY = 'catalogSync';
+  private TOPIC_CREATE: string;
+  private TOPIC_UPDATE: string;
   private static instance: ICatalogSyncService;
   private repo: ICatalogSyncRepository;
   private cols;
@@ -93,6 +96,8 @@ export class CatalogSyncService implements ICatalogSyncService {
     this.config = server.config;
     this.queues = server.queues;
     this.log = server.log;
+    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): ICatalogSyncService {
@@ -112,11 +117,12 @@ export class CatalogSyncService implements ICatalogSyncService {
       ...payload,
     });
     if (result.err) return result;
-    this.queues.publish('global.product.insert', {
+    // Send new entity via messagging
+    this.queues.publish(this.TOPIC_CREATE, {
       source: toEntity(result.val),
       metadata: {
-        type: 'entityInsert',
-        entity: 'catalogSync',
+        type: 'entityCreated',
+        entity: this.ENTITY,
       },
     });
     return new Ok(toEntity(result.val));
@@ -154,17 +160,22 @@ export class CatalogSyncService implements ICatalogSyncService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.queues.publish('global.catalogSync.update', {
-        entity: 'catalogSync',
-        source: entity,
+      this.queues.publish(this.TOPIC_UPDATE, {
+        source: { id: result.val._id },
         difference,
-        metadata: { type: 'entityUpdate' },
+        metadata: {
+          type: 'entityUpdated',
+          entity: this.ENTITY,
+        },
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish('global.catalogSync.update.sideEffect', {
+        this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
-          metadata: { type: sideEffect.action },
+          metadata: {
+            type: sideEffect.action,
+            entity: this.ENTITY,
+          },
         });
       });
     }

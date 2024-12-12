@@ -62,7 +62,7 @@ export type UpdateProductChangeDescription = Static<
 export const UpdateProductChangeKeywordsSchema = Type.Object(
   {
     action: Type.Literal(ProductUpdateActionType.CHANGEKEYWORDS),
-    searchKeywords: Type.Array(Type.String()),
+    searchKeywords: i18nArrayKeyType,
   },
   { additionalProperties: false },
 );

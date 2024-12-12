@@ -273,7 +273,7 @@ describe('Product', () => {
       assert.equal(records.body.length, 1);
       assert.equal(records.body[0].entity, 'product');
       assert.equal(records.body[0].entityId, pId);
-      assert.equal(records.body[0].updateType, 'entityUpdate');
+      assert.equal(records.body[0].updateType, 'entityUpdated');
       assert.deepEqual(records.body[0].edits, updateChange);
     });
   }

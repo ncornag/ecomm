@@ -33,6 +33,9 @@ const toEntity = ({ _id, ...remainder }: CatalogDAO): Catalog => ({
 
 // SERVICE IMPLEMENTATION
 export class CatalogService implements ICatalogService {
+  private ENTITY = 'catalog';
+  private TOPIC_CREATE: string;
+  private TOPIC_UPDATE: string;
   private static instance: ICatalogService;
   private repo: ICatalogRepository;
   private actionHandlers: ActionHandlersList;
@@ -49,6 +52,8 @@ export class CatalogService implements ICatalogService {
     this.actionsRunner = new ActionsRunner<CatalogDAO, ICatalogRepository>();
     this.config = server.config;
     this.queues = server.queues;
+    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): ICatalogService {
@@ -68,11 +73,12 @@ export class CatalogService implements ICatalogService {
       ...payload,
     });
     if (result.err) return result;
-    this.queues.publish(`global.catalog.insert`, {
+    // Send new entity via messagging
+    this.queues.publish(this.TOPIC_CREATE, {
       source: toEntity(result.val),
       metadata: {
-        type: 'entityInsert',
-        entity: 'catalog',
+        type: 'entityCreated',
+        entity: this.ENTITY,
       },
     });
     return new Ok(toEntity(result.val));
@@ -110,17 +116,22 @@ export class CatalogService implements ICatalogService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.queues.publish(`global.catalog.update`, {
-        entity: 'catalog',
-        source: entity,
+      this.queues.publish(this.TOPIC_UPDATE, {
+        source: { id: result.val._id },
         difference,
-        metadata: { type: 'entityUpdate' },
+        metadata: {
+          type: 'entityUpdated',
+          entity: this.ENTITY,
+        },
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish('global.catalog.update.sideEffect', {
+        this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
-          metadata: { type: sideEffect.action },
+          metadata: {
+            type: sideEffect.action,
+            entity: this.ENTITY,
+          },
         });
       });
     }

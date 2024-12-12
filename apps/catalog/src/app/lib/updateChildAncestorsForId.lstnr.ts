@@ -10,10 +10,11 @@ export interface IRepo<DAO> {
 class UpdateChildAncestorsForIdListener {
   private server: any;
   private msgIn = bold(yellow('←')) + yellow('MSG:');
-  private TOPIC = 'updateChildAncestorsForId';
+  private TOPIC: string;
 
   constructor(server: any) {
     this.server = server;
+    this.TOPIC = server.config.CC_TREE_ROUTE;
   }
 
   public start() {
@@ -24,7 +25,7 @@ class UpdateChildAncestorsForIdListener {
   }
 
   private handler = async (data: any) => {
-    const repo = this.server.db.repo[data.entity + 'Repository'];
+    const repo = this.server.db.repo[data.metadata.entity + 'Repository'];
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} updateChildAncestorsForId ${green(
