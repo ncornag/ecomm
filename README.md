@@ -85,7 +85,7 @@ It lays the groundwork for an advanced e-commerce platform capable of managing c
 
 ## Configuration
 
-Create `.env` and `.test.env` files using the supplied `.template` files, both in the `<projectRoot>` dir, and the `<projectRoot>/apps/<project>` folders.
+Create `.env` and `.env.test` files using the supplied `.defaults` file, both in the `<projectRoot>` dir, and the `<projectRoot>/apps/<project>` folders.
 
 ## Running the Application(s)
 
