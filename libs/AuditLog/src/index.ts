@@ -1,19 +1,27 @@
 import { AuditLog } from './auditLog.entity';
-import { AuditLogService } from './auditLog.svc';
+import { AuditLogService, IAuditLogService } from './auditLog.svc';
 import { AuditLogListener, auditLogListener } from './auditLog.lstnr';
 import {
   FindAuditLogParms,
   FindAuditLogsQueryString,
 } from './auditLog.schemas';
-import { AuditLogRepository, getAuditLogCollection } from './auditLog.repo';
+import {
+  type IAuditLogRepository,
+  AuditLogRepository,
+  getAuditLogCollection,
+} from './auditLog.repo';
+import { default as auditLogRoutes } from './auditLog.routes';
 
 export {
   type AuditLog,
   AuditLogListener,
   auditLogListener,
   AuditLogRepository,
+  IAuditLogRepository,
   getAuditLogCollection,
   AuditLogService,
+  IAuditLogService,
   FindAuditLogParms,
   FindAuditLogsQueryString,
+  auditLogRoutes,
 };
