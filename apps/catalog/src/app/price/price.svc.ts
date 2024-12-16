@@ -116,8 +116,8 @@ export class PriceService implements IPriceService {
       checkperiod: 60,
     });
     this.warmupPricesExpressions(server);
-    this.TOPIC_CREATE = `${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
+    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IPriceService {
@@ -159,7 +159,7 @@ export class PriceService implements IPriceService {
     } as Price);
     if (result.err) return result;
     // Send new entity via messagging
-    this.queues.publish(`${catalogId}.${this.TOPIC_CREATE}`, {
+    this.queues.publish(this.TOPIC_CREATE, {
       source: toEntity(result.val),
       metadata: {
         catalogId,
