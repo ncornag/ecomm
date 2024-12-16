@@ -4,13 +4,15 @@ import { nanoid } from 'nanoid';
 import { type AuditLog } from './auditLog.entity';
 import { type AuditLogDAO } from './auditLog.dao.schema';
 import { type IAuditLogRepository } from './auditLog.repo';
-import { JSONPath } from 'jsonpath-plus';
 
 // SERVICE INTERFACE
 export interface IAuditLogService {
   createAuditLog: (payload: any) => Promise<Result<AuditLog, AppError>>;
   findAuditLogById: (id: string) => Promise<Result<AuditLog, AppError>>;
-  findAuditLogs: (catalog: string) => Promise<Result<AuditLog[], AppError>>;
+  findAuditLogs: (
+    query: any,
+    options?: any,
+  ) => Promise<Result<AuditLog[], AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: AuditLogDAO): AuditLog => ({
@@ -58,26 +60,11 @@ export class AuditLogService implements IAuditLogService {
 
   // FIND AUDITLOGS
   public async findAuditLogs(
-    catalogId: string,
+    query: any,
+    options?: any,
   ): Promise<Result<AuditLog[], AppError>> {
-    const result = await this.repo.find({ catalogId }, {});
+    const result = await this.repo.find(query, options);
     if (result.err) return result;
-    // Add old values
-    const massagedResults = result.val.map((e: AuditLogDAO) => {
-      if (e.edits == null) return e;
-      return {
-        ...e,
-        edits: e.edits.map((ed: any) => {
-          return {
-            ...ed,
-            oldValue: JSONPath({
-              path: '$.' + ed.path.replace(/\//g, '.'),
-              json: e.source,
-            })[0],
-          };
-        }),
-      };
-    });
-    return new Ok(massagedResults.map((e: AuditLogDAO) => toEntity(e)));
+    return new Ok(result.val.map((entity) => toEntity(entity)));
   }
 }
