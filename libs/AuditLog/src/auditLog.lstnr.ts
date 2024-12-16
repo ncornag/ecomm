@@ -40,14 +40,12 @@ export class AuditLogListener {
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} logging ${green(txt)}`,
       );
     }
-
     this.service.createAuditLog({
       entity: data.metadata.entity,
       entityId: data.source.id,
       catalogId: data.metadata.catalogId,
       updateType: data.metadata.type,
       source: data.source,
-      edits: data.difference,
     });
   };
   private UpdateEntityHandler = async (data: any, server: any) => {
@@ -58,7 +56,6 @@ export class AuditLogListener {
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} logging ${green(txt)}`,
       );
     }
-
     this.service.createAuditLog({
       entity: data.metadata.entity,
       entityId: data.source.id,
