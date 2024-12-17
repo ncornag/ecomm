@@ -21,6 +21,15 @@ declare module 'fastify' {
   }
 }
 
+// Patch Bigint.toJSON
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface BigInt {
+  toJSON: () => string;
+}
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 export default async (app, envConfig): Promise<FastifyInstance> => {
   // Server
   const serverOptions: FastifyServerOptions = {
