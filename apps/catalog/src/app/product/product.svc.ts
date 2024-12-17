@@ -14,6 +14,8 @@ import { type IProductRepository } from './product.repo';
 import { type Config } from '@ecomm/Config';
 import NodeCache from 'node-cache';
 import { Queues } from '@ecomm/Queues';
+import { type IAuditLogService, AuditLogService } from '@ecomm/AuditLog';
+import { FastifyInstance } from 'fastify';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -31,6 +33,10 @@ export interface IProductService {
     catalogId: string,
     id: string,
     materialized: boolean,
+  ) => Promise<Result<Product, AppError>>;
+  findProductByIdEventStore: (
+    catalogId: string,
+    id: string,
   ) => Promise<Result<Product, AppError>>;
   findProducts: (
     catalogId: string,
@@ -54,6 +60,7 @@ export class ProductService implements IProductService {
   private ENTITY = 'product';
   private TOPIC_CREATE: string;
   private TOPIC_UPDATE: string;
+  private server: FastifyInstance;
   private static instance: IProductService;
   private repo: IProductRepository;
   private cols;
@@ -63,8 +70,11 @@ export class ProductService implements IProductService {
   private queues: Queues;
   private cartProductsCache;
   private cacheCartProducts;
+  private auditLogService: IAuditLogService;
+  private handle;
 
-  private constructor(server: any) {
+  private constructor(server: FastifyInstance) {
+    this.server = server;
     this.repo = server.db.repo.productRepository as IProductRepository;
     this.cols = server.db.col.product;
     this.actionHandlers = {
@@ -72,6 +82,7 @@ export class ProductService implements IProductService {
       changeDescription: new ChangeDescriptionActionHandler(server),
       changeKeywords: new ChangeKeywordsActionHandler(server),
     };
+    this.auditLogService = AuditLogService.getInstance(server);
     this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
     this.config = server.config;
     this.queues = server.queues;
@@ -98,8 +109,9 @@ export class ProductService implements IProductService {
     payload: CreateProductBody,
   ): Promise<Result<Product, AppError>> {
     // Save the entity
+    const id = nanoid();
     const result = await this.repo.create(catalogId, {
-      id: nanoid(),
+      id,
       ...payload,
     } as Product);
     if (result.err) return result;
@@ -112,6 +124,16 @@ export class ProductService implements IProductService {
         entity: this.ENTITY,
       },
     });
+    // Publish to Event Sourcing
+    // this.queues.publish('es.create', {
+    //   source: { id, catalogId, ...payload },
+    //   metadata: {
+    //     catalogId,
+    //     type: 'entityCreated',
+    //     entity: this.ENTITY,
+    //   },
+    // });
+
     // Return new entity
     return new Ok(toEntity(result.val));
   }
@@ -137,6 +159,7 @@ export class ProductService implements IProductService {
       actions,
     );
     if (actionRunnerResults.err) return actionRunnerResults;
+    const update = Value.Clone(actionRunnerResults.val.update);
     // Compute difference, and save if needed
     const difference = Value.Diff(entity, toUpdateEntity);
     if (difference.length > 0) {
@@ -159,6 +182,16 @@ export class ProductService implements IProductService {
           entity: this.ENTITY,
         },
       });
+      // Publish to Event Sourcing
+      // this.queues.publish('es.update', {
+      //   source: { id: entity._id, catalogId, version: entity.version },
+      //   update,
+      //   metadata: {
+      //     catalogId,
+      //     type: 'entityUpdated',
+      //     entity: this.ENTITY,
+      //   },
+      // });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {
@@ -230,6 +263,25 @@ export class ProductService implements IProductService {
       }
       return new Ok(toEntity(entity));
     }
+  }
+
+  public async findProductByIdEventStore(
+    catalogId: string,
+    id: string,
+  ): Promise<Result<Product, AppError>> {
+    const result = await this.auditLogService.findAuditLogs({
+      catalogId,
+      entityId: id,
+    });
+    if (result.err) return result;
+    if (result.val.length === 0)
+      return new Err(new AppError(ErrorCode.NOT_FOUND));
+    if (!result.val[0].source)
+      return new Err(new AppError(ErrorCode.UNPROCESSABLE_ENTITY, 'No source'));
+    const entity = result.val.slice(1).reduce((acc: any, event: any) => {
+      return Value.Patch(acc, event.edits);
+    }, result.val[0].source);
+    return new Ok(entity);
   }
 
   public async findProducts(

@@ -33,7 +33,19 @@ import { productsIndexerListener } from './product/productsIndexer.lstnr';
 import { pricesIndexerListener } from './price/pricesIndexer.lstnr';
 import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr';
 import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
+import { projectorListener } from './product/projector.lstnr';
 
+import { getInMemoryMessageBus } from '@event-driven-io/emmett';
+import { getMongoDBEventStore } from '@event-driven-io/emmett-mongodb';
+
+declare module 'fastify' {
+  export interface FastifyInstance {
+    es: {
+      store: ReturnType<typeof getMongoDBEventStore>;
+      bus: ReturnType<typeof getInMemoryMessageBus>;
+    };
+  }
+}
 /* eslint-disable-next-line */
 export interface AppOptions {}
 
@@ -51,6 +63,16 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
     const fastifyPrintRoutes = await importDynamic('fastify-print-routes');
     await server.register(fastifyPrintRoutes);
   }
+
+  // EventStore
+  const eventStore = getMongoDBEventStore({
+    database: 'events',
+    collection: 'Events',
+    client: server.mongo.client,
+  });
+  const inMemoryMessageBus = getInMemoryMessageBus();
+
+  server.decorate('es', { store: eventStore, bus: inMemoryMessageBus });
 
   // Register Collections
   server.db.col.classificationCategory = getClassificationCategoryCollection(
@@ -216,6 +238,8 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   productsIndexerListener(server);
   pricesIndexerListener(server);
   updateChildAncestorsForIdListener(server);
+
+  projectorListener(server);
 
   // // Register plugins
   // server.register(AutoLoad, {
