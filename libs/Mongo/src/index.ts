@@ -88,8 +88,12 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   const createTargets: string[] = ['insertOne'];
   const updateTargets: string[] = ['updateOne', 'updateMany', 'bulkWrite'];
 
+  // Interceptors NegativeFilter
+  const negativeFilterInterceptor: Record<string, boolean> = { Events: true };
+
   // ProjectId Interceptor -- Force projectId in find & updates
-  const projectIdOne = function (data: any) {
+  const projectIdOne = function (collectionName: string, data: any) {
+    if (negativeFilterInterceptor[collectionName]) return data;
     // Add projectId
     const projectId = requestContext.get(PROJECT_ID_STORE_KEY) || 'TestProject';
     data.projectId = projectId;
@@ -97,24 +101,27 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
   const projectIdInterceptor = function (obj: any, replace, name: string) {
     obj.prototype[name] = function (...args: any[]) {
+      const collectionName = (this as Collection).collectionName;
       if (Array.isArray(args[0])) {
         args[0] = args[0].map((a) => {
           if (a.updateOne) {
             return {
               updateOne: {
-                filter: projectIdOne(a.updateOne.filter),
+                filter: projectIdOne(collectionName, a.updateOne.filter),
                 update: a.updateOne.update,
               },
             };
           } else if (a.insertOne) {
             return {
-              insertOne: { document: projectIdOne(a.insertOne.document) },
+              insertOne: {
+                document: projectIdOne(collectionName, a.insertOne.document),
+              },
             };
           }
           return a;
         });
       } else {
-        projectIdOne(args[0]);
+        projectIdOne(collectionName, args[0]);
       }
       // console.log(name, 'pidInterceptor');
       // console.log(JSON.stringify(args, null, 2));
@@ -123,7 +130,8 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
 
   // Create Interceptor -- Create timestamp / version
-  const createOne = function (data: any) {
+  const createOne = function (collectionName: string, data: any) {
+    if (negativeFilterInterceptor[collectionName]) return data;
     // Add timestamp
     data.createdAt = new Date().toISOString();
     // Add version
@@ -132,15 +140,19 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
   const createInterceptor = function (obj: any, replace, name: string) {
     obj.prototype[name] = function (...args: any[]) {
-      createOne(args[0]);
-      // console.log(name, 'insertInterceptor');
-      // console.log(JSON.stringify(args[0], null, 2));
+      createOne((this as Collection).collectionName, args[0]);
       return replace.apply(this, args as any);
     };
   };
 
   // Update Interceptor -- Update timestamp / version
-  const updateOne = function (filter: any, update: any) {
+  const updateOne = function (
+    this: any,
+    collectionName: string,
+    filter: any,
+    update: any,
+  ) {
+    if (negativeFilterInterceptor[collectionName]) return { filter, update };
     const set = update.$set || {};
     const inc = update.$inc || {};
     // Version management
@@ -159,24 +171,29 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
   const updateInterceptor = function (obj: any, replace, name: string) {
     obj.prototype[name] = function (...args: any[]) {
-      // console.log(name, 'updateInterceptor, before');
-      // console.log(JSON.stringify(args, null, 2));
+      const collectionName = (this as Collection).collectionName;
       if (Array.isArray(args[0])) {
         args[0] = args[0].map((a) => {
           if (a.updateOne) {
             return {
-              updateOne: updateOne(a.updateOne.filter, a.updateOne.update),
+              updateOne: updateOne(
+                collectionName,
+                a.updateOne.filter,
+                a.updateOne.update,
+              ),
             };
           } else if (a.insertOne) {
-            return { insertOne: { document: createOne(a.insertOne.document) } };
+            return {
+              insertOne: {
+                document: createOne(collectionName, a.insertOne.document),
+              },
+            };
           }
           return a;
         });
       } else {
-        updateOne(args[0], args[1]);
+        updateOne(collectionName, args[0], args[1]);
       }
-      // console.log(name, 'updateInterceptor');
-      // console.log(JSON.stringify(args, null, 2));
       return replace.apply(this, args as any);
     };
   };
@@ -206,9 +223,6 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
       server,
     },
   });
-  // migrator.on('migrating', (params) => {
-  //   console.log(params);
-  // });
   await migrator.up();
 };
 
