@@ -33,8 +33,8 @@ export function getRequestIdFastifyAppConfig(): Pick<
   'genReqId' | 'requestIdHeader'
 > {
   return {
-    genReqId: () => nanoid(5),
-    requestIdHeader: 'x-request-id',
+    genReqId: (req) => (req.headers['request-id'] as string) ?? nanoid(5),
+    requestIdHeader: 'request-id',
   };
 }
 
@@ -59,7 +59,7 @@ const plugin: FastifyPluginAsync<ConfigOptions> = async (
       payload,
       next: HookHandlerDoneFunction,
     ) => {
-      void res.header('x-request-id', req.id);
+      void res.header('request-id', req.id);
       next();
     },
   );
