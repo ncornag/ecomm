@@ -32,7 +32,8 @@
       "@ecomm/Queues": ["libs/Queues/src/index.ts"],
       "@ecomm/RequestContext": ["libs/RequestContext/src/index.ts"],
       "@ecomm/Search": ["libs/Search/src/index.ts"],
-      "@ecomm/Server": ["libs/Server/src/index.ts"]
+      "@ecomm/Server": ["libs/Server/src/index.ts"],
+      "@ecomm/EventStore": ["libs/EventStore/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"],

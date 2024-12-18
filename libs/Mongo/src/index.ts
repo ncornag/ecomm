@@ -89,7 +89,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   const updateTargets: string[] = ['updateOne', 'updateMany', 'bulkWrite'];
 
   // Interceptors NegativeFilter
-  const negativeFilterInterceptor: Record<string, boolean> = { Events: true };
+  const negativeFilterInterceptor: Record<string, boolean> = { _Events: true };
 
   // ProjectId Interceptor -- Force projectId in find & updates
   const projectIdOne = function (collectionName: string, data: any) {

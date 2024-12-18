@@ -90,7 +90,7 @@ export const ProductSchema = Type.Object(
   {
     id: Type.String(),
     catalog: Type.String(),
-    name: Type.Optional(i18nKeyType),
+    name: i18nKeyType,
     description: Type.Optional(i18nKeyType),
     sku: Type.Optional(Type.String()), // Optional in the base product
     slug: Type.Optional(i18nKeyType), // Optional in the variants

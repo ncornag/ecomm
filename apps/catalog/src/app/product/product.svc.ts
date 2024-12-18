@@ -16,9 +16,17 @@ import NodeCache from 'node-cache';
 import { Queues } from '@ecomm/Queues';
 import { type IAuditLogService, AuditLogService } from '@ecomm/AuditLog';
 import { FastifyInstance } from 'fastify';
+import { Command } from '@ecomm/EventStore';
+import {
+  CreateProduct,
+  ProductCommandTypes,
+  UpdateProductName,
+} from './product.events';
+import { version } from 'os';
 
 // SERVICE INTERFACE
 export interface IProductService {
+  handleCommand: (command: Command) => Promise<Result<unknown, AppError>>;
   createProduct: (
     catalogId: string,
     payload: CreateProductBody,
@@ -102,6 +110,49 @@ export class ProductService implements IProductService {
     }
     return ProductService.instance;
   }
+
+  public handleCommand = async (
+    command: Command,
+  ): Promise<Result<unknown, AppError>> => {
+    console.log('handleCommand');
+    console.dir(command, { depth: 15 });
+    let stream: string;
+    let data: Record<string, unknown>;
+    let metadata: Record<string, unknown>;
+    switch (command.type) {
+      case ProductCommandTypes.CREATE: {
+        const cmd = command as CreateProduct;
+        const id = cmd.data.product.id || nanoid(); // FIXME Remove getting id from data
+        data = { product: { id, ...cmd.data.product } };
+        metadata = { version: 0, ...cmd.metadata };
+        stream = `product_${id}`;
+        break;
+      }
+      case ProductCommandTypes.UPDATE_NAME: {
+        // return new Err(new AppError(ErrorCode.BAD_REQUEST, 'Not implemented'));
+        const cmd = command as UpdateProductName;
+        data = command.data;
+        stream = `product_${data.id}`;
+        metadata = { expectedVersion: cmd.metadata!.version, ...cmd.metadata };
+        break;
+      }
+      default: {
+        return new Err(
+          new AppError(ErrorCode.BAD_REQUEST, 'Command not found'),
+        );
+        break;
+      }
+    }
+    // TODO: Save stream
+    const result = await this.server.es.addEvent(stream, {
+      type: command.type,
+      data,
+      metadata,
+    });
+    if (result.err) return result;
+    // TODO: Emmit event
+    return new Ok('ok');
+  };
 
   // CREATE PRODUCT
   public async createProduct(

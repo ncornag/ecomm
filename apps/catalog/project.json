@@ -45,7 +45,8 @@
         "buildTarget": "catalog:build",
         "runBuildTargetDependencies": false,
         "runtimeArgs": ["--no-warnings"],
-        "inspect": false
+        "inspect": true,
+        "port": 7777
       },
       "configurations": {
         "development": {
