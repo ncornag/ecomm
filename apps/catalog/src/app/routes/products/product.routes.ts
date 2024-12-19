@@ -1,4 +1,4 @@
-import { type Result, Ok, Err } from 'ts-results';
+import { type Result } from 'ts-results';
 import {
   type FastifyInstance,
   type FastifyPluginOptions,
@@ -20,8 +20,10 @@ import { type Product } from '../../product/product';
 import {
   CreateProduct,
   ProductCommandTypes,
+  toProductStreamName,
   UpdateProductName,
 } from '../../product/product.events';
+import { nanoid } from 'nanoid';
 
 export type StreamType = string;
 export type StreamName<T extends StreamType = StreamType> = `${T}:${string}`;
@@ -56,17 +58,26 @@ export default async function (
       );
       if (!result.ok) return reply.sendAppError(result.val);
 
-      const command: CreateProduct = {
-        type: ProductCommandTypes.CREATE,
-        data: {
-          product: { id: result.val.id, ...request.body },
+      ///////////////////////////////////////////////////////////////////////////////
+      const eventStoreResult = await server.es.create(
+        service.create,
+        toProductStreamName(result.val.id),
+        {
+          type: ProductCommandTypes.CREATE,
+          data: {
+            product: { id: result.val.id, ...request.body },
+          },
+          metadata: {
+            catalog: request.query.catalog,
+          },
         },
-        metadata: {
-          catalog: request.query.catalog,
-        },
-      };
-      const handleResult = await service.handleCommand(command);
-      if (!handleResult.ok) return reply.sendAppError(handleResult.val);
+      );
+      console.log('route.eventStoreResult');
+      console.dir(eventStoreResult);
+      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
+      ///////////////////////////////////////////////////////////////////////////////
+
+      //response.set('ETag', toWeakETag(result.nextExpectedRevision));
 
       return reply.code(201).send(result.val);
     },
@@ -85,23 +96,6 @@ export default async function (
       }>,
       reply: FastifyReply,
     ) => {
-      // const command: UpdateProductName = {
-      //   type: 'UpdateProductName',
-      //   data: {
-      //     productId: request.params.id,
-      //     name: (request.body.actions[0] as any).name,
-      //   },
-      //   // metadata: {
-      //   //   catalogId,
-      //   // },
-      // };
-
-      // await handle(
-      //   server.es.store,
-      //   toStreamName(StreamType, request.params.id),
-      //   (state) => decider.decide(command, state),
-      // );
-
       const result: Result<Product, AppError> = await service.updateProduct(
         request.query.catalog,
         request.params.id,
@@ -110,19 +104,27 @@ export default async function (
       );
       if (!result.ok) return reply.sendAppError(result.val);
 
-      const command: UpdateProductName = {
-        type: ProductCommandTypes.UPDATE_NAME,
-        data: {
-          id: request.params.id,
-          name: (request.body.actions[0] as any).name,
+      ///////////////////////////////////////////////////////////////////////////////
+      const eventStoreResult = await server.es.update(
+        service.update,
+        toProductStreamName(result.val.id),
+        BigInt(request.body.version),
+        {
+          type: ProductCommandTypes.UPDATE_NAME,
+          data: {
+            productId: request.params.id,
+            name: (request.body.actions[0] as any).name,
+          },
+          metadata: {
+            catalog: request.query.catalog,
+            //version: request.body.version,
+          },
         },
-        metadata: {
-          catalog: request.query.catalog,
-          version: request.body.version,
-        },
-      };
-      const handleResult = await service.handleCommand(command);
-      //if (!handleResult.ok) return reply.sendAppError(handleResult.val);
+      );
+      console.log('route.eventStoreResult');
+      console.dir(eventStoreResult);
+      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
+      ///////////////////////////////////////////////////////////////////////////////
 
       return reply.send(result.val);
     },
@@ -142,22 +144,15 @@ export default async function (
       }>,
       reply: FastifyReply,
     ) => {
-      // const streamResult = await server.es.store.aggregateStream<
-      //   Product,
-      //   ProductEvent
-      // >(toStreamName(StreamType, request.params.id), {
-      //   evolve,
-      //   initialState,
-      // });
-
-      // console.dir(streamResult);
-
       const result: Result<Product, AppError> = await service.findProductById(
         request.query.catalog,
         request.params.id,
         request.query.materialized,
       );
       if (!result.ok) return reply.sendAppError(result.val);
+
+      // this.server.es.aggregateStream
+
       return reply.send(result.val);
     },
   });

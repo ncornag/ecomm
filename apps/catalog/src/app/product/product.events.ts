@@ -1,8 +1,9 @@
 import { Product } from './product';
-import { CreateProductBody } from './product.schemas';
-import { Command } from '@ecomm/EventStore';
+import { Event, Command } from '@ecomm/EventStore';
 
-// Product
+///////////
+// Commands
+///////////
 
 export const enum ProductCommandTypes {
   CREATE = 'product-create',
@@ -11,25 +12,50 @@ export const enum ProductCommandTypes {
 }
 
 export type CreateProduct = Command<
-  ProductCommandTypes,
+  ProductCommandTypes.CREATE,
   { product: any }, // TODO: rename CreateProductBody schema and reuse
   { catalog: string }
 >;
 export type UpdateProductName = Command<
-  ProductCommandTypes,
-  { id: Product['id']; name: Product['name'] },
-  { catalog: Product['catalog']; version: number }
+  ProductCommandTypes.UPDATE_NAME,
+  { productId: Product['id']; name: Product['name'] },
+  { catalog: Product['catalog'] } //version: number
 >;
+
+/////////
+// Events
+/////////
+
+export const enum ProductEventTypes {
+  PRODUCT_CREATED = 'product-created',
+  PRODUCT_NAME_UPDATED = 'product-name-updated',
+  PRODUCT_DESCRIPTION_UPDATED = 'product-description-updated',
+}
+
+export type ProductCreated = Event<
+  'product-created',
+  { product: Product },
+  any
+>;
+
+export type ProductNameUpdated = Event<
+  'product-name-updated',
+  { productId: Product['id']; name: Product['name'] },
+  any
+>;
+
+export const toProductStreamName = (productId: string) =>
+  `product-${productId}`;
 
 // // Events
 
 // export const StreamType = 'product';
-
+//
 // export type ProductCreated = Event<
 //   'ProductCreated',
 //   { product: Product; addedAt: Date }
 // >;
-
+//
 // export type ProductNameUpdated = Event<
 //   'ProductNameUpdated',
 //   {
