@@ -123,7 +123,7 @@ class ProductImporter {
         _id: p.id,
         version: p.version,
         projectId,
-        catalog:
+        catalogId:
           catalog === this.ct.Catalog.STAGED
             ? CatalogNames.STAGE
             : CatalogNames.ONLINE,
@@ -156,7 +156,7 @@ class ProductImporter {
         _id: p.id + '#' + v.id,
         version: p.version,
         projectId,
-        catalog:
+        catalogId:
           catalog === this.ct.Catalog.STAGED
             ? CatalogNames.STAGE.toLowerCase()
             : CatalogNames.ONLINE.toLowerCase(),
@@ -208,7 +208,7 @@ class ProductImporter {
         _id: price.id,
         version: p.version,
         projectId,
-        catalog:
+        catalogId:
           catalog === this.ct.Catalog.STAGED
             ? CatalogNames.STAGE
             : CatalogNames.ONLINE,

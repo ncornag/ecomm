@@ -34,7 +34,7 @@ export type Predicate = Static<typeof PredicateSchema>;
 export const PriceSchema = Type.Object(
   {
     id: Type.String(),
-    catalog: Type.String(),
+    catalogId: Type.String(),
     key: Type.Optional(Type.String()),
     active: Type.Boolean({ default: false }),
     order: Type.Number(),

@@ -221,14 +221,14 @@ class ProductCreator {
     const prices = Array.from({ length: pricesPerVariant }, (_, i) =>
       this.createPrice(
         projectId,
-        parent.catalog,
+        parent.catalogId,
         sku,
         order++,
         this.predicatesOrder,
       ),
     );
     prices.push(
-      this.createPrice(projectId, parent.catalog, sku, order++, [[]]),
+      this.createPrice(projectId, parent.catalogId, sku, order++, [[]]),
     );
     return [
       {

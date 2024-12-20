@@ -9,29 +9,36 @@ import { type ProductDAO } from './product.dao.schema';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
 import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler';
 import { ChangeKeywordsActionHandler } from '../lib/actions/changeKeywords.handler';
-import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
+import {
+  ActionsRunner,
+  ActionsRunner2,
+  type ActionHandlersList,
+} from '@ecomm/ActionsRunner';
 import { type IProductRepository } from './product.repo';
 import { type Config } from '@ecomm/Config';
 import NodeCache from 'node-cache';
 import { Queues } from '@ecomm/Queues';
 import { type IAuditLogService, AuditLogService } from '@ecomm/AuditLog';
 import { FastifyInstance } from 'fastify';
-import { Event, Command } from '@ecomm/EventStore';
 import {
-  CreateProduct,
-  ProductCommandTypes,
-  ProductCreated,
   ProductEventTypes,
-  ProductNameUpdated,
-  UpdateProductName,
+  CreateProduct,
+  ProductCreated,
+  UpdateProduct,
+  ProductUpdated,
+  ProductEvent,
+  PRODUCT_ENTITY_NAME,
 } from './product.events';
+import { RecordedEvent } from '@ecomm/EventStore';
 
 // SERVICE INTERFACE
 export interface IProductService {
   create: (command: CreateProduct) => Promise<Result<ProductCreated, AppError>>;
-  update: (
-    command: UpdateProductName,
-  ) => Promise<Result<ProductNameUpdated, AppError>>;
+  update: (command: UpdateProduct) => Promise<Result<ProductUpdated, AppError>>;
+  aggregate: (
+    currentState: Product,
+    event: RecordedEvent<ProductEvent>,
+  ) => Promise<Result<Product, AppError>>;
   createProduct: (
     catalogId: string,
     payload: CreateProductBody,
@@ -46,10 +53,6 @@ export interface IProductService {
     catalogId: string,
     id: string,
     materialized: boolean,
-  ) => Promise<Result<Product, AppError>>;
-  findProductByIdEventStore: (
-    catalogId: string,
-    id: string,
   ) => Promise<Result<Product, AppError>>;
   findProducts: (
     catalogId: string,
@@ -70,7 +73,7 @@ export const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
 
 // SERVICE IMPLEMENTATION
 export class ProductService implements IProductService {
-  private ENTITY = 'product';
+  // private ENTITY = 'product';
   private TOPIC_CREATE: string;
   private TOPIC_UPDATE: string;
   private server: FastifyInstance;
@@ -79,12 +82,12 @@ export class ProductService implements IProductService {
   private cols;
   private actionHandlers: ActionHandlersList;
   private actionsRunner: ActionsRunner<ProductDAO, IProductRepository>;
+  private actionsRunner2: ActionsRunner2<Product, IProductRepository>;
   private config: Config;
   private queues: Queues;
   private cartProductsCache;
   private cacheCartProducts;
   private auditLogService: IAuditLogService;
-  private handle;
 
   private constructor(server: FastifyInstance) {
     this.server = server;
@@ -97,6 +100,7 @@ export class ProductService implements IProductService {
     };
     this.auditLogService = AuditLogService.getInstance(server);
     this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
+    this.actionsRunner2 = new ActionsRunner2<Product, IProductRepository>();
     this.config = server.config;
     this.queues = server.queues;
     this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;
@@ -105,8 +109,8 @@ export class ProductService implements IProductService {
       stdTTL: 60 * 60,
       checkperiod: 60,
     });
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
+    this.TOPIC_CREATE = `global.${PRODUCT_ENTITY_NAME}.${server.config.TOPIC_CREATE_SUFIX}`;
+    this.TOPIC_UPDATE = `global.${PRODUCT_ENTITY_NAME}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IProductService {
@@ -119,26 +123,86 @@ export class ProductService implements IProductService {
   public create = async (
     command: CreateProduct,
   ): Promise<Result<ProductCreated, AppError>> => {
-    console.log('p.create');
-    console.dir(command, { depth: 15 });
+    const { id, ...remainder } = command.metadata;
     return new Ok({
       type: ProductEventTypes.PRODUCT_CREATED,
-      data: command.data,
-      metadata: command.metadata,
+      data: { product: { id, ...command.data.product } },
+      metadata: { entity: PRODUCT_ENTITY_NAME, ...remainder },
     } as ProductCreated);
   };
 
   public update = async (
-    command: UpdateProductName,
-  ): Promise<Result<ProductNameUpdated, AppError>> => {
-    console.log('p.updateName');
-    console.dir(command, { depth: 15 });
-    // TODO: Validate Name
+    command: UpdateProduct,
+  ): Promise<Result<ProductUpdated, AppError>> => {
+    // TODO Process Actions
     return new Ok({
-      type: ProductEventTypes.PRODUCT_NAME_UPDATED,
+      type: ProductEventTypes.PRODUCT_UPDATED,
       data: command.data,
-      metadata: command.metadata,
-    } as ProductNameUpdated);
+      metadata: { entity: PRODUCT_ENTITY_NAME, ...command.metadata },
+    } as ProductUpdated);
+  };
+
+  // FIXME replace throws with return Err
+  // FIXME use ActionsRunner, not ActionsRunner2
+  public aggregate = async (
+    currentState: Product,
+    event: RecordedEvent<ProductEvent>,
+  ): Promise<Result<Product, AppError>> => {
+    const e = event as ProductEvent;
+    switch (e.type) {
+      case ProductEventTypes.PRODUCT_CREATED: {
+        if (currentState)
+          return new Err(
+            new AppError(
+              ErrorCode.UNPROCESSABLE_ENTITY,
+              'Entity already exists',
+            ),
+          );
+        return new Ok(
+          Object.assign(e.data.product, {
+            projectId: event.projectId,
+            catalogId: e.metadata.catalogId,
+            version: e.metadata.version,
+            createdAt: event.createdAt,
+          }),
+        );
+      }
+
+      case ProductEventTypes.PRODUCT_UPDATED: {
+        if (!currentState)
+          return new Err(
+            new AppError(ErrorCode.UNPROCESSABLE_ENTITY, 'Empty entity'),
+          );
+        // Execute actions
+        const toUpdateEntity = Value.Clone(currentState);
+        const actionRunnerResults = await this.actionsRunner2.run(
+          currentState,
+          toUpdateEntity,
+          this.repo,
+          this.actionHandlers,
+          e.data.actions,
+        );
+        if (actionRunnerResults.err) return actionRunnerResults;
+
+        return new Ok(
+          Object.assign(toUpdateEntity, {
+            projectId: event.projectId,
+            catalogId: e.metadata.catalogId,
+            version: e.metadata.version,
+            lastModifiedAt: event.createdAt,
+          }),
+        );
+      }
+
+      default: {
+        return new Err(
+          new AppError(
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            `Unknown event type: ${(e as any).type}`,
+          ),
+        );
+      }
+    }
   };
 
   // CREATE PRODUCT
@@ -159,19 +223,9 @@ export class ProductService implements IProductService {
       metadata: {
         catalogId,
         type: 'entityCreated',
-        entity: this.ENTITY,
+        entity: PRODUCT_ENTITY_NAME,
       },
     });
-    // Publish to Event Sourcing
-    // this.queues.publish('es.create', {
-    //   source: { id, catalogId, ...payload },
-    //   metadata: {
-    //     catalogId,
-    //     type: 'entityCreated',
-    //     entity: this.ENTITY,
-    //   },
-    // });
-
     // Return new entity
     return new Ok(toEntity(result.val));
   }
@@ -197,7 +251,7 @@ export class ProductService implements IProductService {
       actions,
     );
     if (actionRunnerResults.err) return actionRunnerResults;
-    const update = Value.Clone(actionRunnerResults.val.update);
+    // const update = Value.Clone(actionRunnerResults.val.update);
     // Compute difference, and save if needed
     const difference = Value.Diff(entity, toUpdateEntity);
     if (difference.length > 0) {
@@ -217,19 +271,9 @@ export class ProductService implements IProductService {
         metadata: {
           catalogId,
           type: 'entityUpdated',
-          entity: this.ENTITY,
+          entity: PRODUCT_ENTITY_NAME,
         },
       });
-      // Publish to Event Sourcing
-      // this.queues.publish('es.update', {
-      //   source: { id: entity._id, catalogId, version: entity.version },
-      //   update,
-      //   metadata: {
-      //     catalogId,
-      //     type: 'entityUpdated',
-      //     entity: this.ENTITY,
-      //   },
-      // });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {
@@ -237,7 +281,7 @@ export class ProductService implements IProductService {
           metadata: {
             catalogId,
             type: sideEffect.action,
-            entity: this.ENTITY,
+            entity: PRODUCT_ENTITY_NAME,
           },
         });
       });
@@ -279,7 +323,7 @@ export class ProductService implements IProductService {
           $project: {
             'variants.parent': 0,
             'variants.type': 0,
-            'variants.catalog': 0,
+            'variants.catalogId': 0,
             'variants.projectId': 0,
             'variants.createdAt': 0,
             'variants.lastModifiedAt': 0,
@@ -301,25 +345,6 @@ export class ProductService implements IProductService {
       }
       return new Ok(toEntity(entity));
     }
-  }
-
-  public async findProductByIdEventStore(
-    catalogId: string,
-    id: string,
-  ): Promise<Result<Product, AppError>> {
-    const result = await this.auditLogService.findAuditLogs({
-      catalogId,
-      entityId: id,
-    });
-    if (result.err) return result;
-    if (result.val.length === 0)
-      return new Err(new AppError(ErrorCode.NOT_FOUND));
-    if (!result.val[0].source)
-      return new Err(new AppError(ErrorCode.UNPROCESSABLE_ENTITY, 'No source'));
-    const entity = result.val.slice(1).reduce((acc: any, event: any) => {
-      return Value.Patch(acc, event.edits);
-    }, result.val[0].source);
-    return new Ok(entity);
   }
 
   public async findProducts(

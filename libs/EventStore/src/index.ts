@@ -4,14 +4,23 @@ import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { green, yellow } from 'kolorist';
 import { Collection } from 'mongodb';
-import { nanoid } from 'nanoid';
+import { Queues } from '@ecomm/Queues';
+import { requestContext } from '@fastify/request-context';
+import {
+  REQUEST_ID_STORE_KEY,
+  PROJECT_ID_STORE_KEY,
+} from '@ecomm/RequestContext';
+
+const NEW = 'new';
+type ExpectedRevision = typeof NEW | bigint;
 
 export type JSONType = Record<string | number, any>;
+export type MetadataType = JSONType;
 
 export type Command<
   Type extends string = string,
   Data extends JSONType = JSONType,
-  Metadata extends JSONType = JSONType,
+  Metadata extends MetadataType = MetadataType,
 > = {
   type: Type;
   data: Data;
@@ -21,23 +30,43 @@ export type Command<
 export type Event<
   Type extends string = string,
   Data extends JSONType = JSONType,
-  Metadata extends JSONType = JSONType,
+  Metadata extends MetadataType = MetadataType,
 > = {
   type: Type;
   data: Data;
   metadata: Metadata;
 };
 
-const NEW = 'new';
-type ExpectedRevision = typeof NEW | bigint;
+export type RecordedEvent<E extends Event = Event> = {
+  id: string;
+  streamName: string;
+  version: bigint;
+  projectId: string;
+  isLastEvent: boolean;
+  requestId: string;
+  type: E['type'];
+  data: E['data'];
+  metadata: E['metadata'] & { version: bigint };
+  createdAt: Date;
+  lastModifiedAt?: Date;
+};
+
+export type ApplyEvent<Entity, E extends Event> = (
+  currentState: Entity,
+  event: RecordedEvent<E>,
+) => Promise<Result<Entity, AppError>>;
+
+///////////////////////////////////////////////////////////////////////////////
 
 class EventStore {
   private server: FastifyInstance;
-  private col: Collection;
+  private col: Collection<RecordedEvent>;
+  private queues: Queues;
 
   constructor(server: FastifyInstance) {
     this.server = server;
     this.col = server.mongo!.db!.collection('Events');
+    this.queues = server.queues;
   }
 
   public start() {
@@ -46,6 +75,25 @@ class EventStore {
     );
     return this;
   }
+
+  public aggregateStream = async <Entity, StreamEvents extends Event>(
+    streamName: string,
+    when: ApplyEvent<Entity, StreamEvents>,
+  ): Promise<Result<Entity, AppError>> => {
+    let currentState: Entity = undefined as any;
+    const cursor = this.col.find(
+      { streamName: streamName },
+      { sort: { version: -1 } },
+    );
+    for await (const event of cursor) {
+      if (!event) continue;
+
+      const aggregateResult = await when(currentState, event);
+      if (aggregateResult.err) return aggregateResult;
+      currentState = aggregateResult.val;
+    }
+    return new Ok(currentState);
+  };
 
   public appendToStream = async (
     streamName: string,
@@ -60,16 +108,14 @@ class EventStore {
     } else {
       const result = await this.col.updateOne(
         {
-          stream: streamName,
+          streamName,
           'metadata.version': options.expectedRevision,
         },
         {
           $set: { isLastEvent: false },
         },
       );
-      console.log('update event', result);
       if (result.modifiedCount === 0) {
-        console.log('version error');
         return new Err(
           ErrorCode.CONFLICT,
           `Event with version ${options.expectedRevision} doesn't exist`,
@@ -79,16 +125,24 @@ class EventStore {
     }
 
     // Save the event
-    const result = await this.col.insertOne({
+    const recordedEvent = {
       //_id: nanoid(),
-      stream: streamName,
+      streamName,
       isLastEvent: true,
+      requestId: requestContext.get(REQUEST_ID_STORE_KEY),
       ...event,
-    });
-    console.log(result);
+    } as RecordedEvent;
+    const result = await this.col.insertOne(recordedEvent);
     if (result.acknowledged === false)
       return new Err(ErrorCode.SERVER_ERROR, 'Error saving event');
-    // TODO: Emmit event
+
+    // Publish global event
+    const projectId = requestContext.get(PROJECT_ID_STORE_KEY);
+    this.queues.publish(
+      `es.${projectId}.${event.metadata.entity}`,
+      recordedEvent,
+    );
+
     return new Ok(event);
   };
 
@@ -98,8 +152,6 @@ class EventStore {
     command: CommandType,
   ): Promise<Result<Event, AppError>> => {
     const handleResult = await handle(command);
-    console.log('es.create');
-    console.dir(handleResult);
     if (handleResult.err) return handleResult;
     return await this.appendToStream(streamName, handleResult.val, {
       expectedRevision: NEW,
@@ -113,8 +165,6 @@ class EventStore {
     command: CommandType,
   ): Promise<Result<Event, AppError>> => {
     const handleResult = await handle(command);
-    console.log('es.update');
-    console.dir(handleResult);
     if (handleResult.err) return handleResult;
     return await this.appendToStream(streamName, handleResult.val, {
       expectedRevision,

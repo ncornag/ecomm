@@ -13,6 +13,7 @@ export const envConfig = Type.Object({
   LOG_LEVEL_DB: Type.Optional(Type.String()),
   LOG_LEVEL_NATS: Type.Optional(Type.String()),
   LOG_LEVEL_AUDITLOG: Type.Optional(Type.String()),
+  LOG_LEVEL_AGGREGATOR: Type.Optional(Type.String()),
   API_HOST: Type.String(),
   API_PORT: Type.Number(),
   MONGO_URL: Type.String(),

@@ -65,7 +65,7 @@ export class ProductRepository implements IProductRepository {
     product: Product,
   ): Promise<Result<ProductDAO, AppError>> {
     const { id: _id, ...data } = product;
-    const productDAO = { _id, ...data, catalog: catalogId };
+    const productDAO = { _id, ...data, catalogId };
     if (productDAO.parent) productDAO.type = ProductType.VARIANT;
     const catAwareCol = this.col[catalogId];
     const result = await catAwareCol.insertOne(productDAO);
@@ -86,7 +86,7 @@ export class ProductRepository implements IProductRepository {
     const { id: _id, ...data } = product;
     const productDAO = { _id, ...data };
     const catAwareCol = this.col[catalogId];
-    product.catalog = catalogId;
+    product.catalogId = catalogId;
     const version = productDAO.version!;
     const result = await catAwareCol.updateOne({ _id }, { $set: productDAO });
     if (!result || result.modifiedCount != 1)

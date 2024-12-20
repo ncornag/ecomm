@@ -226,6 +226,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   await migrator.up();
 };
 
+// TODO move out of mongo
 export const AuditFields = {
   version: Type.Optional(Type.Number({ default: 0 })),
   createdAt: Type.Optional(Type.String({ format: 'date-time' })),

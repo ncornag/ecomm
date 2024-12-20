@@ -241,7 +241,7 @@ export class CatalogSyncService implements ICatalogSyncService {
           version: 0,
           createdAt: 0,
           lastModifiedAt: 0,
-          catalog: 0,
+          catalogId: 0,
         });
         if (update.$set) {
           const u = {

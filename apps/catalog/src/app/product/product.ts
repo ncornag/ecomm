@@ -50,7 +50,7 @@ export type UpdateProductChangeName = Static<
 export const UpdateProductChangeDescriptionSchema = Type.Object(
   {
     action: Type.Literal(ProductUpdateActionType.CHANGEDESCRIPTION),
-    description: Type.String(),
+    description: i18nKeyType,
   },
   { additionalProperties: false },
 );
@@ -89,7 +89,7 @@ export const ProductType: Record<string, string> = {
 export const ProductSchema = Type.Object(
   {
     id: Type.String(),
-    catalog: Type.String(),
+    catalogId: Type.String(),
     name: i18nKeyType,
     description: Type.Optional(i18nKeyType),
     sku: Type.Optional(Type.String()), // Optional in the base product

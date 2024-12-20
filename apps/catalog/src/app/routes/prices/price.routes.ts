@@ -18,7 +18,7 @@ export default async function (
   server: FastifyInstance,
   opts: FastifyPluginOptions,
 ) {
-  let service = PriceService.getInstance(server);
+  const service = PriceService.getInstance(server);
 
   // CREATE
   server.route({
@@ -33,7 +33,7 @@ export default async function (
       reply: FastifyReply,
     ) => {
       const result: Result<Price, AppError> = await service.createPrice(
-        request.query.catalog,
+        request.query.catalogId,
         request.body,
       );
 

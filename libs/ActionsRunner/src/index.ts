@@ -8,8 +8,8 @@ export interface ActionHandlerRepository {}
 
 export interface ActionHandler {
   run(
-    entity: ActionHandlerDAO,
-    toUpdateEntity: ActionHandlerDAO,
+    entity: ActionHandlerEntity,
+    toUpdateEntity: ActionHandlerEntity,
     action: ActionData,
     classificationCategoryRepository: ActionHandlerRepository,
   ): Promise<Result<ActionHandlerResult, AppError>>;
@@ -21,17 +21,59 @@ export interface ActionHandlersList {
   [key: string]: ActionHandler;
 }
 
-export interface ActionHandlerDAO {
+export interface ActionHandlerEntity {
   [key: string]: any;
 }
 
 export class ActionsRunner<
-  DAO extends ActionHandlerDAO,
+  Entity extends ActionHandlerEntity,
   REPO extends ActionHandlerRepository,
 > {
   async run(
-    entity: DAO,
-    toUpdateEntity: DAO,
+    entity: Entity,
+    toUpdateEntity: Entity,
+    repo: REPO,
+    actionHandlers: ActionHandlersList,
+    actions: any[],
+  ): Promise<Result<ActionHandlerResult, AppError>> {
+    const update: any = {};
+    const sideEffects: any[] = [];
+    for (const action of actions) {
+      // Execute action
+      const actionHandler = actionHandlers[action.action];
+      const actionResult = await actionHandler.run(
+        entity,
+        toUpdateEntity,
+        action,
+        repo,
+      );
+      if (actionResult.err) return actionResult;
+      const actionHandlerResult = actionResult.val;
+      // Compute Updates
+      Object.keys(actionHandlerResult.update).forEach((updateKey: string) => {
+        if (update[updateKey]) {
+          Object.assign(
+            update[updateKey],
+            actionHandlerResult.update[updateKey],
+          );
+        } else {
+          update[updateKey] = actionHandlerResult.update[updateKey];
+        }
+      });
+      // Compute SideEffects
+      sideEffects.push(...(actionHandlerResult.sideEffects || []));
+    }
+    return new Ok({ update, sideEffects });
+  }
+}
+
+export class ActionsRunner2<
+  Entity extends ActionHandlerEntity,
+  REPO extends ActionHandlerRepository,
+> {
+  async run(
+    entity: Entity,
+    toUpdateEntity: Entity,
     repo: REPO,
     actionHandlers: ActionHandlersList,
     actions: any[],

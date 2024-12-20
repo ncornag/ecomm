@@ -7,7 +7,7 @@ const defaultExample = {
   key: 'root',
 };
 
-const PriceResponse = Type.Omit(PriceSchema, ['catalog'], {
+const PriceResponse = Type.Omit(PriceSchema, ['catalogId'], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
@@ -22,7 +22,7 @@ const PriceResponse = Type.Omit(PriceSchema, ['catalog'], {
 // CREATE
 export const CreatePriceBodySchema = Type.Omit(
   PriceSchema,
-  ['id', 'catalog', 'createdAt', 'lastModifiedAt', 'version'],
+  ['id', 'catalogId', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
     additionalProperties: false,
@@ -32,7 +32,7 @@ export type CreatePriceBody = Static<typeof CreatePriceBodySchema>;
 
 export const FindPriceParmsSchema = Type.Object({ id: Type.String() });
 export const FindPriceQueryStringSchema = Type.Object({
-  catalog: Type.String(),
+  catalogId: Type.String(),
   materialized: Type.Boolean({ default: false }),
 });
 export type FindPriceParms = Static<typeof FindPriceParmsSchema>;

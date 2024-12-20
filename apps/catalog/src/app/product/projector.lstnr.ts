@@ -1,35 +1,37 @@
 import { green, magenta, yellow, bold } from 'kolorist';
-import { type IAuditLogService, AuditLogService } from '@ecomm/AuditLog';
 import pino from 'pino';
+import { RecordedEvent } from '@ecomm/EventStore';
+import { type IProductService, ProductService } from '../product/product.svc';
+import { ProductEvent } from './product.events';
 
 export class ProjectorListener {
   private server: any;
-  private service: IAuditLogService;
-  private msgIn = bold(yellow('←')) + yellow('AUDITLOG:');
-  private TOPIC = '*.*.events';
+  private msgIn = bold(yellow('←')) + yellow('AGGREGATOR:');
   private logger: pino.Logger;
+  private productService: IProductService;
 
   constructor(server: any) {
     this.server = server;
-    this.service = AuditLogService.getInstance(server);
+    this.productService = ProductService.getInstance(server);
     this.logger = server.log.child(
       {},
-      //{ level: server.config.LOG_LEVEL_AUDITLOG ?? server.config.LOG_LEVEL },
-      { level: 'debug' },
+      { level: server.config.LOG_LEVEL_AGGREGATOR ?? server.config.LOG_LEVEL },
     ) as pino.Logger;
   }
 
   public start() {
+    // this.server.queues.subscribe(
+    //   'es.create',
+    //   this.createEntityHandler.bind(this),
+    // );
+    // this.server.queues.subscribe(
+    //   'es.update',
+    //   this.updateEntityHandler.bind(this),
+    // );
+    const TOPIC = `es.${this.server.config.PROJECTID}.product`;
+    this.server.queues.subscribe(TOPIC, this.handler.bind(this));
     this.server.log.info(
-      `${yellow('AuditLogService')} ${green('listening to')} [${this.TOPIC}]`,
-    );
-    this.server.queues.subscribe(
-      'es.create',
-      this.createEntityHandler.bind(this),
-    );
-    this.server.queues.subscribe(
-      'es.update',
-      this.updateEntityHandler.bind(this),
+      `${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`,
     );
   }
 
@@ -37,6 +39,35 @@ export class ProjectorListener {
     _id: id,
     ...remainder,
   });
+
+  private handler = async (event: RecordedEvent<ProductEvent>) => {
+    if (this.logger.isLevelEnabled('debug')) {
+      const txt = `${event.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
+      this.logger.debug(
+        `${magenta('#' + event.requestId || '')} ${this.msgIn} logging ${green(txt)}`,
+      );
+    }
+    const catalogName = event.metadata.catalogId
+      ? `_${event.metadata.catalogId}`
+      : '';
+    const col = this.server.mongo.db.collection(
+      `${event.projectId}_${event.metadata.entity}${catalogName}`,
+    );
+    if (event.type === 'product-created') {
+      const entity = await this.productService.aggregate(
+        undefined as any,
+        event,
+      );
+      if (entity.err) {
+        this.logger.error(entity.err);
+        return;
+      }
+      const result = await col.insertOne(this.toDAO(entity.val));
+      console.dir(entity.val, { depth: 15 });
+    } else {
+      console.log('not implemented yet');
+    }
+  };
 
   private createEntityHandler = async (data: any, server: any) => {
     console.log('createEntityHandler');

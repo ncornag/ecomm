@@ -307,7 +307,7 @@ const productShoes = [
     _id: 'adizeroPrimeX2-base',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     name: {
       en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
     },
@@ -354,7 +354,7 @@ const productShoes = [
     _id: 'adizeroPrimeX2-White-001',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     name: {
       en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!',
     },
@@ -371,7 +371,7 @@ const productShoes = [
     _id: 'adizeroPrimeX2-White-002',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     sku: 'HP9708_580',
     type: 'variant',
     parent: 'adizeroPrimeX2-base',
@@ -384,7 +384,7 @@ const productShoes = [
     _id: 'adizeroPrimeX2-Black-001',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     sku: 'HP9709_580',
     type: 'variant',
     parent: 'adizeroPrimeX2-base',
@@ -399,7 +399,7 @@ const productComposites = [
     _id: 'full-frame-mirrorless-camera-kit',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     name: {
       en: 'Full Frame Mirrorless Camera Kit',
     },
@@ -483,7 +483,7 @@ const productComposites = [
     _id: 'wood-business-card',
     version: 0,
     projectId: 'TestProject',
-    catalog: 'stage',
+    catalogId: 'stage',
     name: {
       en: 'Modern wood business card',
     },

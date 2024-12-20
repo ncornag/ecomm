@@ -18,10 +18,9 @@ import {
 import { ProductService } from '../../product/product.svc';
 import { type Product } from '../../product/product';
 import {
-  CreateProduct,
   ProductCommandTypes,
+  ProductEvent,
   toProductStreamName,
-  UpdateProductName,
 } from '../../product/product.events';
 import { nanoid } from 'nanoid';
 
@@ -53,7 +52,7 @@ export default async function (
       reply: FastifyReply,
     ) => {
       const result: Result<Product, AppError> = await service.createProduct(
-        request.query.catalog,
+        request.query.catalogId,
         request.body,
       );
       if (!result.ok) return reply.sendAppError(result.val);
@@ -65,19 +64,16 @@ export default async function (
         {
           type: ProductCommandTypes.CREATE,
           data: {
-            product: { id: result.val.id, ...request.body },
+            product: request.body,
           },
           metadata: {
-            catalog: request.query.catalog,
+            id: result.val.id,
+            catalogId: request.query.catalogId,
           },
         },
       );
-      console.log('route.eventStoreResult');
-      console.dir(eventStoreResult);
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
       ///////////////////////////////////////////////////////////////////////////////
-
-      //response.set('ETag', toWeakETag(result.nextExpectedRevision));
 
       return reply.code(201).send(result.val);
     },
@@ -97,7 +93,7 @@ export default async function (
       reply: FastifyReply,
     ) => {
       const result: Result<Product, AppError> = await service.updateProduct(
-        request.query.catalog,
+        request.query.catalogId,
         request.params.id,
         request.body.version,
         request.body.actions,
@@ -110,19 +106,16 @@ export default async function (
         toProductStreamName(result.val.id),
         BigInt(request.body.version),
         {
-          type: ProductCommandTypes.UPDATE_NAME,
+          type: ProductCommandTypes.UPDATE,
           data: {
             productId: request.params.id,
-            name: (request.body.actions[0] as any).name,
+            actions: request.body.actions,
           },
           metadata: {
-            catalog: request.query.catalog,
-            //version: request.body.version,
+            catalogId: request.query.catalogId,
           },
         },
       );
-      console.log('route.eventStoreResult');
-      console.dir(eventStoreResult);
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
       ///////////////////////////////////////////////////////////////////////////////
 
@@ -145,13 +138,19 @@ export default async function (
       reply: FastifyReply,
     ) => {
       const result: Result<Product, AppError> = await service.findProductById(
-        request.query.catalog,
+        request.query.catalogId,
         request.params.id,
         request.query.materialized,
       );
       if (!result.ok) return reply.sendAppError(result.val);
 
-      // this.server.es.aggregateStream
+      ///////////////////////////////////////////////////////////////////////////////
+      const streamResult = await server.es.aggregateStream<
+        Product,
+        ProductEvent
+      >(toProductStreamName(request.params.id), service.aggregate);
+      console.dir(streamResult.val, { depth: 15 });
+      ///////////////////////////////////////////////////////////////////////////////
 
       return reply.send(result.val);
     },
@@ -171,11 +170,11 @@ export default async function (
       }>,
       reply: FastifyReply,
     ) => {
-      const result: Result<Product, AppError> =
-        await service.findProductByIdEventStore(
-          request.query.catalog,
-          request.params.id,
-        );
+      // FIXME handle request.query.catalog,
+      const result = await server.es.aggregateStream<Product, ProductEvent>(
+        toProductStreamName(request.params.id),
+        service.aggregate,
+      );
       if (!result.ok) return reply.sendAppError(result.val);
       return reply.send(result.val);
     },

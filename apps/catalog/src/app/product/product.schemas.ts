@@ -7,7 +7,7 @@ const defaultExample = {
   key: 'root',
 };
 
-const ProductResponse = Type.Omit(ProductSchema, ['catalog'], {
+const ProductResponse = Type.Omit(ProductSchema, ['catalogId'], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
@@ -21,7 +21,7 @@ const ProductResponse = Type.Omit(ProductSchema, ['catalog'], {
 // CREATE
 export const CreateProductBodySchema = Type.Omit(
   ProductSchema,
-  ['id', 'catalog', 'createdAt', 'lastModifiedAt', 'version'],
+  ['id', 'catalogId', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
     additionalProperties: false,
@@ -41,7 +41,7 @@ export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
 
 export const FindProductParmsSchema = Type.Object({ id: Type.String() });
 export const FindProductQueryStringSchema = Type.Object({
-  catalog: Type.String(),
+  catalogId: Type.String(),
   materialized: Type.Boolean({ default: false }),
 });
 export type FindProductParms = Static<typeof FindProductParmsSchema>;

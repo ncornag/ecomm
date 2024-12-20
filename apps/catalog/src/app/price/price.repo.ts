@@ -50,7 +50,7 @@ export class PriceRepository implements IPriceRepository {
     price: Price,
   ): Promise<Result<PriceDAO, AppError>> {
     const { id: _id, ...data } = price;
-    const priceDAO = { _id, ...data, catalog: catalogId };
+    const priceDAO = { _id, ...data, catalogId };
     const catAwareCol = this.col[catalogId];
     const result = await catAwareCol.insertOne(priceDAO);
     if (!result || result.insertedId == '') {

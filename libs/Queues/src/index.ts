@@ -70,13 +70,15 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
       },
       publish: (subject, payload, options?) => {
         const metadata = payload.metadata || {};
-        metadata.projectId =
-          metadata.projectId || requestContext.get(PROJECT_ID_STORE_KEY);
-        metadata.requestId =
-          metadata.requestId || requestContext.get(REQUEST_ID_STORE_KEY);
+        if (!payload.projectId)
+          metadata.projectId =
+            metadata.projectId || requestContext.get(PROJECT_ID_STORE_KEY);
+        if (!payload.requestId)
+          metadata.requestId =
+            metadata.requestId || requestContext.get(REQUEST_ID_STORE_KEY);
         if (logger.isLevelEnabled('debug'))
           logger.debug(
-            `${magenta('#' + metadata.requestId || '')} ${msgOut} ${green('publishing to')} [${subject}] ${green(JSON.stringify(payload))}`,
+            `${magenta('#' + requestContext.get(REQUEST_ID_STORE_KEY) || '')} ${msgOut} ${green('publishing to')} [${subject}] ${green(JSON.stringify(payload))}`,
           );
         nc.publish(subject, JSONCodec().encode(payload), options);
       },

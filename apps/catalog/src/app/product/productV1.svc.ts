@@ -76,12 +76,12 @@ export class ProductServiceV1 implements IProductServiceV1 {
       {
         $project: {
           'variants.parent': 0,
-          'variants.catalog': 0,
+          'variants.catalogId': 0,
           'variants.projectId': 0,
           'variants.createdAt': 0,
           'variants.lastModifiedAt': 0,
           'variants.version': 0,
-          'prices.catalog': 0,
+          'prices.catalogId': 0,
           'prices.projectId': 0,
           'prices.createdAt': 0,
           'prices.lastModifiedAt': 0,

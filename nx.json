@@ -4,6 +4,7 @@
     "appsDir": "apps",
     "libsDir": "libs"
   },
+  "useDaemonProcess": false,
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [

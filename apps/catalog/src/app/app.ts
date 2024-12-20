@@ -121,7 +121,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
     name: 'products',
     fields: [
       { name: 'sku', type: 'string' },
-      { name: 'catalog', type: 'string' },
+      { name: 'catalogId', type: 'string' },
       { name: 'name', type: 'string' },
       { name: 'description', type: 'string', optional: true },
       {

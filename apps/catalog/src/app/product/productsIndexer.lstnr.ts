@@ -47,7 +47,7 @@ export class ProductsIndexerListener {
     const doc: any = {
       id: variant.id,
       sku: variant.sku,
-      catalog: variant.catalog,
+      catalogId: variant.catalogId,
       name: variant.name!.en,
       description: variant.description!.en,
       searchKeywords: variant.searchKeywords!.en.map((e) => e.text),
