@@ -58,16 +58,17 @@ export default async function (
       if (!result.ok) return reply.sendAppError(result.val);
 
       ///////////////////////////////////////////////////////////////////////////////
+      const id = nanoid();
       const eventStoreResult = await server.es.create(
         service.create,
-        toProductStreamName(result.val.id),
+        toProductStreamName(id),
         {
           type: ProductCommandTypes.CREATE,
           data: {
             product: request.body,
           },
           metadata: {
-            id: result.val.id,
+            id,
             catalogId: request.query.catalogId,
           },
         },
@@ -104,7 +105,7 @@ export default async function (
       const eventStoreResult = await server.es.update(
         service.update,
         toProductStreamName(result.val.id),
-        BigInt(request.body.version),
+        request.body.version,
         {
           type: ProductCommandTypes.UPDATE,
           data: {
@@ -113,6 +114,7 @@ export default async function (
           },
           metadata: {
             catalogId: request.query.catalogId,
+            expectedVersion: request.body.version,
           },
         },
       );

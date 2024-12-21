@@ -12,7 +12,7 @@ import {
 } from '@ecomm/RequestContext';
 
 const NEW = 'new';
-type ExpectedRevision = typeof NEW | bigint;
+type ExpectedRevision = typeof NEW | number;
 
 export type JSONType = Record<string | number, any>;
 export type MetadataType = JSONType;
@@ -40,13 +40,13 @@ export type Event<
 export type RecordedEvent<E extends Event = Event> = {
   id: string;
   streamName: string;
-  version: bigint;
+  version: number;
   projectId: string;
   isLastEvent: boolean;
   requestId: string;
   type: E['type'];
   data: E['data'];
-  metadata: E['metadata'] & { version: bigint };
+  metadata: E['metadata'] & { version: number };
   createdAt: Date;
   lastModifiedAt?: Date;
 };
@@ -54,7 +54,7 @@ export type RecordedEvent<E extends Event = Event> = {
 export type ApplyEvent<Entity, E extends Event> = (
   currentState: Entity,
   event: RecordedEvent<E>,
-) => Promise<Result<Entity, AppError>>;
+) => Promise<Result<{ entity: Entity; update?: any }, AppError>>;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -90,7 +90,7 @@ class EventStore {
 
       const aggregateResult = await when(currentState, event);
       if (aggregateResult.err) return aggregateResult;
-      currentState = aggregateResult.val;
+      currentState = aggregateResult.val.entity;
     }
     return new Ok(currentState);
   };
@@ -121,7 +121,7 @@ class EventStore {
           `Event with version ${options.expectedRevision} doesn't exist`,
         );
       }
-      event.metadata.version = options.expectedRevision + 1n;
+      event.metadata.version = options.expectedRevision + 1;
     }
 
     // Save the event
@@ -161,7 +161,7 @@ class EventStore {
   public update = async <CommandType extends Command>(
     handle: (command: CommandType) => Promise<Result<Event, AppError>>,
     streamName: string,
-    expectedRevision: bigint,
+    expectedRevision: number,
     command: CommandType,
   ): Promise<Result<Event, AppError>> => {
     const handleResult = await handle(command);

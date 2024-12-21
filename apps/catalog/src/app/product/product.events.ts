@@ -30,6 +30,7 @@ export type UpdateProduct = Command<
   },
   {
     catalogId: Product['catalogId'];
+    expectedVersion: number;
   }
 >;
 

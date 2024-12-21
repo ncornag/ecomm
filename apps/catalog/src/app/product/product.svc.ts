@@ -38,7 +38,7 @@ export interface IProductService {
   aggregate: (
     currentState: Product,
     event: RecordedEvent<ProductEvent>,
-  ) => Promise<Result<Product, AppError>>;
+  ) => Promise<Result<{ entity: Product; update?: any }, AppError>>;
   createProduct: (
     catalogId: string,
     payload: CreateProductBody,
@@ -134,7 +134,7 @@ export class ProductService implements IProductService {
   public update = async (
     command: UpdateProduct,
   ): Promise<Result<ProductUpdated, AppError>> => {
-    // TODO Process Actions
+    // TODO? Process Actions
     return new Ok({
       type: ProductEventTypes.PRODUCT_UPDATED,
       data: command.data,
@@ -142,12 +142,11 @@ export class ProductService implements IProductService {
     } as ProductUpdated);
   };
 
-  // FIXME replace throws with return Err
   // FIXME use ActionsRunner, not ActionsRunner2
   public aggregate = async (
     currentState: Product,
     event: RecordedEvent<ProductEvent>,
-  ): Promise<Result<Product, AppError>> => {
+  ): Promise<Result<{ entity: Product; update?: any }, AppError>> => {
     const e = event as ProductEvent;
     switch (e.type) {
       case ProductEventTypes.PRODUCT_CREATED: {
@@ -158,14 +157,14 @@ export class ProductService implements IProductService {
               'Entity already exists',
             ),
           );
-        return new Ok(
-          Object.assign(e.data.product, {
+        return new Ok({
+          entity: Object.assign(e.data.product, {
             projectId: event.projectId,
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
             createdAt: event.createdAt,
           }),
-        );
+        });
       }
 
       case ProductEventTypes.PRODUCT_UPDATED: {
@@ -184,14 +183,15 @@ export class ProductService implements IProductService {
         );
         if (actionRunnerResults.err) return actionRunnerResults;
 
-        return new Ok(
-          Object.assign(toUpdateEntity, {
+        return new Ok({
+          entity: Object.assign(toUpdateEntity, {
             projectId: event.projectId,
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
             lastModifiedAt: event.createdAt,
           }),
-        );
+          update: actionRunnerResults.val.update,
+        });
       }
 
       default: {
