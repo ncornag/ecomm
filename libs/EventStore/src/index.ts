@@ -5,11 +5,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { green, yellow } from 'kolorist';
 import { Collection } from 'mongodb';
 import { Queues } from '@ecomm/Queues';
-import { requestContext } from '@fastify/request-context';
-import {
-  REQUEST_ID_STORE_KEY,
-  PROJECT_ID_STORE_KEY,
-} from '@ecomm/RequestContext';
+import { requestId, projectId } from '@ecomm/RequestContext';
 
 const NEW = 'new';
 type ExpectedRevision = typeof NEW | number;
@@ -129,7 +125,7 @@ class EventStore {
       //_id: nanoid(),
       streamName,
       isLastEvent: true,
-      requestId: requestContext.get(REQUEST_ID_STORE_KEY),
+      requestId: requestId(),
       ...event,
     } as RecordedEvent;
     const result = await this.col.insertOne(recordedEvent);
@@ -137,9 +133,8 @@ class EventStore {
       return new Err(ErrorCode.SERVER_ERROR, 'Error saving event');
 
     // Publish global event
-    const projectId = requestContext.get(PROJECT_ID_STORE_KEY);
     this.queues.publish(
-      `es.${projectId}.${event.metadata.entity}`,
+      `es.${projectId()}.${event.metadata.entity}`,
       recordedEvent,
     );
 

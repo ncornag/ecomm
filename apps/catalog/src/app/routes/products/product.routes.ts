@@ -23,6 +23,7 @@ import {
   toProductStreamName,
 } from '../../product/product.events';
 import { nanoid } from 'nanoid';
+import { projectId } from '@ecomm/RequestContext';
 
 export type StreamType = string;
 export type StreamName<T extends StreamType = StreamType> = `${T}:${string}`;

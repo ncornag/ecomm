@@ -2,10 +2,7 @@ import fp from 'fastify-plugin';
 import { type PublishOptions, JSONCodec, connect } from 'nats';
 import { FastifyPluginAsync } from 'fastify';
 import { requestContext } from '@fastify/request-context';
-import {
-  REQUEST_ID_STORE_KEY,
-  PROJECT_ID_STORE_KEY,
-} from '@ecomm/RequestContext';
+import { requestId, projectId } from '@ecomm/RequestContext';
 import { green, yellow, magenta, bold } from 'kolorist';
 import pino from 'pino';
 
@@ -71,14 +68,12 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
       publish: (subject, payload, options?) => {
         const metadata = payload.metadata || {};
         if (!payload.projectId)
-          metadata.projectId =
-            metadata.projectId || requestContext.get(PROJECT_ID_STORE_KEY);
+          metadata.projectId = metadata.projectId || projectId();
         if (!payload.requestId)
-          metadata.requestId =
-            metadata.requestId || requestContext.get(REQUEST_ID_STORE_KEY);
+          metadata.requestId = metadata.requestId || requestId();
         if (logger.isLevelEnabled('debug'))
           logger.debug(
-            `${magenta('#' + requestContext.get(REQUEST_ID_STORE_KEY) || '')} ${msgOut} ${green('publishing to')} [${subject}] ${green(JSON.stringify(payload))}`,
+            `${magenta('#' + requestId())} ${msgOut} ${green('publishing to')} [${subject}] ${green(JSON.stringify(payload))}`,
           );
         nc.publish(subject, JSONCodec().encode(payload), options);
       },

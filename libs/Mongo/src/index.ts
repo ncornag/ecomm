@@ -4,12 +4,8 @@ import mongo from '@fastify/mongodb';
 import { green, red, magenta, yellow, bold } from 'kolorist';
 import { Collection } from 'mongodb';
 import { Umzug, MongoDBStorage } from 'umzug';
-import { requestContext } from '@fastify/request-context';
 import { Type } from '@fastify/type-provider-typebox';
-import {
-  REQUEST_ID_STORE_KEY,
-  PROJECT_ID_STORE_KEY,
-} from '@ecomm/RequestContext';
+import { requestId, projectId } from '@ecomm/RequestContext';
 import pino from 'pino';
 
 interface Database {
@@ -55,7 +51,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
     if (ignoredCommandsForLogging.includes(event.commandName)) return;
     if (logger.isLevelEnabled('debug'))
       logger.debug(
-        `${magenta('#' + (requestContext.get(REQUEST_ID_STORE_KEY) || ''))} ${dbOut} ${event.requestId} ${green(
+        `${magenta('#' + requestId())} ${dbOut} ${event.requestId} ${green(
           JSON.stringify(event.command),
         )}`,
       );
@@ -64,14 +60,14 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
     if (ignoredCommandsForLogging.includes(event.commandName)) return;
     if (logger.isLevelEnabled('debug'))
       logger.debug(
-        `${magenta('#' + (requestContext.get(REQUEST_ID_STORE_KEY) || ''))} ${dbIn} ${event.requestId} ${green(
+        `${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${green(
           JSON.stringify(event.reply),
         )}`,
       );
   });
   server.mongo.client.on('commandFailed', (event) =>
     logger.warn(
-      `${magenta('#' + (requestContext.get(REQUEST_ID_STORE_KEY) || ''))} ${dbIn} ${event.requestId} ${red(
+      `${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${red(
         JSON.stringify(event, null, 2),
       )}`,
     ),
@@ -95,8 +91,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   const projectIdOne = function (collectionName: string, data: any) {
     if (negativeFilterInterceptor[collectionName]) return data;
     // Add projectId
-    const projectId = requestContext.get(PROJECT_ID_STORE_KEY) || 'TestProject';
-    data.projectId = projectId;
+    data.projectId = projectId();
     return data;
   };
   const projectIdInterceptor = function (obj: any, replace, name: string) {

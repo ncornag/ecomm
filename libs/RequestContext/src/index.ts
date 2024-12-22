@@ -14,6 +14,7 @@ import type {
 } from 'fastify';
 import fp from 'fastify-plugin';
 
+let configProjectId: string;
 export const PROJECT_ID_STORE_KEY = 'projectId';
 export const REQUEST_ID_STORE_KEY = 'reqId';
 
@@ -42,6 +43,7 @@ const plugin: FastifyPluginAsync<ConfigOptions> = async (
   fastify: FastifyInstance,
   opts: ConfigOptions,
 ) => {
+  configProjectId = opts.projectId;
   fastify.addHook(
     'onRequest',
     (req: FastifyRequest, res: FastifyReply, next: HookHandlerDoneFunction) => {
@@ -64,6 +66,13 @@ const plugin: FastifyPluginAsync<ConfigOptions> = async (
     },
   );
 };
+
+export function projectId(): string {
+  return requestContext.get(PROJECT_ID_STORE_KEY) || configProjectId;
+}
+export function requestId(): string {
+  return requestContext.get(REQUEST_ID_STORE_KEY) || '';
+}
 
 export default fp(plugin, {
   fastify: '5.x',
