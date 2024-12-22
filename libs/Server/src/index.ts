@@ -100,6 +100,16 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
     projectId: server.config.PROJECT_ID,
   });
 
+  // Print Routes
+  if (server.config.PRINT_ROUTES === true) {
+    const importDynamic = new Function(
+      'modulePath',
+      'return import(modulePath)',
+    );
+    const fastifyPrintRoutes = await importDynamic('fastify-print-routes');
+    await server.register(fastifyPrintRoutes);
+  }
+
   // Register your application as a normal plugin.
   await server.register(app);
 

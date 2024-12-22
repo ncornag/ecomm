@@ -48,15 +48,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await server.register(mongo);
   await server.register(eventStore);
 
-  // Print Routes
-  if (server.config.PRINT_ROUTES === true) {
-    const importDynamic = new Function(
-      'modulePath',
-      'return import(modulePath)',
-    );
-    const fastifyPrintRoutes = await importDynamic('fastify-print-routes');
-    await server.register(fastifyPrintRoutes);
-  }
 
   // Register Collections
   server.db.col.classificationCategory = getClassificationCategoryCollection(
