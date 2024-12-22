@@ -111,83 +111,82 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await Promise.all(indexes);
 
   // Load Indexer Schemas
-  const productsSchema: CollectionCreateSchema = {
-    name: 'products',
-    fields: [
-      { name: 'sku', type: 'string' },
-      { name: 'catalogId', type: 'string' },
-      { name: 'name', type: 'string' },
-      { name: 'description', type: 'string', optional: true },
-      {
-        name: 'searchKeywords',
-        type: 'string[]',
-        optional: true,
-        facet: true,
-      },
-      { name: 'attributes', type: 'object', optional: true, facet: true },
-      { name: 'categories', type: 'string[]', optional: true, facet: true },
-      { name: 'prices', type: 'object', optional: true, facet: true },
-      // Compatibility
-      {
-        name: 'brand',
-        type: 'string',
-        facet: true,
-      },
-      {
-        name: 'categories.lvl0',
-        type: 'string[]',
-        facet: true,
-      },
-      {
-        name: 'categories.lvl1',
-        type: 'string[]',
-        facet: true,
-        optional: true,
-      },
-      {
-        name: 'categories.lvl2',
-        type: 'string[]',
-        facet: true,
-        optional: true,
-      },
-      {
-        name: 'categories.lvl3',
-        type: 'string[]',
-        facet: true,
-        optional: true,
-      },
-      {
-        name: 'price',
-        type: 'float',
-        facet: true,
-        optional: true,
-      },
-      {
-        name: 'popularity',
-        type: 'int32',
-        facet: false,
-      },
-      {
-        name: 'free_shipping',
-        type: 'bool',
-        facet: true,
-      },
-      {
-        name: 'rating',
-        type: 'int32',
-        facet: true,
-      },
-      {
-        name: 'vectors',
-        type: 'float[]',
-        num_dim: 384,
-        optional: true,
-      },
-    ],
-    enable_nested_fields: true,
-  };
-
   if (server.index) {
+    const productsSchema: CollectionCreateSchema = {
+      name: 'products',
+      fields: [
+        { name: 'sku', type: 'string' },
+        { name: 'catalogId', type: 'string' },
+        { name: 'name', type: 'string' },
+        { name: 'description', type: 'string', optional: true },
+        {
+          name: 'searchKeywords',
+          type: 'string[]',
+          optional: true,
+          facet: true,
+        },
+        { name: 'attributes', type: 'object', optional: true, facet: true },
+        { name: 'categories', type: 'string[]', optional: true, facet: true },
+        { name: 'prices', type: 'object', optional: true, facet: true },
+        // Compatibility
+        {
+          name: 'brand',
+          type: 'string',
+          facet: true,
+        },
+        {
+          name: 'categories.lvl0',
+          type: 'string[]',
+          facet: true,
+        },
+        {
+          name: 'categories.lvl1',
+          type: 'string[]',
+          facet: true,
+          optional: true,
+        },
+        {
+          name: 'categories.lvl2',
+          type: 'string[]',
+          facet: true,
+          optional: true,
+        },
+        {
+          name: 'categories.lvl3',
+          type: 'string[]',
+          facet: true,
+          optional: true,
+        },
+        {
+          name: 'price',
+          type: 'float',
+          facet: true,
+          optional: true,
+        },
+        {
+          name: 'popularity',
+          type: 'int32',
+          facet: false,
+        },
+        {
+          name: 'free_shipping',
+          type: 'bool',
+          facet: true,
+        },
+        {
+          name: 'rating',
+          type: 'int32',
+          facet: true,
+        },
+        {
+          name: 'vectors',
+          type: 'float[]',
+          num_dim: 384,
+          optional: true,
+        },
+      ],
+      enable_nested_fields: true,
+    };
     if (process.env.DROP_PRODUCT_INDEX === 'YES')
       await server.index
         .collections('products')
