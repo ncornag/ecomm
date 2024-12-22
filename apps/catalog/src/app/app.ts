@@ -4,6 +4,8 @@ import AutoLoad from '@fastify/autoload';
 import search from '@ecomm/Search';
 import queues from '@ecomm/Queues';
 import eventStore from '@ecomm/EventStore';
+import mongo from '@ecomm/Mongo';
+import { Umzug, MongoDBStorage } from 'umzug';
 import {
   ClassificationCategoryRepository,
   getClassificationCategoryCollection,
@@ -43,6 +45,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Register plugins
   await server.register(search);
   await server.register(queues);
+  await server.register(mongo);
   await server.register(eventStore);
 
   // Print Routes

@@ -94,7 +94,6 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   });
   await server.register(fastifyRequestLogger); //, { logBody: true }
   await server.register(docs);
-  await server.register(mongo);
   await server.register(sendAppError);
   await server.register(fastifyRequestContext);
   await server.register(requestContextProvider, {
