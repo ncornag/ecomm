@@ -63,7 +63,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   }
 
   server.logger.info(
-    `${yellow('APP:')} [${process.env.APP_NAME}] ${yellow('ENV:')} [${process.env.NODE_ENV}] ${yellow('PRJ:')} [${process.env.PROJECTID}] `,
+    `${yellow('APP:')} [${process.env.APP_NAME}] ${yellow('ENV:')} [${process.env.NODE_ENV}] ${yellow('PRJ:')} [${process.env.PROJECT_ID}] `,
   );
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
@@ -98,7 +98,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   await server.register(sendAppError);
   await server.register(fastifyRequestContext);
   await server.register(requestContextProvider, {
-    projectId: server.config.PROJECTID,
+    projectId: server.config.PROJECT_ID,
   });
 
   // Register your application as a normal plugin.

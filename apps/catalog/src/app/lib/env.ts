@@ -17,7 +17,7 @@ export const envConfig = Type.Object({
   API_HOST: Type.String(),
   API_PORT: Type.Number(),
   MONGO_URL: Type.String(),
-  PROJECTID: Type.String(),
+  PROJECT_ID: Type.String(),
   CC_TREE_ROUTE: Type.Optional(Type.String()),
   NATS_URL: Type.Optional(Type.String()),
   CACHE_JSON_SCHEMAS: Type.Boolean({ default: true }),
