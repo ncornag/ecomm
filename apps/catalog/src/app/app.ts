@@ -48,6 +48,26 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await server.register(mongo);
   await server.register(eventStore);
 
+  // Migrations
+  const migGlob = `**/migrations/${server.config.NODE_ENV}/mig_${server.config.APP_NAME}*.js`;
+  const migrator = new Umzug({
+    migrations: {
+      glob: [
+        migGlob,
+        { cwd: path.normalize(path.join(__dirname, '../../../../')) },
+      ],
+      // glob: path,
+    },
+    storage: new MongoDBStorage({
+      collection: server.mongo.db!.collection('migrations'),
+    }),
+    logger: server.log,
+    context: {
+      server,
+    },
+  });
+  //await migrator.down({});
+  await migrator.up({});
 
   // Register Collections
   server.db.col.classificationCategory = getClassificationCategoryCollection(

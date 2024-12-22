@@ -3,7 +3,6 @@ import { FastifyPluginAsync } from 'fastify';
 import mongo from '@fastify/mongodb';
 import { green, red, magenta, yellow, bold } from 'kolorist';
 import { Collection } from 'mongodb';
-import { Umzug, MongoDBStorage } from 'umzug';
 import { Type } from '@fastify/type-provider-typebox';
 import { requestId, projectId } from '@ecomm/RequestContext';
 import pino from 'pino';
@@ -203,22 +202,6 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   updateTargets.forEach((m: string) =>
     updateInterceptor(Collection, (Collection.prototype as any)[m], m),
   );
-
-  // Migrations
-  const path = `**/migrations/${server.config.NODE_ENV}/mig_${server.config.APP_NAME}*.ts`;
-  const migrator = new Umzug({
-    migrations: {
-      glob: path,
-    },
-    storage: new MongoDBStorage({
-      collection: server.mongo.db!.collection('migrations'),
-    }),
-    logger: server.log,
-    context: {
-      server,
-    },
-  });
-  await migrator.up();
 };
 
 // TODO move out of mongo
