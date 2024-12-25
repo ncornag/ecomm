@@ -1,6 +1,6 @@
 import { type Result, Ok } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
-import { type IProductRepository } from './product.repo';
+import { ProductRepository, type IProductRepository } from './product.repo';
 import { CT } from '@ecomm/CT';
 
 // SERVICE INTERFACE
@@ -20,7 +20,7 @@ export class ProductServiceV1 implements IProductServiceV1 {
   };
 
   private constructor(server: any) {
-    this.repo = server.db.repo.productRepository as IProductRepository;
+    this.repo = new ProductRepository(server);
     this.cols = { product: server.db.col.product, price: server.db.col.price };
     this.ct = new CT(server);
   }
@@ -55,6 +55,7 @@ export class ProductServiceV1 implements IProductServiceV1 {
   }
 
   private async getProductFromCatalog(catalogId: string, id: string) {
+    // FIXME use right col names
     return await this.repo.aggregate(catalogId, [
       { $match: { _id: id } },
       {

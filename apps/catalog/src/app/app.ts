@@ -48,6 +48,13 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await server.register(mongo);
   await server.register(eventStore);
 
+  // Load Listeners
+  auditLogListener(server);
+  productsIndexerListener(server);
+  pricesIndexerListener(server);
+  updateChildAncestorsForIdListener(server);
+  projectorListener(server);
+
   // Migrations
   const migGlob = `**/migrations/${server.config.NODE_ENV}/mig_${server.config.APP_NAME}*.js`;
   const migrator = new Umzug({
@@ -77,23 +84,22 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
     server.mongo.db!,
   );
   server.db.col.product = await getProductCollection(server.mongo.db!);
-
   server.db.col.price = await getPriceCollection(server.mongo.db!);
   server.db.col.catalog = getCatalogCollection(server.mongo.db!);
   server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);
   server.db.col.auditLog = getAuditLogCollection(server.mongo.db!);
 
   // Register Repositories
+  server.db.repo.auditLogRepository = new AuditLogRepository(server);
+  server.db.repo.catalogRepository = new CatalogRepository(server);
+  server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
   server.db.repo.classificationCategoryRepository =
     new ClassificationCategoryRepository(server);
   server.db.repo.productCategoryRepository = new ProductCategoryRepository(
     server,
   );
-  server.db.repo.productRepository = new ProductRepository(server);
+  // server.db.repo.productRepository = new ProductRepository(server);
   server.db.repo.priceRepository = new PriceRepository(server);
-  server.db.repo.catalogRepository = new CatalogRepository(server);
-  server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
-  server.db.repo.auditLogRepository = new AuditLogRepository(server);
 
   // Indexes
   const indexes: Promise<any>[] = [];
@@ -226,14 +232,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
         return server.index!.collections().create(productsSchema);
       });
   }
-
-  // Load Listeners
-  auditLogListener(server);
-  productsIndexerListener(server);
-  pricesIndexerListener(server);
-  updateChildAncestorsForIdListener(server);
-
-  projectorListener(server);
 
   // // Register plugins
   // server.register(AutoLoad, {

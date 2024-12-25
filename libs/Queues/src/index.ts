@@ -22,7 +22,7 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
     connection_name: 'catalog',
     drainOnClose: true,
   };
-  const msgOut = bold(yellow('→')) + yellow('MSG:');
+  const msgOut = bold(yellow('→')) + yellow('MSG');
   const { NATS_URL: nats_url } = server.config;
 
   if (!nats_url) {

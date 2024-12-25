@@ -33,8 +33,8 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   server.log.info(`${yellow('MongoDB')} ${green('starting in')} [${mongoUrl}]`);
 
   // Log
-  const dbOut = bold(yellow('→')) + yellow('DB:');
-  const dbIn = bold(yellow('←')) + yellow('DB:');
+  const dbOut = bold(yellow('→')) + yellow('DB ');
+  const dbIn = bold(yellow('←')) + yellow('DB ');
   const ignoredCommandsForLogging = [
     'createIndexes',
     'listCollections',

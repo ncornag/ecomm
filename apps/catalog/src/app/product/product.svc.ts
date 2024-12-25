@@ -14,11 +14,9 @@ import {
   ActionsRunner2,
   type ActionHandlersList,
 } from '@ecomm/ActionsRunner';
-import { type IProductRepository } from './product.repo';
-import { type Config } from '@ecomm/Config';
+import { ProductRepository, type IProductRepository } from './product.repo';
 import NodeCache from 'node-cache';
 import { Queues } from '@ecomm/Queues';
-import { type IAuditLogService, AuditLogService } from '@ecomm/AuditLog';
 import { FastifyInstance } from 'fastify';
 import {
   ProductEventTypes,
@@ -83,25 +81,21 @@ export class ProductService implements IProductService {
   private actionHandlers: ActionHandlersList;
   private actionsRunner: ActionsRunner<ProductDAO, IProductRepository>;
   private actionsRunner2: ActionsRunner2<Product, IProductRepository>;
-  private config: Config;
   private queues: Queues;
   private cartProductsCache;
   private cacheCartProducts;
-  private auditLogService: IAuditLogService;
 
   private constructor(server: FastifyInstance) {
     this.server = server;
-    this.repo = server.db.repo.productRepository as IProductRepository;
+    this.repo = new ProductRepository(server);
     this.cols = server.db.col.product;
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
       changeDescription: new ChangeDescriptionActionHandler(server),
       changeKeywords: new ChangeKeywordsActionHandler(server),
     };
-    this.auditLogService = AuditLogService.getInstance(server);
     this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
     this.actionsRunner2 = new ActionsRunner2<Product, IProductRepository>();
-    this.config = server.config;
     this.queues = server.queues;
     this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;
     this.cartProductsCache = new NodeCache({
@@ -124,6 +118,8 @@ export class ProductService implements IProductService {
     command: CreateProduct,
   ): Promise<Result<ProductCreated, AppError>> => {
     const { id, ...remainder } = command.metadata;
+    if (command.data.product.parent)
+      command.data.product.type = ProductType.VARIANT;
     return new Ok({
       type: ProductEventTypes.PRODUCT_CREATED,
       data: { product: { id, ...command.data.product } },
@@ -238,7 +234,7 @@ export class ProductService implements IProductService {
     actions: UpdateProductAction[],
   ): Promise<Result<Product, AppError>> {
     // Find the Entity
-    const result = await this.repo.findOne(catalogId, id, version);
+    const result = await this.repo.findOne(catalogId, id, version); //FIXME projectId
     if (result.err) return result;
     const entity: ProductDAO = result.val;
     const toUpdateEntity = Value.Clone(entity);
@@ -293,16 +289,17 @@ export class ProductService implements IProductService {
   // FIND PRODUCT BY ID
   public async findProductById(
     catalogId: string,
-    id: string,
+    productId: string,
     materialized = false,
   ): Promise<Result<Product, AppError>> {
     if (!!materialized === false) {
-      const result = await this.repo.findOne(catalogId, id);
+      const result = await this.repo.findOne(catalogId, productId);
       if (result.err) return result;
       return new Ok(toEntity(result.val));
     } else {
+      // FIXME use right col names
       const result = await this.repo.aggregate(catalogId, [
-        { $match: { _id: id } },
+        { $match: { _id: productId } },
         {
           $lookup: {
             from: this.cols[catalogId].collectionName,

@@ -180,4 +180,5 @@ const eventStorePlugin: FastifyPluginAsync = async (server) => {
 export default fp(eventStorePlugin, {
   fastify: '5.x',
   name: 'eventStore-plugin',
+  dependencies: ['mongo-plugin'],
 });

@@ -1,3 +1,10 @@
+import {
+  ProductCommandTypes,
+  toProductStreamName,
+} from '../../app/product/product.events';
+import { ProductService } from '../../app/product/product.svc';
+import { nanoid } from 'nanoid';
+
 const catalogs = [
   {
     _id: 'stage',
@@ -599,6 +606,27 @@ export async function up(params) {
   await db.collection('ProductCategory').insertMany(productCategoriesShoes);
   await db.collection('ProductStage').insertMany(productShoes);
   await db.collection('ProductStage').insertMany(productComposites);
+
+  const service = ProductService.getInstance(params.context.server);
+
+  for await (const record of productShoes) {
+    const id = nanoid();
+    const { _id, version, projectId, catalogId, ...product } = record;
+    await params.context.server.es.create(
+      service.create,
+      toProductStreamName(id),
+      {
+        type: ProductCommandTypes.CREATE,
+        data: {
+          product,
+        },
+        metadata: {
+          id,
+          catalogId: 'stage',
+        },
+      },
+    );
+  }
 }
 
 export async function down(params) {

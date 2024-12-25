@@ -4,9 +4,17 @@ import { RecordedEvent } from '@ecomm/EventStore';
 import { type IProductService, ProductService } from '../product/product.svc';
 import { ProductEvent, ProductUpdated } from './product.events';
 
+export const collectionName = (
+  projectId: string,
+  entity: string,
+  catalogId?: string,
+) => {
+  return `${projectId}_${entity}${catalogId ? `_${catalogId}` : ''}`;
+};
+
 export class ProjectorListener {
   private server: any;
-  private msgIn = bold(yellow('←')) + yellow('AGGREGATOR:');
+  private msgIn = bold(yellow('←')) + yellow('AGR');
   private logger: pino.Logger;
   private productService: IProductService;
 
@@ -20,7 +28,7 @@ export class ProjectorListener {
   }
 
   public start() {
-    const TOPIC = `es.${this.server.config.PROJECTID}.product`;
+    const TOPIC = `es.${this.server.config.PROJECT_ID}.product`;
     this.server.queues.subscribe(TOPIC, this.handler.bind(this));
     this.server.log.info(
       `${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`,
@@ -36,16 +44,16 @@ export class ProjectorListener {
     if (this.logger.isLevelEnabled('debug')) {
       const txt = `${event.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
       this.logger.debug(
-        `${magenta('#' + event.requestId || '')} ${this.msgIn} aggregatting ${green(txt)}`,
+        `${magenta('#' + (event.requestId || ''))} ${this.msgIn} aggregatting entity ${green(txt)}`,
       );
     }
 
-    const catalogName = event.metadata.catalogId
-      ? `_${event.metadata.catalogId}`
-      : '';
-    const col = this.server.mongo.db.collection(
-      `${event.projectId}_${event.metadata.entity}${catalogName}`,
+    const colName = collectionName(
+      event.projectId,
+      event.metadata.entity,
+      event.metadata.catalogId,
     );
+    const col = this.server.mongo.db!.collection(colName);
 
     if (event.type === 'product-created') {
       const entity = await this.productService.aggregate(
@@ -59,7 +67,7 @@ export class ProjectorListener {
       const result = await col.insertOne(this.toDAO(entity.val.entity));
       if (result.acknowledged === false) {
         this.logger.error(
-          `${magenta('#' + event.requestId || '')} ${this.msgIn} ${green('Error saving event')} [${event.id}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error saving event')} [${event.id}]`,
         );
         return;
       }
@@ -72,7 +80,7 @@ export class ProjectorListener {
       });
       if (entity === null) {
         this.logger.error(
-          `${magenta('#' + event.requestId || '')} ${this.msgIn} ${green('Error getting entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error getting entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
         );
         return;
       }
@@ -93,13 +101,13 @@ export class ProjectorListener {
       );
       if (updateResult.acknowledged === false) {
         this.logger.error(
-          `${magenta('#' + event.requestId || '')} ${this.msgIn} ${green('Error updating entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error updating entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
         );
         return;
       }
     } else {
       this.logger.error(
-        `${magenta('#' + event.requestId || '')} ${this.msgIn} ${green('Type not implemented:')} [${event.type}]`,
+        `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Type not implemented:')} [${event.type}]`,
       );
     }
   };

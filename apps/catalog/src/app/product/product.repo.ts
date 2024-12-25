@@ -3,6 +3,9 @@ import { Db, Collection } from 'mongodb';
 import { ErrorCode, AppError } from '@ecomm/AppError';
 import { type Product, ProductType } from './product';
 import { type ProductDAO } from './product.dao.schema';
+import { collectionName } from './projector.lstnr';
+import { FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/RequestContext';
 
 export interface IProductRepository {
   create: (
@@ -47,15 +50,19 @@ export const getProductCollection = async (
   const catalogDb = db.collection('Catalog');
   const catalogs = await catalogDb.find({}).toArray();
   return catalogs.reduce((acc: any, catalog: any) => {
+    console.log();
     acc[catalog._id] = db.collection<ProductDAO>(`Product${catalog.name}`);
     return acc;
   }, {});
 };
 
 export class ProductRepository implements IProductRepository {
+  private ENTITY = 'product';
+  private server: FastifyInstance;
   private col: Record<string, Collection<ProductDAO>>;
 
   constructor(server: any) {
+    this.server = server;
     this.col = server.db.col.product;
   }
 
@@ -135,18 +142,19 @@ export class ProductRepository implements IProductRepository {
   // FIND ONE
   async findOne(
     catalogId: string,
-    id: string,
+    productId: string,
     version?: number,
   ): Promise<Result<ProductDAO, AppError>> {
-    const filter: any = { _id: id };
+    const colName = collectionName(projectId(), this.ENTITY, catalogId);
+    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
+    const filter: any = { _id: productId };
     if (version !== undefined) filter.version = version;
-    const catAwareCol = this.col[catalogId];
-    const entity = await catAwareCol.findOne(filter);
+    const entity = await col.findOne(filter);
     if (!entity) {
       return new Err(
         new AppError(
           ErrorCode.BAD_REQUEST,
-          `Can't find product with id [${id}]`,
+          `Can't find product with id [${productId}]`,
         ),
       );
     }
@@ -160,8 +168,9 @@ export class ProductRepository implements IProductRepository {
     options: any,
   ): Promise<Result<ProductDAO[], AppError>> {
     // TODO: Add query limit
-    const catAwareCol = this.col[catalogId];
-    const entities = await catAwareCol.find(query, options).toArray();
+    const colName = collectionName(projectId(), this.ENTITY, catalogId);
+    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
+    const entities = await col.find(query, options).toArray();
     return new Ok(entities);
   }
 
@@ -171,9 +180,10 @@ export class ProductRepository implements IProductRepository {
     pipeline: any[],
     options: any,
   ): Promise<Result<any, AppError>> {
+    const colName = collectionName(projectId(), this.ENTITY, catalogId);
+    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
     const result: any[] = [];
-    const catAwareCol = this.col[catalogId];
-    const cursor = catAwareCol.aggregate(pipeline, options);
+    const cursor = col.aggregate(pipeline, options);
     for await (const doc of cursor) {
       result.push(doc);
     }

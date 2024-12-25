@@ -52,13 +52,6 @@ export default async function (
       }>,
       reply: FastifyReply,
     ) => {
-      const result: Result<Product, AppError> = await service.createProduct(
-        request.query.catalogId,
-        request.body,
-      );
-      if (!result.ok) return reply.sendAppError(result.val);
-
-      ///////////////////////////////////////////////////////////////////////////////
       const id = nanoid();
       const eventStoreResult = await server.es.create(
         service.create,
@@ -75,9 +68,8 @@ export default async function (
         },
       );
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-      ///////////////////////////////////////////////////////////////////////////////
 
-      return reply.code(201).send(result.val);
+      return reply.code(201).send({ id });
     },
   });
 
@@ -94,18 +86,9 @@ export default async function (
       }>,
       reply: FastifyReply,
     ) => {
-      const result: Result<Product, AppError> = await service.updateProduct(
-        request.query.catalogId,
-        request.params.id,
-        request.body.version,
-        request.body.actions,
-      );
-      if (!result.ok) return reply.sendAppError(result.val);
-
-      ///////////////////////////////////////////////////////////////////////////////
       const eventStoreResult = await server.es.update(
         service.update,
-        toProductStreamName(result.val.id),
+        toProductStreamName(request.params.id),
         request.body.version,
         {
           type: ProductCommandTypes.UPDATE,
@@ -120,13 +103,12 @@ export default async function (
         },
       );
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-      ///////////////////////////////////////////////////////////////////////////////
 
-      return reply.send(result.val);
+      return reply.send({});
     },
   });
 
-  // GET
+  // GET the entity from the ReadModel
   server.route({
     method: 'GET',
     url: '/:id',
@@ -147,19 +129,11 @@ export default async function (
       );
       if (!result.ok) return reply.sendAppError(result.val);
 
-      ///////////////////////////////////////////////////////////////////////////////
-      const streamResult = await server.es.aggregateStream<
-        Product,
-        ProductEvent
-      >(toProductStreamName(request.params.id), service.aggregate);
-      console.dir(streamResult.val, { depth: 15 });
-      ///////////////////////////////////////////////////////////////////////////////
-
       return reply.send(result.val);
     },
   });
 
-  // GET
+  // GET the entity from the Stream
   server.route({
     method: 'GET',
     url: '/:id/es',

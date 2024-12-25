@@ -5,7 +5,7 @@ import pino from 'pino';
 export class AuditLogListener {
   private server: any;
   private service: IAuditLogService;
-  private msgIn = bold(yellow('←')) + yellow('AUDITLOG:');
+  private msgIn = bold(yellow('←')) + yellow('AUD');
   private TOPIC = '*.*.update';
   private logger: pino.Logger;
 
