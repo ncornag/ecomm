@@ -242,6 +242,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Register Routes
   server.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
-    options: { ...opts },
+    options: { prefix: ':projectId', ...opts },
   });
 }

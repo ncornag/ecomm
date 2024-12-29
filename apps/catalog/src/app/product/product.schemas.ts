@@ -39,7 +39,14 @@ export const UpdateProductBodySchema = Type.Object(
 );
 export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
 
-export const FindProductParmsSchema = Type.Object({ id: Type.String() });
+// FIND
+export const ProjectBasedParamsSchema = Type.Object({
+  projectId: Type.String(),
+});
+export const FindProductParmsSchema = Type.Composite([
+  ProjectBasedParamsSchema,
+  Type.Object({ id: Type.String() }),
+]);
 export const FindProductQueryStringSchema = Type.Object({
   catalogId: Type.String(),
   materialized: Type.Boolean({ default: false }),

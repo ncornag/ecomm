@@ -9,15 +9,18 @@ import { errorName } from '@ecomm/MongoErrors';
 import { yellow } from 'kolorist';
 import config from '@ecomm/Config';
 import docs from '@ecomm/Docs';
-import mongo from '@ecomm/Mongo';
 import {
   default as requestContextProvider,
   getRequestIdFastifyAppConfig,
 } from '@ecomm/RequestContext';
+import authorization from './authorization';
 
 declare module 'fastify' {
   interface FastifyInstance {
     logger: pino.Logger;
+  }
+  interface FastifyContextConfig {
+    scopes: string[];
   }
 }
 
@@ -99,6 +102,9 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   await server.register(requestContextProvider, {
     projectId: server.config.PROJECT_ID,
   });
+
+  // Initialize Authorization
+  await authorization(server);
 
   // Print Routes
   if (server.config.PRINT_ROUTES === true) {

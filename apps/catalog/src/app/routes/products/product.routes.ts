@@ -23,7 +23,6 @@ import {
   toProductStreamName,
 } from '../../product/product.events';
 import { nanoid } from 'nanoid';
-import { projectId } from '@ecomm/RequestContext';
 
 export type StreamType = string;
 export type StreamName<T extends StreamType = StreamType> = `${T}:${string}`;
@@ -112,6 +111,7 @@ export default async function (
   server.route({
     method: 'GET',
     url: '/:id',
+    config: { scopes: ['catalog:read'] },
     schema: {
       querystring: FindProductQueryStringSchema,
     },
