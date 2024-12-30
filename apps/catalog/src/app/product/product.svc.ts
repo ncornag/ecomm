@@ -137,7 +137,11 @@ export class ProductService implements IProductService {
     const aggregateResult = await this.server.es.aggregateStream<
       Product,
       ProductEvent
-    >(toProductStreamName(command.data.productId), this.aggregate);
+    >(
+      command.metadata.projectId,
+      toProductStreamName(command.data.productId),
+      this.aggregate,
+    );
     if (!aggregateResult.ok) return aggregateResult;
 
     const expectedResult = await this.aggregate(aggregateResult.val, {

@@ -161,6 +161,7 @@ export default async function (
     ) => {
       // FIXME handle request.query.catalog,
       const result = await server.es.aggregateStream<Product, ProductEvent>(
+        projectId(),
         toProductStreamName(request.params.id),
         service.aggregate,
       );

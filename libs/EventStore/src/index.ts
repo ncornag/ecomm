@@ -73,12 +73,13 @@ class EventStore {
   }
 
   public aggregateStream = async <Entity, StreamEvents extends Event>(
+    projectId: string,
     streamName: string,
     when: ApplyEvent<Entity, StreamEvents>,
   ): Promise<Result<Entity, AppError>> => {
     let currentState: Entity = undefined as any;
     const cursor = this.col.find(
-      { streamName: streamName },
+      { 'metadata.projectId': projectId, streamName },
       { sort: { version: -1 } },
     );
     for await (const event of cursor) {
