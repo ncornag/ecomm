@@ -1,3 +1,4 @@
+//import fastifyJwt from '@fastify/jwt';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet(
   'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLFGQZbfghjklqvwyzrict',
@@ -14,13 +15,8 @@ import type {
 } from 'fastify';
 import fp from 'fastify-plugin';
 
-let configProjectId: string;
 export const PROJECT_ID_STORE_KEY = 'projectId';
 export const REQUEST_ID_STORE_KEY = 'reqId';
-
-type ConfigOptions = {
-  projectId: string;
-};
 
 declare module '@fastify/request-context' {
   interface RequestContextData {
@@ -39,19 +35,13 @@ export function getRequestIdFastifyAppConfig(): Pick<
   };
 }
 
-const plugin: FastifyPluginAsync<ConfigOptions> = async (
-  fastify: FastifyInstance,
-  opts: ConfigOptions,
-) => {
-  configProjectId = opts.projectId;
-  fastify.addHook(
-    'onRequest',
-    (req: FastifyRequest, res: FastifyReply, next: HookHandlerDoneFunction) => {
-      requestContext.set(REQUEST_ID_STORE_KEY, req.id);
-      requestContext.set(PROJECT_ID_STORE_KEY, opts.projectId);
-      next();
-    },
-  );
+const plugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  fastify.addHook('onRequest', (req: any, res, next) => {
+    requestContext.set(REQUEST_ID_STORE_KEY, req.id);
+    const [_audTag, audProjectId] = req.user.aud.split(':');
+    requestContext.set(PROJECT_ID_STORE_KEY, audProjectId);
+    next();
+  });
 
   fastify.addHook(
     'onSend',
@@ -68,7 +58,7 @@ const plugin: FastifyPluginAsync<ConfigOptions> = async (
 };
 
 export function projectId(): string {
-  return requestContext.get(PROJECT_ID_STORE_KEY) || configProjectId;
+  return requestContext.get(PROJECT_ID_STORE_KEY) || '';
 }
 export function requestId(): string {
   return requestContext.get(REQUEST_ID_STORE_KEY) || '';

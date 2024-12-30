@@ -39,10 +39,13 @@ export const UpdateProductBodySchema = Type.Object(
 );
 export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
 
-// FIND
+// PROJECT BASED PARAMS
 export const ProjectBasedParamsSchema = Type.Object({
   projectId: Type.String(),
 });
+export type ProjectBasedParams = Static<typeof ProjectBasedParamsSchema>;
+
+// FIND
 export const FindProductParmsSchema = Type.Composite([
   ProjectBasedParamsSchema,
   Type.Object({ id: Type.String() }),

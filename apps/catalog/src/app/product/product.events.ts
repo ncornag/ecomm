@@ -17,6 +17,7 @@ export type CreateProduct = Command<
   ProductCommandTypes.CREATE,
   { product: CreateProductBody },
   {
+    projectId: string;
     id: Product['id'];
     catalogId: Product['catalogId'];
   }
@@ -29,6 +30,7 @@ export type UpdateProduct = Command<
     actions: UpdateProductAction[];
   },
   {
+    projectId: string;
     catalogId: Product['catalogId'];
     expectedVersion: number;
   }
@@ -48,7 +50,7 @@ export type ProductCreated = Event<
   {
     product: Product;
   },
-  { entity: string; catalogId: string; [key: string]: any }
+  { projectId: string; entity: string; catalogId: string; [key: string]: any }
 >;
 
 export type ProductUpdated = Event<
@@ -57,7 +59,7 @@ export type ProductUpdated = Event<
     productId: Product['id'];
     actions: UpdateProductAction[];
   },
-  { entity: string; catalogId: string; [key: string]: any }
+  { projectId: string; entity: string; catalogId: string; [key: string]: any }
 >;
 
 export type ProductEvent = ProductCreated | ProductUpdated;

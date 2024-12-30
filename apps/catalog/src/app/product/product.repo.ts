@@ -50,7 +50,6 @@ export const getProductCollection = async (
   const catalogDb = db.collection('Catalog');
   const catalogs = await catalogDb.find({}).toArray();
   return catalogs.reduce((acc: any, catalog: any) => {
-    console.log();
     acc[catalog._id] = db.collection<ProductDAO>(`Product${catalog.name}`);
     return acc;
   }, {});

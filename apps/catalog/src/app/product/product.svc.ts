@@ -26,6 +26,7 @@ import {
   ProductUpdated,
   ProductEvent,
   PRODUCT_ENTITY_NAME,
+  toProductStreamName,
 } from './product.events';
 import { RecordedEvent } from '@ecomm/EventStore';
 
@@ -120,6 +121,7 @@ export class ProductService implements IProductService {
     const { id, ...remainder } = command.metadata;
     if (command.data.product.parent)
       command.data.product.type = ProductType.VARIANT;
+
     return new Ok({
       type: ProductEventTypes.PRODUCT_CREATED,
       data: { product: { id, ...command.data.product } },
@@ -131,10 +133,40 @@ export class ProductService implements IProductService {
     command: UpdateProduct,
   ): Promise<Result<ProductUpdated, AppError>> => {
     // TODO? Process Actions
+
+    const aggregateResult = await this.server.es.aggregateStream<
+      Product,
+      ProductEvent
+    >(toProductStreamName(command.data.productId), this.aggregate);
+    if (!aggregateResult.ok) return aggregateResult;
+
+    const expectedResult = await this.aggregate(aggregateResult.val, {
+      id: '',
+      streamName: '',
+      version: 0,
+      projectId: '',
+      isLastEvent: false,
+      requestId: '',
+      type: ProductEventTypes.PRODUCT_UPDATED,
+      data: command.data,
+      metadata: {
+        entity: PRODUCT_ENTITY_NAME,
+        version: command.metadata.expectedVersion,
+        ...command.metadata,
+      },
+      createdAt: new Date(),
+      lastModifiedAt: new Date(),
+    });
+    if (!expectedResult.ok) return expectedResult;
+
     return new Ok({
       type: ProductEventTypes.PRODUCT_UPDATED,
       data: command.data,
-      metadata: { entity: PRODUCT_ENTITY_NAME, ...command.metadata },
+      metadata: {
+        entity: PRODUCT_ENTITY_NAME,
+        expected: expectedResult.val.entity,
+        ...command.metadata,
+      },
     } as ProductUpdated);
   };
 
@@ -155,7 +187,6 @@ export class ProductService implements IProductService {
           );
         return new Ok({
           entity: Object.assign(e.data.product, {
-            projectId: event.projectId,
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
             createdAt: event.createdAt,
@@ -181,7 +212,6 @@ export class ProductService implements IProductService {
 
         return new Ok({
           entity: Object.assign(toUpdateEntity, {
-            projectId: event.projectId,
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
             lastModifiedAt: event.createdAt,
@@ -234,7 +264,7 @@ export class ProductService implements IProductService {
     actions: UpdateProductAction[],
   ): Promise<Result<Product, AppError>> {
     // Find the Entity
-    const result = await this.repo.findOne(catalogId, id, version); //FIXME projectId
+    const result = await this.repo.findOne(catalogId, id, version);
     if (result.err) return result;
     const entity: ProductDAO = result.val;
     const toUpdateEntity = Value.Clone(entity);
@@ -321,7 +351,6 @@ export class ProductService implements IProductService {
             'variants.parent': 0,
             'variants.type': 0,
             'variants.catalogId': 0,
-            'variants.projectId': 0,
             'variants.createdAt': 0,
             'variants.lastModifiedAt': 0,
             'variants.version': 0,

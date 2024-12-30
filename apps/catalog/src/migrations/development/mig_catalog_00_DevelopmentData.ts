@@ -8,19 +8,16 @@ import { nanoid } from 'nanoid';
 const catalogs = [
   {
     _id: 'stage',
-    projectId: 'TestProject',
     name: 'Stage',
   },
   {
     _id: 'online',
-    projectId: 'TestProject',
     name: 'Online',
   },
 ];
 const catalogSyncs = [
   {
     _id: 'stage-2-online',
-    projectId: 'TestProject',
     sourceCatalog: 'stage',
     targetCatalog: 'online',
     removeNonExistent: false,
@@ -35,7 +32,6 @@ const catalogSyncs = [
 const classificationCategories = [
   {
     _id: 'machine-properties',
-    projectId: 'TestProject',
     name: 'Machine Properties',
     key: 'machine-properties',
     parent: '',
@@ -82,7 +78,6 @@ const classificationCategories = [
   },
   {
     _id: 'hardware',
-    projectId: 'TestProject',
     name: 'Hardware',
     key: 'hardware',
     parent: '',
@@ -93,7 +88,6 @@ const classificationCategories = [
   },
   {
     _id: 'cpu',
-    projectId: 'TestProject',
     name: 'CPU',
     key: 'cpu',
     parent: 'hardware',
@@ -117,7 +111,6 @@ const classificationCategories = [
   },
   {
     _id: 'photography',
-    projectId: 'TestProject',
     name: 'Photography',
     key: 'photography',
     attributes: [
@@ -141,7 +134,6 @@ const classificationCategories = [
   },
   {
     _id: 'electricity',
-    projectId: 'TestProject',
     name: 'Electricity Things',
     key: 'electricity',
     parent: '',
@@ -159,7 +151,6 @@ const classificationCategories = [
   },
   {
     _id: 'machines',
-    projectId: 'TestProject',
     name: 'Machines',
     key: 'machines',
     parent: 'electricity',
@@ -190,7 +181,6 @@ const classificationCategories = [
   },
   {
     _id: 'software',
-    projectId: 'TestProject',
     name: 'Software',
     key: 'software',
     parent: 'electricity',
@@ -216,7 +206,6 @@ const classificationCategories = [
 const classificationCategoriesShoes = [
   {
     _id: 'shoes',
-    projectId: 'TestProject',
     name: 'Shoes',
     key: 'shoes',
     parent: '',
@@ -242,7 +231,6 @@ const classificationCategoriesShoes = [
 const productCategories = [
   {
     _id: 'mana',
-    projectId: 'TestProject',
     name: 'Manufacturer A',
     key: 'manA',
     parent: '',
@@ -253,7 +241,6 @@ const productCategories = [
   },
   {
     _id: 'printers',
-    projectId: 'TestProject',
     name: 'Printers',
     key: 'printers',
     parent: 'mana',
@@ -264,7 +251,6 @@ const productCategories = [
   },
   {
     _id: 'laptops',
-    projectId: 'TestProject',
     name: 'Laptops',
     key: 'laptops',
     parent: 'mana',
@@ -277,7 +263,6 @@ const productCategories = [
 const productCategoriesShoes = [
   {
     _id: 'home',
-    projectId: 'TestProject',
     name: 'Home',
     key: 'home',
     parent: '',
@@ -288,7 +273,6 @@ const productCategoriesShoes = [
   },
   {
     _id: 'running',
-    projectId: 'TestProject',
     name: 'Running',
     key: 'running',
     parent: 'home',
@@ -299,7 +283,6 @@ const productCategoriesShoes = [
   },
   {
     _id: 'shoes',
-    projectId: 'TestProject',
     name: 'shoes',
     key: 'shoes',
     parent: 'running',
@@ -313,7 +296,6 @@ const productShoes = [
   {
     _id: 'adizeroPrimeX2-base',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     name: {
       en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
@@ -360,7 +342,6 @@ const productShoes = [
   {
     _id: 'adizeroPrimeX2-White-001',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     name: {
       en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!',
@@ -377,7 +358,6 @@ const productShoes = [
   {
     _id: 'adizeroPrimeX2-White-002',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     sku: 'HP9708_580',
     type: 'variant',
@@ -390,7 +370,6 @@ const productShoes = [
   {
     _id: 'adizeroPrimeX2-Black-001',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     sku: 'HP9709_580',
     type: 'variant',
@@ -405,7 +384,6 @@ const productComposites = [
   {
     _id: 'full-frame-mirrorless-camera-kit',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     name: {
       en: 'Full Frame Mirrorless Camera Kit',
@@ -489,7 +467,6 @@ const productComposites = [
   {
     _id: 'wood-business-card',
     version: 0,
-    projectId: 'TestProject',
     catalogId: 'stage',
     name: {
       en: 'Modern wood business card',
@@ -611,7 +588,7 @@ export async function up(params) {
 
   for await (const record of productShoes) {
     const id = nanoid();
-    const { _id, version, projectId, catalogId, ...product } = record;
+    const { _id, version, catalogId, ...product } = record;
     await params.context.server.es.create(
       service.create,
       toProductStreamName(id),
@@ -623,6 +600,7 @@ export async function up(params) {
         metadata: {
           id,
           catalogId: 'stage',
+          projectId: 'test',
         },
       },
     );

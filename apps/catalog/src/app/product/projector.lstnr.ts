@@ -28,7 +28,7 @@ export class ProjectorListener {
   }
 
   public start() {
-    const TOPIC = `es.${this.server.config.PROJECT_ID}.product`;
+    const TOPIC = 'es.*.product';
     this.server.queues.subscribe(TOPIC, this.handler.bind(this));
     this.server.log.info(
       `${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`,
@@ -42,14 +42,14 @@ export class ProjectorListener {
 
   private handler = async (event: RecordedEvent<ProductEvent>) => {
     if (this.logger.isLevelEnabled('debug')) {
-      const txt = `${event.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
+      const txt = `${event.metadata.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
       this.logger.debug(
         `${magenta('#' + (event.requestId || ''))} ${this.msgIn} aggregatting entity ${green(txt)}`,
       );
     }
 
     const colName = collectionName(
-      event.projectId,
+      event.metadata.projectId,
       event.metadata.entity,
       event.metadata.catalogId,
     );
@@ -73,7 +73,6 @@ export class ProjectorListener {
       }
     } else if (event.type === 'product-updated') {
       const e = event as ProductUpdated;
-      console.dir(event, { depth: 15 });
       const entity = await col.findOne({
         _id: e.data.productId,
         version: event.metadata.expectedVersion,

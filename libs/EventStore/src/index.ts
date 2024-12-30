@@ -121,12 +121,15 @@ class EventStore {
     }
 
     // Save the event
+    const { expected, ...metadata } = event.metadata;
     const recordedEvent = {
       //_id: nanoid(),
       streamName,
       isLastEvent: true,
       requestId: requestId(),
-      ...event,
+      type: event.type,
+      data: event.data,
+      metadata,
     } as RecordedEvent;
     const result = await this.col.insertOne(recordedEvent);
     if (result.acknowledged === false)
@@ -134,7 +137,7 @@ class EventStore {
 
     // Publish global event
     this.queues.publish(
-      `es.${projectId()}.${event.metadata.entity}`,
+      `es.${event.metadata.projectId}.${event.metadata.entity}`,
       recordedEvent,
     );
 

@@ -73,55 +73,55 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   );
 
   // Iterceptor targets
-  const projectIdTargets: string[] = [
-    'find',
-    'insertOne',
-    'updateOne',
-    'updateMany',
-    'bulkWrite',
-  ];
+  // const projectIdTargets: string[] = [
+  //   'find',
+  //   'insertOne',
+  //   'updateOne',
+  //   'updateMany',
+  //   'bulkWrite',
+  // ];
   const createTargets: string[] = ['insertOne'];
   const updateTargets: string[] = ['updateOne', 'updateMany', 'bulkWrite'];
 
   // Interceptors NegativeFilter
   const negativeFilterInterceptor: Record<string, boolean> = { _Events: true };
 
-  // ProjectId Interceptor -- Force projectId in find & updates
-  const projectIdOne = function (collectionName: string, data: any) {
-    if (negativeFilterInterceptor[collectionName]) return data;
-    // Add projectId
-    data.projectId = projectId();
-    return data;
-  };
-  const projectIdInterceptor = function (obj: any, replace, name: string) {
-    obj.prototype[name] = function (...args: any[]) {
-      const collectionName = (this as Collection).collectionName;
-      if (Array.isArray(args[0])) {
-        args[0] = args[0].map((a) => {
-          if (a.updateOne) {
-            return {
-              updateOne: {
-                filter: projectIdOne(collectionName, a.updateOne.filter),
-                update: a.updateOne.update,
-              },
-            };
-          } else if (a.insertOne) {
-            return {
-              insertOne: {
-                document: projectIdOne(collectionName, a.insertOne.document),
-              },
-            };
-          }
-          return a;
-        });
-      } else {
-        projectIdOne(collectionName, args[0]);
-      }
-      // console.log(name, 'pidInterceptor');
-      // console.log(JSON.stringify(args, null, 2));
-      return replace.apply(this, args as any);
-    };
-  };
+  // // ProjectId Interceptor -- Force projectId in find & updates
+  // const projectIdOne = function (collectionName: string, data: any) {
+  //   if (negativeFilterInterceptor[collectionName]) return data;
+  //   // Add projectId
+  //   data.projectId = projectId();
+  //   return data;
+  // };
+  // const projectIdInterceptor = function (obj: any, replace, name: string) {
+  //   obj.prototype[name] = function (...args: any[]) {
+  //     const collectionName = (this as Collection).collectionName;
+  //     if (Array.isArray(args[0])) {
+  //       args[0] = args[0].map((a) => {
+  //         if (a.updateOne) {
+  //           return {
+  //             updateOne: {
+  //               filter: projectIdOne(collectionName, a.updateOne.filter),
+  //               update: a.updateOne.update,
+  //             },
+  //           };
+  //         } else if (a.insertOne) {
+  //           return {
+  //             insertOne: {
+  //               document: projectIdOne(collectionName, a.insertOne.document),
+  //             },
+  //           };
+  //         }
+  //         return a;
+  //       });
+  //     } else {
+  //       projectIdOne(collectionName, args[0]);
+  //     }
+  //     // console.log(name, 'pidInterceptor');
+  //     // console.log(JSON.stringify(args, null, 2));
+  //     return replace.apply(this, args as any);
+  //   };
+  // };
 
   // Create Interceptor -- Create timestamp / version
   const createOne = function (collectionName: string, data: any) {
@@ -193,9 +193,9 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
 
   // Intercept
-  projectIdTargets.forEach((m: string) =>
-    projectIdInterceptor(Collection, (Collection.prototype as any)[m], m),
-  );
+  // projectIdTargets.forEach((m: string) =>
+  //   projectIdInterceptor(Collection, (Collection.prototype as any)[m], m),
+  // );
   createTargets.forEach((m: string) =>
     createInterceptor(Collection, (Collection.prototype as any)[m], m),
   );

@@ -14,6 +14,7 @@ import {
   updateProductSchema,
   type FindProductQueryString,
   FindProductQueryStringSchema,
+  ProjectBasedParams,
 } from '../../product/product.schemas';
 import { ProductService } from '../../product/product.svc';
 import { type Product } from '../../product/product';
@@ -23,6 +24,7 @@ import {
   toProductStreamName,
 } from '../../product/product.events';
 import { nanoid } from 'nanoid';
+import { projectId } from '@ecomm/RequestContext';
 
 export type StreamType = string;
 export type StreamName<T extends StreamType = StreamType> = `${T}:${string}`;
@@ -43,9 +45,11 @@ export default async function (
   server.route({
     method: 'POST',
     url: '/',
+    config: { scopes: ['catalog:write'] },
     schema: postProductSchema,
     handler: async (
       request: FastifyRequest<{
+        Params: ProjectBasedParams;
         Body: CreateProductBody;
         Querystring: FindProductQueryString;
       }>,
@@ -61,14 +65,17 @@ export default async function (
             product: request.body,
           },
           metadata: {
+            projectId: projectId(),
             id,
             catalogId: request.query.catalogId,
           },
         },
       );
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-
-      return reply.code(201).send({ id });
+      return reply.code(201).send({
+        ...eventStoreResult.val.data.product,
+        version: eventStoreResult.val.metadata.version,
+      });
     },
   });
 
@@ -76,6 +83,7 @@ export default async function (
   server.route({
     method: 'PATCH',
     url: '/:id',
+    config: { scopes: ['catalog:write'] },
     schema: updateProductSchema,
     handler: async (
       request: FastifyRequest<{
@@ -96,14 +104,17 @@ export default async function (
             actions: request.body.actions,
           },
           metadata: {
+            projectId: projectId(),
             catalogId: request.query.catalogId,
             expectedVersion: request.body.version,
           },
         },
       );
       if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-
-      return reply.send({});
+      return reply.send({
+        ...eventStoreResult.val.metadata.expected,
+        version: eventStoreResult.val.metadata.version,
+      });
     },
   });
 
@@ -137,6 +148,7 @@ export default async function (
   server.route({
     method: 'GET',
     url: '/:id/es',
+    config: { scopes: ['catalog:read'] },
     schema: {
       querystring: FindProductQueryStringSchema,
     },

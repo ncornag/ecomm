@@ -95,16 +95,12 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   await server.register(config, {
     envType: envConfig,
   });
-  await server.register(fastifyRequestLogger); //, { logBody: true }
+  await server.register(fastifyRequestLogger);
   await server.register(docs);
   await server.register(sendAppError);
   await server.register(fastifyRequestContext);
-  await server.register(requestContextProvider, {
-    projectId: server.config.PROJECT_ID,
-  });
-
-  // Initialize Authorization
-  await authorization(server);
+  await authorization(server); // Initialize Authorization
+  await server.register(requestContextProvider);
 
   // Print Routes
   if (server.config.PRINT_ROUTES === true) {
