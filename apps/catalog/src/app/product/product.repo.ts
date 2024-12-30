@@ -44,17 +44,6 @@ export interface IProductRepository {
   ) => Promise<Result<any[], AppError>>;
 }
 
-export const getProductCollection = async (
-  db: Db,
-): Promise<Collection<ProductDAO> | Record<string, Collection<ProductDAO>>> => {
-  const catalogDb = db.collection('Catalog');
-  const catalogs = await catalogDb.find({}).toArray();
-  return catalogs.reduce((acc: any, catalog: any) => {
-    acc[catalog._id] = db.collection<ProductDAO>(`Product${catalog.name}`);
-    return acc;
-  }, {});
-};
-
 export class ProductRepository implements IProductRepository {
   private ENTITY = 'product';
   private server: FastifyInstance;
@@ -144,8 +133,9 @@ export class ProductRepository implements IProductRepository {
     productId: string,
     version?: number,
   ): Promise<Result<ProductDAO, AppError>> {
+    const db = await this.server.db.getDb(projectId());
     const colName = collectionName(projectId(), this.ENTITY, catalogId);
-    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
+    const col = db.collection<ProductDAO>(colName);
     const filter: any = { _id: productId };
     if (version !== undefined) filter.version = version;
     const entity = await col.findOne(filter);

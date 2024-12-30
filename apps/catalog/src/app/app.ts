@@ -14,10 +14,7 @@ import {
   getProductCategoryCollection,
   ProductCategoryRepository,
 } from './productCategory/productCategory.repo';
-import {
-  ProductRepository,
-  getProductCollection,
-} from './product/product.repo';
+import { ProductRepository } from './product/product.repo';
 import { getPriceCollection, PriceRepository } from './price/price.repo';
 import {
   CatalogRepository,
@@ -83,7 +80,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.col.productCategory = getProductCategoryCollection(
     server.mongo.db!,
   );
-  server.db.col.product = await getProductCollection(server.mongo.db!);
   server.db.col.price = await getPriceCollection(server.mongo.db!);
   server.db.col.catalog = getCatalogCollection(server.mongo.db!);
   server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);

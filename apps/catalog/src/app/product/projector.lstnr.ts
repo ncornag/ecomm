@@ -9,7 +9,7 @@ export const collectionName = (
   entity: string,
   catalogId?: string,
 ) => {
-  return `${projectId}_${entity}${catalogId ? `_${catalogId}` : ''}`;
+  return `${entity}${catalogId ? `_${catalogId}` : ''}`;
 };
 
 export class ProjectorListener {
@@ -48,12 +48,14 @@ export class ProjectorListener {
       );
     }
 
+    const db = await this.server.db.getDb(event.metadata.projectId);
+
     const colName = collectionName(
       event.metadata.projectId,
       event.metadata.entity,
       event.metadata.catalogId,
     );
-    const col = this.server.mongo.db!.collection(colName);
+    const col = db.collection(colName);
 
     if (event.type === 'product-created') {
       const entity = await this.productService.aggregate(

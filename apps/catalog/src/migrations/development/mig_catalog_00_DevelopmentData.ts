@@ -581,8 +581,8 @@ export async function up(params) {
     .insertMany(classificationCategoriesShoes);
   await db.collection('ProductCategory').insertMany(productCategories);
   await db.collection('ProductCategory').insertMany(productCategoriesShoes);
-  await db.collection('ProductStage').insertMany(productShoes);
-  await db.collection('ProductStage').insertMany(productComposites);
+  //await db.collection('ProductStage').insertMany(productShoes);
+  //await db.collection('ProductStage').insertMany(productComposites);
 
   const service = ProductService.getInstance(params.context.server);
 
