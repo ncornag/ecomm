@@ -1,5 +1,5 @@
 import { type Result, Ok } from 'ts-results';
-import { Err, AppError, ErrorCode } from '@ecomm/AppError';
+import { Error, AppError, ErrorCode } from '@ecomm/AppError';
 import fp from 'fastify-plugin';
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { green, yellow } from 'kolorist';
@@ -46,6 +46,29 @@ export type RecordedEvent<E extends Event = Event> = {
   createdAt: Date;
   lastModifiedAt?: Date;
 };
+
+export const toRecordedEvent = (type, entity, command) =>
+  Object.assign(
+    {
+      id: '',
+      streamName: '',
+      version: 0,
+      projectId: '',
+      isLastEvent: false,
+      requestId: '',
+      createdAt: new Date(),
+      lastModifiedAt: new Date(),
+    },
+    {
+      type,
+      entity,
+      data: command.data,
+      metadata: {
+        version: command.metadata.expectedVersion,
+        ...command.metadata,
+      },
+    },
+  );
 
 export type ApplyEvent<Entity, E extends Event> = (
   currentState: Entity,
@@ -113,7 +136,7 @@ class EventStore {
         },
       );
       if (result.modifiedCount === 0) {
-        return new Err(
+        return new Error(
           ErrorCode.CONFLICT,
           `Event with version ${options.expectedRevision} doesn't exist`,
         );
@@ -134,7 +157,7 @@ class EventStore {
     } as RecordedEvent;
     const result = await this.col.insertOne(recordedEvent);
     if (result.acknowledged === false)
-      return new Err(ErrorCode.SERVER_ERROR, 'Error saving event');
+      return new Error(ErrorCode.SERVER_ERROR, 'Error saving event');
 
     // Publish global event
     this.queues.publish(
