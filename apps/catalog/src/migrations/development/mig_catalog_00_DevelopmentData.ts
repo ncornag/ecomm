@@ -1,6 +1,6 @@
 import {
   ProductCommandTypes,
-  toProductStreamName,
+  toStreamName,
 } from '../../app/product/product.events';
 import { ProductService } from '../../app/product/product.svc';
 import { nanoid } from 'nanoid';
@@ -589,21 +589,17 @@ export async function up(params) {
   for await (const record of productShoes) {
     const id = nanoid();
     const { _id, version, catalogId, ...product } = record;
-    await params.context.server.es.create(
-      service.create,
-      toProductStreamName(id),
-      {
-        type: ProductCommandTypes.CREATE,
-        data: {
-          product,
-        },
-        metadata: {
-          id,
-          catalogId: 'stage',
-          projectId: 'test',
-        },
+    await params.context.server.es.create(service.create, toStreamName(id), {
+      type: ProductCommandTypes.CREATE,
+      data: {
+        product,
       },
-    );
+      metadata: {
+        id,
+        catalogId: 'stage',
+        projectId: 'test',
+      },
+    });
   }
 }
 

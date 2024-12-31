@@ -1,10 +1,8 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError, ErrorCode } from '@ecomm/AppError';
+import { type Result, Ok } from 'ts-results';
+import { AppErrorResult, AppError, ErrorCode } from '@ecomm/AppError';
 import { Value } from '@sinclair/typebox/value';
-import { nanoid } from 'nanoid';
-import { type Product, UpdateProductAction, ProductType } from './product';
+import { type Product, ProductType } from './product';
 import { type CartProduct } from '../cart/cart';
-import { type CreateProductBody } from './product.schemas';
 import { type ProductDAO } from './product.dao.schema';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
 import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler';
@@ -25,10 +23,10 @@ import {
   UpdateProduct,
   ProductUpdated,
   ProductEvent,
-  PRODUCT_ENTITY_NAME,
-  toProductStreamName,
+  ENTITY_NAME,
+  toStreamName,
 } from './product.events';
-import { RecordedEvent } from '@ecomm/EventStore';
+import { toRecordedEvent, RecordedEvent } from '@ecomm/EventStore';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -38,16 +36,6 @@ export interface IProductService {
     currentState: Product,
     event: RecordedEvent<ProductEvent>,
   ) => Promise<Result<{ entity: Product; update?: any }, AppError>>;
-  createProduct: (
-    catalogId: string,
-    payload: CreateProductBody,
-  ) => Promise<Result<Product, AppError>>;
-  updateProduct: (
-    catalogId: string,
-    id: string,
-    version: number,
-    actions: any,
-  ) => Promise<Result<Product, AppError>>;
   findProductById: (
     catalogId: string,
     id: string,
@@ -70,11 +58,11 @@ export const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
   ...remainder,
 });
 
+// FIXME use ActionsRunner, not ActionsRunner2
+// FIXME implement sideEffects
+
 // SERVICE IMPLEMENTATION
 export class ProductService implements IProductService {
-  // private ENTITY = 'product';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
   private server: FastifyInstance;
   private static instance: IProductService;
   private repo: IProductRepository;
@@ -104,8 +92,6 @@ export class ProductService implements IProductService {
       stdTTL: 60 * 60,
       checkperiod: 60,
     });
-    this.TOPIC_CREATE = `global.${PRODUCT_ENTITY_NAME}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${PRODUCT_ENTITY_NAME}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IProductService {
@@ -115,6 +101,7 @@ export class ProductService implements IProductService {
     return ProductService.instance;
   }
 
+  // CREATE
   public create = async (
     command: CreateProduct,
   ): Promise<Result<ProductCreated, AppError>> => {
@@ -123,71 +110,59 @@ export class ProductService implements IProductService {
       command.data.product.type = ProductType.VARIANT;
 
     return new Ok({
-      type: ProductEventTypes.PRODUCT_CREATED,
+      type: ProductEventTypes.CREATED,
       data: { product: { id, ...command.data.product } },
-      metadata: { entity: PRODUCT_ENTITY_NAME, ...remainder },
+      metadata: { entity: ENTITY_NAME, ...remainder },
     } as ProductCreated);
   };
 
+  // UPDATE
   public update = async (
     command: UpdateProduct,
   ): Promise<Result<ProductUpdated, AppError>> => {
-    // TODO? Process Actions
-
     const aggregateResult = await this.server.es.aggregateStream<
       Product,
       ProductEvent
     >(
       command.metadata.projectId,
-      toProductStreamName(command.data.productId),
+      toStreamName(command.data.productId),
       this.aggregate,
     );
     if (!aggregateResult.ok) return aggregateResult;
 
-    const expectedResult = await this.aggregate(aggregateResult.val, {
-      id: '',
-      streamName: '',
-      version: 0,
-      projectId: '',
-      isLastEvent: false,
-      requestId: '',
-      type: ProductEventTypes.PRODUCT_UPDATED,
-      data: command.data,
-      metadata: {
-        entity: PRODUCT_ENTITY_NAME,
-        version: command.metadata.expectedVersion,
-        ...command.metadata,
-      },
-      createdAt: new Date(),
-      lastModifiedAt: new Date(),
-    });
+    const expectedResult = await this.aggregate(
+      aggregateResult.val,
+      toRecordedEvent(ProductEventTypes.UPDATED, ENTITY_NAME, command),
+    );
     if (!expectedResult.ok) return expectedResult;
 
+    if (!expectedResult.val.update.length) {
+      return new AppErrorResult(ErrorCode.NOT_MODIFIED);
+    }
+
     return new Ok({
-      type: ProductEventTypes.PRODUCT_UPDATED,
+      type: ProductEventTypes.UPDATED,
       data: command.data,
       metadata: {
-        entity: PRODUCT_ENTITY_NAME,
+        entity: ENTITY_NAME,
         expected: expectedResult.val.entity,
         ...command.metadata,
       },
     } as ProductUpdated);
   };
 
-  // FIXME use ActionsRunner, not ActionsRunner2
+  // AGGREGATE
   public aggregate = async (
     currentState: Product,
     event: RecordedEvent<ProductEvent>,
   ): Promise<Result<{ entity: Product; update?: any }, AppError>> => {
     const e = event as ProductEvent;
     switch (e.type) {
-      case ProductEventTypes.PRODUCT_CREATED: {
+      case ProductEventTypes.CREATED: {
         if (currentState)
-          return new Err(
-            new AppError(
-              ErrorCode.UNPROCESSABLE_ENTITY,
-              'Entity already exists',
-            ),
+          return new AppErrorResult(
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            'Entity already exists',
           );
         return new Ok({
           entity: Object.assign(e.data.product, {
@@ -198,10 +173,11 @@ export class ProductService implements IProductService {
         });
       }
 
-      case ProductEventTypes.PRODUCT_UPDATED: {
+      case ProductEventTypes.UPDATED: {
         if (!currentState)
-          return new Err(
-            new AppError(ErrorCode.UNPROCESSABLE_ENTITY, 'Empty entity'),
+          return new AppErrorResult(
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            'Empty entity',
           );
         // Execute actions
         const toUpdateEntity = Value.Clone(currentState);
@@ -225,102 +201,15 @@ export class ProductService implements IProductService {
       }
 
       default: {
-        return new Err(
-          new AppError(
-            ErrorCode.UNPROCESSABLE_ENTITY,
-            `Unknown event type: ${(e as any).type}`,
-          ),
+        return new AppErrorResult(
+          ErrorCode.UNPROCESSABLE_ENTITY,
+          `Unknown event type: ${(e as any).type}`,
         );
       }
     }
   };
 
-  // CREATE PRODUCT
-  public async createProduct(
-    catalogId: string,
-    payload: CreateProductBody,
-  ): Promise<Result<Product, AppError>> {
-    // Save the entity
-    const id = nanoid();
-    const result = await this.repo.create(catalogId, {
-      id,
-      ...payload,
-    } as Product);
-    if (result.err) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.val),
-      metadata: {
-        catalogId,
-        type: 'entityCreated',
-        entity: PRODUCT_ENTITY_NAME,
-      },
-    });
-    // Return new entity
-    return new Ok(toEntity(result.val));
-  }
-
-  // UPDATE PRODUCT
-  public async updateProduct(
-    catalogId: string,
-    id: string,
-    version: number,
-    actions: UpdateProductAction[],
-  ): Promise<Result<Product, AppError>> {
-    // Find the Entity
-    const result = await this.repo.findOne(catalogId, id, version);
-    if (result.err) return result;
-    const entity: ProductDAO = result.val;
-    const toUpdateEntity = Value.Clone(entity);
-    // Execute actions
-    const actionRunnerResults = await this.actionsRunner.run(
-      entity,
-      toUpdateEntity,
-      this.repo,
-      this.actionHandlers,
-      actions,
-    );
-    if (actionRunnerResults.err) return actionRunnerResults;
-    // const update = Value.Clone(actionRunnerResults.val.update);
-    // Compute difference, and save if needed
-    const difference = Value.Diff(entity, toUpdateEntity);
-    if (difference.length > 0) {
-      // Save the entity
-      const saveResult = await this.repo.updateOne(
-        catalogId,
-        id,
-        version,
-        actionRunnerResults.val.update,
-      );
-      if (saveResult.err) return saveResult;
-      toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.val._id },
-        difference,
-        metadata: {
-          catalogId,
-          type: 'entityUpdated',
-          entity: PRODUCT_ENTITY_NAME,
-        },
-      });
-      // Send side effects via messagging
-      actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish(sideEffect.action, {
-          ...sideEffect.data,
-          metadata: {
-            catalogId,
-            type: sideEffect.action,
-            entity: PRODUCT_ENTITY_NAME,
-          },
-        });
-      });
-    }
-    // Return updated entity
-    return Ok(toEntity(toUpdateEntity));
-  }
-
-  // FIND PRODUCT BY ID
+  // FIND IN THE READ MODEL
   public async findProductById(
     catalogId: string,
     productId: string,
@@ -363,7 +252,7 @@ export class ProductService implements IProductService {
       ]);
       if (result.err) return result;
       if (result.val.length === 0)
-        return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+        return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
       const entity = result.val[0];
       if (entity.type === ProductType.BASE) {
         delete entity.base;
@@ -458,7 +347,7 @@ export class ProductService implements IProductService {
       ]);
       if (result.err) return result;
       if (result.val.length === 0)
-        return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+        return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
       result.val.forEach((entity) => {
         entity.inheritedFields = [];
         this.inheritFields(entity, locale);

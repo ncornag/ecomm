@@ -2,15 +2,15 @@ import { Product, UpdateProductAction } from './product';
 import { Event, Command } from '@ecomm/EventStore';
 import { CreateProductBody } from './product.schemas';
 
-export const PRODUCT_ENTITY_NAME = 'product';
+export const ENTITY_NAME = 'product';
 
 ///////////
 // Commands
 ///////////
 
 export const enum ProductCommandTypes {
-  CREATE = 'product-create',
-  UPDATE = 'product-update',
+  CREATE = `${ENTITY_NAME}-create`,
+  UPDATE = `${ENTITY_NAME}-update`,
 }
 
 export type CreateProduct = Command<
@@ -41,12 +41,12 @@ export type UpdateProduct = Command<
 /////////
 
 export const enum ProductEventTypes {
-  PRODUCT_CREATED = 'product-created',
-  PRODUCT_UPDATED = 'product-updated',
+  CREATED = `${ENTITY_NAME}-created`,
+  UPDATED = `${ENTITY_NAME}-upated`,
 }
 
 export type ProductCreated = Event<
-  ProductEventTypes.PRODUCT_CREATED,
+  ProductEventTypes.CREATED,
   {
     product: Product;
   },
@@ -54,7 +54,7 @@ export type ProductCreated = Event<
 >;
 
 export type ProductUpdated = Event<
-  ProductEventTypes.PRODUCT_UPDATED,
+  ProductEventTypes.UPDATED,
   {
     productId: Product['id'];
     actions: UpdateProductAction[];
@@ -68,5 +68,4 @@ export type ProductEvent = ProductCreated | ProductUpdated;
 // Stream
 /////////
 
-export const toProductStreamName = (productId: string) =>
-  `product-${productId}`;
+export const toStreamName = (id: string) => `${ENTITY_NAME}-${id}`;

@@ -4,6 +4,7 @@ import {
   UpdateProductCategoryAction,
   ProductCategorySchema,
 } from './productCategory';
+import { ProjectBasedParamsSchema } from '../base.schemas';
 
 const defaultExample = {
   name: 'Root Category',
@@ -46,9 +47,12 @@ export type UpdateProductCategoryBody = Static<
   typeof UpdateProductCategoryBodySchema
 >;
 
-export const FindProductCategoryParmsSchema = Type.Object({
-  id: Type.String(),
-});
+export const FindProductCategoryParmsSchema = Type.Composite([
+  ProjectBasedParamsSchema,
+  Type.Object({
+    id: Type.String(),
+  }),
+]);
 export type FindProductCategoryParms = Static<
   typeof FindProductCategoryParmsSchema
 >;

@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import { FastifyPluginAsync } from 'fastify';
 import mongo from '@fastify/mongodb';
 import { green, red, magenta, yellow, bold } from 'kolorist';
-import { Collection, Db } from 'mongodb';
+import { Collection, Db, Document } from 'mongodb';
 import { Record, Type } from '@fastify/type-provider-typebox';
 import { requestId } from '@ecomm/RequestContext';
 import pino from 'pino';
@@ -11,7 +11,13 @@ interface Database {
   mongo: typeof mongo;
   col: { [key: string]: Collection<any> | { [key: string]: Collection<any> } };
   repo: { [key: string]: any };
-  getDb: (projectId: string) => Promise<Db>;
+  getDb: (projectId: string) => Db;
+  getCol: (projectId: string, entity: string, catalogId?: string) => Collection;
+  collectionName: (
+    projectId: string,
+    entity: string,
+    catalogId?: string,
+  ) => string;
 }
 
 declare module 'fastify' {
@@ -23,15 +29,41 @@ declare module 'fastify' {
 const mongoPlugin: FastifyPluginAsync = async (server) => {
   const dbs = new Map<string, Db>();
 
-  const getDb = async (projectId: string): Promise<Db> => {
+  const getDb = (projectId: string): Db => {
     const db = dbs.get(projectId);
     if (db) return db;
-    const newDb = await server.mongo.client.db(projectId);
+    const newDb = server.mongo.client.db(projectId);
     dbs.set(projectId, newDb);
     return newDb;
   };
 
-  server.decorate('db', { getDb, mongo, col: {}, repo: {} });
+  const getCol = (
+    projectId: string,
+    entity: string,
+    catalogId?: string,
+  ): Collection => {
+    const col: Collection = getDb(projectId).collection(
+      collectionName(projectId, entity, catalogId),
+    );
+    return col;
+  };
+
+  const collectionName = (
+    projectId: string,
+    entity: string,
+    catalogId?: string,
+  ) => {
+    return `${entity}${catalogId ? `_${catalogId}` : ''}`;
+  };
+
+  server.decorate('db', {
+    getDb,
+    getCol,
+    collectionName,
+    mongo,
+    col: {},
+    repo: {},
+  });
 
   // Register
   const { MONGO_URL: mongoUrl } = server.config;

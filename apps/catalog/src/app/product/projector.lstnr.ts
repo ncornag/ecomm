@@ -2,7 +2,11 @@ import { green, magenta, yellow, bold } from 'kolorist';
 import pino from 'pino';
 import { RecordedEvent } from '@ecomm/EventStore';
 import { type IProductService, ProductService } from '../product/product.svc';
-import { ProductEvent, ProductUpdated } from './product.events';
+import {
+  ProductEvent,
+  ProductEventTypes,
+  ProductUpdated,
+} from './product.events';
 
 export const collectionName = (
   projectId: string,
@@ -57,7 +61,7 @@ export class ProjectorListener {
     );
     const col = db.collection(colName);
 
-    if (event.type === 'product-created') {
+    if (event.type === ProductEventTypes.CREATED) {
       const entity = await this.productService.aggregate(
         undefined as any,
         event,
@@ -73,7 +77,7 @@ export class ProjectorListener {
         );
         return;
       }
-    } else if (event.type === 'product-updated') {
+    } else if (event.type === ProductEventTypes.UPDATED) {
       const e = event as ProductUpdated;
       const entity = await col.findOne({
         _id: e.data.productId,

@@ -14,26 +14,17 @@ import {
   updateProductSchema,
   type FindProductQueryString,
   FindProductQueryStringSchema,
-  ProjectBasedParams,
 } from '../../product/product.schemas';
 import { ProductService } from '../../product/product.svc';
 import { type Product } from '../../product/product';
 import {
   ProductCommandTypes,
   ProductEvent,
-  toProductStreamName,
+  toStreamName,
 } from '../../product/product.events';
 import { nanoid } from 'nanoid';
 import { projectId } from '@ecomm/RequestContext';
-
-export type StreamType = string;
-export type StreamName<T extends StreamType = StreamType> = `${T}:${string}`;
-export function toStreamName<T extends StreamType>(
-  streamType: T,
-  streamId: string,
-): StreamName<T> {
-  return `${streamType}:${streamId}`;
-}
+import { ProjectBasedParams } from '../../base.schemas';
 
 export default async function (
   server: FastifyInstance,
@@ -58,7 +49,7 @@ export default async function (
       const id = nanoid();
       const eventStoreResult = await server.es.create(
         service.create,
-        toProductStreamName(id),
+        toStreamName(id),
         {
           type: ProductCommandTypes.CREATE,
           data: {
@@ -95,7 +86,7 @@ export default async function (
     ) => {
       const eventStoreResult = await server.es.update(
         service.update,
-        toProductStreamName(request.params.id),
+        toStreamName(request.params.id),
         request.body.version,
         {
           type: ProductCommandTypes.UPDATE,
@@ -139,7 +130,6 @@ export default async function (
         request.query.materialized,
       );
       if (!result.ok) return reply.sendAppError(result.val);
-
       return reply.send(result.val);
     },
   });
@@ -162,7 +152,7 @@ export default async function (
       // FIXME handle request.query.catalog,
       const result = await server.es.aggregateStream<Product, ProductEvent>(
         projectId(),
-        toProductStreamName(request.params.id),
+        toStreamName(request.params.id),
         service.aggregate,
       );
       if (!result.ok) return reply.sendAppError(result.val);

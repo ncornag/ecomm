@@ -4,6 +4,9 @@ import { type ITreeRepo } from '../lib/tree';
 import { Db, Collection } from 'mongodb';
 import { type ProductCategory } from './productCategory';
 import { type ProductCategoryDAO } from './productCategory.dao.schema';
+import { FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/RequestContext';
+import { collectionName } from '../product/projector.lstnr';
 
 export interface IProductCategoryRepository {
   create: (
@@ -32,18 +35,21 @@ export interface IProductCategoryRepository {
   ) => Promise<Result<any[], AppError>>;
 }
 
-export const getProductCategoryCollection = (
-  db: Db,
-): Collection<ProductCategoryDAO> => {
-  return db.collection<ProductCategoryDAO>('ProductCategory');
-};
+// export const getProductCategoryCollection = (
+//   db: Db,
+// ): Collection<ProductCategoryDAO> => {
+//   return db.collection<ProductCategoryDAO>('ProductCategory');
+// };
 
 export class ProductCategoryRepository
   implements IProductCategoryRepository, ITreeRepo<ProductCategoryDAO>
 {
+  private ENTITY = 'productCategory';
+  private server: FastifyInstance;
   private col: Collection<ProductCategoryDAO>;
 
   constructor(server: any) {
+    this.server = server;
     this.col = server.db.col.productCategory;
   }
 
@@ -108,17 +114,18 @@ export class ProductCategoryRepository
 
   // FIND ONE CATEGORY
   async findOne(
-    id: string,
+    productCategoryId: string,
     version?: number,
   ): Promise<Result<ProductCategoryDAO, AppError>> {
-    const filter: any = { _id: id };
+    const col = this.server.db.getCol(projectId(), this.ENTITY);
+    const filter: any = { _id: productCategoryId };
     if (version !== undefined) filter.version = version;
-    const entity = await this.col.findOne(filter);
+    const entity = await col.findOne<ProductCategoryDAO>(filter);
     if (!entity) {
       return new Err(
         new AppError(
           ErrorCode.BAD_REQUEST,
-          `Can't find category with id [${id}]`,
+          `Can't find category with id [${productCategoryId}]`,
         ),
       );
     }
@@ -131,7 +138,10 @@ export class ProductCategoryRepository
     options: any,
   ): Promise<Result<ProductCategoryDAO[], AppError>> {
     // TODO: Add query limit
-    const entities = await this.col.find(query, options).toArray();
+    const col = this.server.db.getCol(projectId(), this.ENTITY);
+    const entities = await col
+      .find<ProductCategoryDAO>(query, options)
+      .toArray();
     return new Ok(entities);
   }
 
@@ -140,8 +150,9 @@ export class ProductCategoryRepository
     pipeline: any[],
     options: any,
   ): Promise<Result<any, AppError>> {
+    const col = this.server.db.getCol(projectId(), this.ENTITY);
     const result: any[] = [];
-    const cursor = this.col.aggregate(pipeline, options);
+    const cursor = col.aggregate(pipeline, options);
     for await (const doc of cursor) {
       result.push(doc);
     }

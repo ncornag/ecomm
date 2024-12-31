@@ -1,6 +1,7 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
 import { UpdateProductAction, ProductSchema } from './product';
+import { ProjectBasedParamsSchema } from '../base.schemas';
 
 const defaultExample = {
   name: 'Root Category',
@@ -38,12 +39,6 @@ export const UpdateProductBodySchema = Type.Object(
   { additionalProperties: false },
 );
 export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
-
-// PROJECT BASED PARAMS
-export const ProjectBasedParamsSchema = Type.Object({
-  projectId: Type.String(),
-});
-export type ProjectBasedParams = Static<typeof ProjectBasedParamsSchema>;
 
 // FIND
 export const FindProductParmsSchema = Type.Composite([

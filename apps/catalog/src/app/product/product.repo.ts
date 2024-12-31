@@ -133,12 +133,10 @@ export class ProductRepository implements IProductRepository {
     productId: string,
     version?: number,
   ): Promise<Result<ProductDAO, AppError>> {
-    const db = await this.server.db.getDb(projectId());
-    const colName = collectionName(projectId(), this.ENTITY, catalogId);
-    const col = db.collection<ProductDAO>(colName);
+    const col = this.server.db.getCol(projectId(), this.ENTITY, catalogId);
     const filter: any = { _id: productId };
     if (version !== undefined) filter.version = version;
-    const entity = await col.findOne(filter);
+    const entity = await col.findOne<ProductDAO>(filter);
     if (!entity) {
       return new Err(
         new AppError(
@@ -157,9 +155,8 @@ export class ProductRepository implements IProductRepository {
     options: any,
   ): Promise<Result<ProductDAO[], AppError>> {
     // TODO: Add query limit
-    const colName = collectionName(projectId(), this.ENTITY, catalogId);
-    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
-    const entities = await col.find(query, options).toArray();
+    const col = this.server.db.getCol(projectId(), this.ENTITY, catalogId);
+    const entities = await col.find<ProductDAO>(query, options).toArray();
     return new Ok(entities);
   }
 
@@ -169,8 +166,7 @@ export class ProductRepository implements IProductRepository {
     pipeline: any[],
     options: any,
   ): Promise<Result<any, AppError>> {
-    const colName = collectionName(projectId(), this.ENTITY, catalogId);
-    const col = this.server.mongo.db!.collection<ProductDAO>(colName);
+    const col = this.server.db.getCol(projectId(), this.ENTITY, catalogId);
     const result: any[] = [];
     const cursor = col.aggregate(pipeline, options);
     for await (const doc of cursor) {

@@ -3,6 +3,7 @@ import { type FastifyPluginCallback } from 'fastify';
 import { Err as ErrBase } from 'ts-results';
 
 export const ErrorCode: Record<string, number> = {
+  NOT_MODIFIED: 304,
   BAD_REQUEST: 400,
   UNPROCESSABLE_ENTITY: 422,
   UNAUTHORIZED: 401,
@@ -12,6 +13,7 @@ export const ErrorCode: Record<string, number> = {
 };
 
 export const ErrorName = {
+  [ErrorCode.NOT_MODIFIED]: 'Not modified',
   [ErrorCode.BAD_REQUEST]: 'Bad request',
   [ErrorCode.UNPROCESSABLE_ENTITY]: 'Unprocessable entity',
   [ErrorCode.UNAUTHORIZED]: 'Unathorized',

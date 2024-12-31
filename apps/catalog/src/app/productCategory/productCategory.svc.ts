@@ -1,32 +1,44 @@
 import { type Result, Ok, Err } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
+import { AppErrorResult, AppError, ErrorCode } from '@ecomm/AppError';
 import { Value } from '@sinclair/typebox/value';
-import { nanoid } from 'nanoid';
-import {
-  type ProductCategory,
-  UpdateProductCategoryAction,
-} from './productCategory';
-import { type CreateProductCategoryBody } from './productCategory.schemas';
+import { type ProductCategory } from './productCategory';
 import { type ProductCategoryDAO } from './productCategory.dao.schema';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
 import { SetKeyActionHandler } from '../lib/actions/setKey.handler';
 import { ChangeParentActionHandler } from '../lib/tree';
-import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
+import {
+  ActionsRunner,
+  ActionsRunner2,
+  type ActionHandlersList,
+} from '@ecomm/ActionsRunner';
 import { type IProductCategoryRepository } from './productCategory.repo';
-import { type Config } from '@ecomm/Config';
 import { Validator } from '../lib/validator';
 import { Queues } from '@ecomm/Queues';
+import {
+  CreateProductCategory,
+  ENTITY_NAME,
+  ProductCategoryCreated,
+  ProductCategoryEvent,
+  ProductCategoryEventTypes,
+  ProductCategoryUpdated,
+  toStreamName,
+  UpdateProductCategory,
+} from './productCategory.events';
+import { RecordedEvent, toRecordedEvent } from '@ecomm/EventStore';
+import { FastifyInstance } from 'fastify';
 
 // SERVICE INTERFACE
 interface IProductCategoryService {
-  createProductCategory: (
-    payload: CreateProductCategoryBody,
-  ) => Promise<Result<ProductCategory, AppError>>;
-  updateProductCategory: (
-    id: string,
-    version: number,
-    actions: any,
-  ) => Promise<Result<ProductCategory, AppError>>;
+  create: (
+    command: CreateProductCategory,
+  ) => Promise<Result<ProductCategoryCreated, AppError>>;
+  update: (
+    command: UpdateProductCategory,
+  ) => Promise<Result<ProductCategoryUpdated, AppError>>;
+  aggregate: (
+    currentState: ProductCategory,
+    event: RecordedEvent<ProductCategoryEvent>,
+  ) => Promise<Result<{ entity: ProductCategory; update?: any }, AppError>>;
   findProductCategoryById: (
     id: string,
   ) => Promise<Result<ProductCategory, AppError>>;
@@ -43,9 +55,7 @@ const toEntity = ({
 
 // SERVICE IMPLEMENTATION
 export class ProductCategoryService implements IProductCategoryService {
-  private ENTITY = 'productCategory';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
+  private server: FastifyInstance;
   private static instance: IProductCategoryService;
   private repo: IProductCategoryRepository;
   private actionHandlers: ActionHandlersList;
@@ -53,11 +63,15 @@ export class ProductCategoryService implements IProductCategoryService {
     ProductCategoryDAO,
     IProductCategoryRepository
   >;
-  private config: Config;
+  private actionsRunner2: ActionsRunner2<
+    ProductCategory,
+    IProductCategoryRepository
+  >;
   private queues: Queues;
   private validator: Validator;
 
   private constructor(server: any) {
+    this.server = server;
     this.repo = server.db.repo
       .productCategoryRepository as IProductCategoryRepository;
     this.actionHandlers = {
@@ -69,11 +83,12 @@ export class ProductCategoryService implements IProductCategoryService {
       ProductCategoryDAO,
       IProductCategoryRepository
     >();
-    this.config = server.config;
+    this.actionsRunner2 = new ActionsRunner2<
+      ProductCategory,
+      IProductCategoryRepository
+    >();
     this.queues = server.queues;
     this.validator = new Validator(server);
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IProductCategoryService {
@@ -83,93 +98,120 @@ export class ProductCategoryService implements IProductCategoryService {
     return ProductCategoryService.instance;
   }
 
-  // CREATE CATEGORY
-  public async createProductCategory(
-    payload: CreateProductCategoryBody,
-  ): Promise<Result<ProductCategory, AppError>> {
-    // Add ancestors
-    if (payload.parent) {
-      const actionResult = await this.actionHandlers['changeParent'].run(
-        {} as ProductCategoryDAO,
-        payload as ProductCategoryDAO,
-        { action: 'changeParent', parent: payload.parent },
-        this.repo,
-      );
-      if (actionResult.err) return actionResult;
+  // CREATE
+  public create = async (
+    command: CreateProductCategory,
+  ): Promise<Result<ProductCategoryCreated, AppError>> => {
+    const { id, ...remainder } = command.metadata;
+    if (command.data.productCategory.parent) {
+      // const actionResult = await this.actionHandlers['changeParent'].run(
+      //   {} as ProductCategoryDAO,
+      //   payload as ProductCategoryDAO,
+      //   { action: 'changeParent', parent: payload.parent },
+      //   this.repo,
+      // );
+      // if (actionResult.err) return actionResult;
     }
-    // Save the entity
-    const result = await this.repo.create({
-      id: nanoid(),
-      ...payload,
-    });
-    if (result.err) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.val),
-      metadata: {
-        type: 'entityCreated',
-        entity: this.ENTITY,
-      },
-    });
-    return new Ok(toEntity(result.val));
-  }
+    return new Ok({
+      type: ProductCategoryEventTypes.CREATED,
+      data: { productCategory: { id, ...command.data.productCategory } },
+      metadata: { entity: ENTITY_NAME, ...remainder },
+    } as ProductCategoryCreated);
+  };
 
-  // UPDATE CATEGORY
-  public async updateProductCategory(
-    id: string,
-    version: number,
-    actions: UpdateProductCategoryAction[],
-  ): Promise<Result<ProductCategory, AppError>> {
-    // Find the Entity
-    const result = await this.repo.findOne(id, version);
-    if (result.err) return result;
-    const entity = result.val;
-    const toUpdateEntity = Value.Clone(entity);
-    // Execute actions
-    const actionRunnerResults = await this.actionsRunner.run(
-      entity,
-      toUpdateEntity,
-      this.repo,
-      this.actionHandlers,
-      actions,
+  // UPDATE
+  public update = async (
+    command: UpdateProductCategory,
+  ): Promise<Result<ProductCategoryUpdated, AppError>> => {
+    const aggregateResult = await this.server.es.aggregateStream<
+      ProductCategory,
+      ProductCategoryEvent
+    >(
+      command.metadata.projectId,
+      toStreamName(command.data.productCategoryId),
+      this.aggregate,
     );
-    if (actionRunnerResults.err) return actionRunnerResults;
-    // Compute difference, and save if needed
-    const difference = Value.Diff(entity, toUpdateEntity);
-    if (difference.length > 0) {
-      // Save the entity
-      const saveResult = await this.repo.updateOne(
-        id,
-        version,
-        actionRunnerResults.val.update,
-      );
-      if (saveResult.err) return saveResult;
-      toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.val._id },
-        difference,
-        metadata: {
-          type: 'entityUpdated',
-          entity: this.ENTITY,
-        },
-      });
-      // Send side effects via messagging
-      actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish(sideEffect.action, {
-          ...sideEffect.data,
-          metadata: {
-            type: sideEffect.action,
-            entity: this.ENTITY,
-          },
-        });
-      });
-    }
-    // Return udated entity
-    return Ok(toEntity(toUpdateEntity));
-  }
+    if (!aggregateResult.ok) return aggregateResult;
 
-  // FIND CATEGORY
+    const expectedResult = await this.aggregate(
+      aggregateResult.val,
+      toRecordedEvent(ProductCategoryEventTypes.UPDATED, ENTITY_NAME, command),
+    );
+    if (!expectedResult.ok) return expectedResult;
+
+    if (!expectedResult.val.update.length) {
+      return new AppErrorResult(ErrorCode.NOT_MODIFIED);
+    }
+
+    return new Ok({
+      type: ProductCategoryEventTypes.UPDATED,
+      data: command.data,
+      metadata: {
+        entity: ENTITY_NAME,
+        expected: expectedResult.val.entity,
+        ...command.metadata,
+      },
+    } as ProductCategoryUpdated);
+  };
+
+  // AGGREGATE
+  public aggregate = async (
+    currentState: ProductCategory,
+    event: RecordedEvent<ProductCategoryEvent>,
+  ): Promise<Result<{ entity: ProductCategory; update?: any }, AppError>> => {
+    const e = event as ProductCategoryEvent;
+    switch (e.type) {
+      case ProductCategoryEventTypes.CREATED: {
+        if (currentState)
+          return new AppErrorResult(
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            'Entity already exists',
+          );
+        return new Ok({
+          entity: Object.assign(e.data.productCategory, {
+            version: e.metadata.version,
+            createdAt: event.createdAt,
+          }),
+        });
+      }
+
+      case ProductCategoryEventTypes.UPDATED: {
+        if (!currentState)
+          return new AppErrorResult(
+            ErrorCode.UNPROCESSABLE_ENTITY,
+            'Empty entity',
+          );
+        // Execute actions
+        const toUpdateEntity = Value.Clone(currentState);
+        const actionRunnerResults = await this.actionsRunner2.run(
+          currentState,
+          toUpdateEntity,
+          this.repo,
+          this.actionHandlers,
+          e.data.actions,
+        );
+        if (actionRunnerResults.err) return actionRunnerResults;
+
+        return new Ok({
+          entity: Object.assign(toUpdateEntity, {
+            catalogId: e.metadata.catalogId,
+            version: e.metadata.version,
+            lastModifiedAt: event.createdAt,
+          }),
+          update: actionRunnerResults.val.update,
+        });
+      }
+
+      default: {
+        return new AppErrorResult(
+          ErrorCode.UNPROCESSABLE_ENTITY,
+          `Unknown event type: ${(e as any).type}`,
+        );
+      }
+    }
+  };
+
+  // FIND CATEGORY IN THE READ MODEL
   public async findProductCategoryById(
     id: string,
   ): Promise<Result<ProductCategory, AppError>> {
@@ -182,12 +224,12 @@ export class ProductCategoryService implements IProductCategoryService {
   public async validate(id: string, data: any): Promise<Result<any, AppError>> {
     const schemaResult: Result<any, AppError> =
       await this.validator.getProductCategorySchema(id);
-    if (!schemaResult.ok) return new Err(schemaResult.val);
+    if (schemaResult.err) return new Err(schemaResult.val);
     const validation: Result<any, AppError> = this.validator.validate(
       schemaResult.val.jsonSchema,
       data,
     );
-    if (!validation.ok) return new Err(validation.val);
+    if (validation.err) return new Err(validation.val);
     return new Ok({ ok: true });
   }
 }
