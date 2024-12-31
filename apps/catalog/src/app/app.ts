@@ -10,11 +10,10 @@ import {
   ClassificationCategoryRepository,
   getClassificationCategoryCollection,
 } from './classificationCategory/classificationCategory.repo';
-import {
-  getProductCategoryCollection,
-  ProductCategoryRepository,
-} from './productCategory/productCategory.repo';
-import { ProductRepository } from './product/product.repo';
+// import {
+//   getProductCategoryCollection,
+//   ProductCategoryRepository,
+// } from './productCategory/productCategory.repo';
 import { getPriceCollection, PriceRepository } from './price/price.repo';
 import {
   CatalogRepository,
@@ -77,9 +76,9 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.col.classificationCategory = getClassificationCategoryCollection(
     server.mongo.db!,
   );
-  server.db.col.productCategory = getProductCategoryCollection(
-    server.mongo.db!,
-  );
+  // server.db.col.productCategory = getProductCategoryCollection(
+  //   server.mongo.db!,
+  // );
   server.db.col.price = await getPriceCollection(server.mongo.db!);
   server.db.col.catalog = getCatalogCollection(server.mongo.db!);
   server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);
@@ -91,13 +90,14 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
   server.db.repo.classificationCategoryRepository =
     new ClassificationCategoryRepository(server);
-  server.db.repo.productCategoryRepository = new ProductCategoryRepository(
-    server,
-  );
+  // server.db.repo.productCategoryRepository = new ProductCategoryRepository(
+  //   server,
+  // );
   // server.db.repo.productRepository = new ProductRepository(server);
   server.db.repo.priceRepository = new PriceRepository(server);
 
   // Indexes
+  // FIXME Move to migrations
   const indexes: Promise<any>[] = [];
   indexes.push(
     server.db.col.classificationCategory.createIndex(
@@ -105,26 +105,26 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
       { name: 'CC_Key' },
     ),
   ); // unique: true
-  indexes.push(
-    server.db.col.productCategory.createIndex(
-      { projectId: 1, 'attributes.name': 1 },
-      { name: 'CCA_Key' },
-    ),
-  );
+  // indexes.push(
+  //   server.db.col.productCategory.createIndex(
+  //     { projectId: 1, 'attributes.name': 1 },
+  //     { name: 'CCA_Key' },
+  //   ),
+  // );
   indexes.push(
     server.db.col.auditLog.createIndex(
       { projectId: 1, catalogId: 1, entity: 1, entityId: 1 },
       { name: 'CCA_Key' },
     ),
   );
-  Object.keys(server.db.col.product).forEach((key) => {
-    indexes.push(
-      server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }),
-    );
-    indexes.push(
-      server.db.col.product[key].createIndex({ sku: 1 }, { name: 'sku' }),
-    );
-  });
+  // Object.keys(server.db.col.product).forEach((key) => {
+  //   indexes.push(
+  //     server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }),
+  //   );
+  //   indexes.push(
+  //     server.db.col.product[key].createIndex({ sku: 1 }, { name: 'sku' }),
+  //   );
+  // });
   Object.keys(server.db.col.price).forEach((key) => {
     indexes.push(
       server.db.col.price[key].createIndex({ sku: 1 }, { name: 'sku' }),
