@@ -1,5 +1,6 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
+import { Value } from '@sinclair/typebox/value';
 import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { type UpdateClassificationCategoryChangeName } from '../../classificationCategory/classificationCategory';
 
@@ -19,7 +20,8 @@ export class ChangeNameActionHandler<Repository> {
     action: UpdateClassificationCategoryChangeName,
     repo: Repository,
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    if (entity.name === action.name) return new Ok({ update: {} });
+    const difference = Value.Diff(entity.name, action.name);
+    if (difference.length === 0) return new Ok({ update: {} });
     toUpdateEntity.name = action.name;
     return new Ok({ update: { $set: { name: action.name } } });
   }

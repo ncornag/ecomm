@@ -1,5 +1,6 @@
 import { type Result, Ok, Err } from 'ts-results';
 import { AppError } from '@ecomm/AppError';
+import { Value } from '@sinclair/typebox/value';
 import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
 import { type UpdateProductChangeDescription } from '../../product/product';
 
@@ -19,8 +20,8 @@ export class ChangeDescriptionActionHandler<Repository> {
     action: UpdateProductChangeDescription,
     classificationCategoryRepository: Repository,
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    if (entity.description === action.description)
-      return new Ok({ update: {} });
+    const difference = Value.Diff(entity.description, action.description);
+    if (difference.length === 0) return new Ok({ update: {} });
     toUpdateEntity.description = action.description;
     return new Ok({ update: { $set: { description: action.description } } });
   }
