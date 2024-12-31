@@ -44,7 +44,7 @@ export class AppError extends Error {
 }
 
 // Redefine ts-results Err class to handle AppError based errors
-export class Err<T = AppError> extends ErrBase<T> {
+export class AppErrorResult<T = AppError> extends ErrBase<T> {
   constructor(
     statusCode: number = ErrorCode.BAD_REQUEST,
     message: string = ErrorName[statusCode],
