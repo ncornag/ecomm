@@ -8,26 +8,16 @@ import mongo from '@ecomm/mongo';
 import { Umzug, MongoDBStorage } from 'umzug';
 import {
   ClassificationCategoryRepository,
-  getClassificationCategoryCollection,
+  getClassificationCategoryCollection
 } from './classificationCategory/classificationCategory.repo.ts';
 // import {
 //   getProductCategoryCollection,
 //   ProductCategoryRepository,
 // } from './productCategory/productCategory.repo.ts';
 import { getPriceCollection, PriceRepository } from './price/price.repo.ts';
-import {
-  CatalogRepository,
-  getCatalogCollection,
-} from './catalog/catalog.repo.ts';
-import {
-  CatalogSyncRepository,
-  getCatalogSyncCollection,
-} from './catalogSync/catalogSync.repo.ts';
-import {
-  AuditLogRepository,
-  getAuditLogCollection,
-  auditLogListener,
-} from '@ecomm/audit-log';
+import { CatalogRepository, getCatalogCollection } from './catalog/catalog.repo.ts';
+import { CatalogSyncRepository, getCatalogSyncCollection } from './catalogSync/catalogSync.repo.ts';
+import { AuditLogRepository, getAuditLogCollection, auditLogListener } from '@ecomm/audit-log';
 import { productsIndexerListener } from './product/productsIndexer.lstnr.ts';
 import { pricesIndexerListener } from './price/pricesIndexer.lstnr.ts';
 import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr.ts';
@@ -52,30 +42,24 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   projectorListener(server);
 
   // Migrations
-  const migGlob = `**/migrations/${server.config.NODE_ENV}/mig_${server.config.APP_NAME}*.js`;
+  const migGlob = `**/migrations/${server.config.NODE_ENV}/mig_${server.config.APP_NAME}*.ts`;
   const migrator = new Umzug({
     migrations: {
-      glob: [
-        migGlob,
-        { cwd: path.normalize(path.join(import.meta.dirname, '../../../../')) },
-      ],
-      // glob: path,
+      glob: migGlob
     },
     storage: new MongoDBStorage({
-      collection: server.mongo.db!.collection('migrations'),
+      collection: server.mongo.db!.collection('migrations')
     }),
     logger: server.log,
     context: {
-      server,
-    },
+      server
+    }
   });
   //await migrator.down({});
   await migrator.up({});
 
   // Register Collections
-  server.db.col.classificationCategory = getClassificationCategoryCollection(
-    server.mongo.db!,
-  );
+  server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
   // server.db.col.productCategory = getProductCategoryCollection(
   //   server.mongo.db!,
   // );
@@ -88,8 +72,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.repo.auditLogRepository = new AuditLogRepository(server);
   server.db.repo.catalogRepository = new CatalogRepository(server);
   server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
-  server.db.repo.classificationCategoryRepository =
-    new ClassificationCategoryRepository(server);
+  server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
   // server.db.repo.productCategoryRepository = new ProductCategoryRepository(
   //   server,
   // );
@@ -99,12 +82,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Indexes
   // FIXME Move to migrations
   const indexes: Promise<any>[] = [];
-  indexes.push(
-    server.db.col.classificationCategory.createIndex(
-      { projectId: 1, key: 1 },
-      { name: 'CC_Key' },
-    ),
-  ); // unique: true
+  indexes.push(server.db.col.classificationCategory.createIndex({ projectId: 1, key: 1 }, { name: 'CC_Key' })); // unique: true
   // indexes.push(
   //   server.db.col.productCategory.createIndex(
   //     { projectId: 1, 'attributes.name': 1 },
@@ -112,10 +90,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   //   ),
   // );
   indexes.push(
-    server.db.col.auditLog.createIndex(
-      { projectId: 1, catalogId: 1, entity: 1, entityId: 1 },
-      { name: 'CCA_Key' },
-    ),
+    server.db.col.auditLog.createIndex({ projectId: 1, catalogId: 1, entity: 1, entityId: 1 }, { name: 'CCA_Key' })
   );
   // Object.keys(server.db.col.product).forEach((key) => {
   //   indexes.push(
@@ -126,9 +101,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   //   );
   // });
   Object.keys(server.db.col.price).forEach((key) => {
-    indexes.push(
-      server.db.col.price[key].createIndex({ sku: 1 }, { name: 'sku' }),
-    );
+    indexes.push(server.db.col.price[key].createIndex({ sku: 1 }, { name: 'sku' }));
   });
   await Promise.all(indexes);
 
@@ -145,7 +118,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
           name: 'searchKeywords',
           type: 'string[]',
           optional: true,
-          facet: true,
+          facet: true
         },
         { name: 'attributes', type: 'object', optional: true, facet: true },
         { name: 'categories', type: 'string[]', optional: true, facet: true },
@@ -154,60 +127,60 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
         {
           name: 'brand',
           type: 'string',
-          facet: true,
+          facet: true
         },
         {
           name: 'categories.lvl0',
           type: 'string[]',
-          facet: true,
+          facet: true
         },
         {
           name: 'categories.lvl1',
           type: 'string[]',
           facet: true,
-          optional: true,
+          optional: true
         },
         {
           name: 'categories.lvl2',
           type: 'string[]',
           facet: true,
-          optional: true,
+          optional: true
         },
         {
           name: 'categories.lvl3',
           type: 'string[]',
           facet: true,
-          optional: true,
+          optional: true
         },
         {
           name: 'price',
           type: 'float',
           facet: true,
-          optional: true,
+          optional: true
         },
         {
           name: 'popularity',
           type: 'int32',
-          facet: false,
+          facet: false
         },
         {
           name: 'free_shipping',
           type: 'bool',
-          facet: true,
+          facet: true
         },
         {
           name: 'rating',
           type: 'int32',
-          facet: true,
+          facet: true
         },
         {
           name: 'vectors',
           type: 'float[]',
           num_dim: 384,
-          optional: true,
-        },
+          optional: true
+        }
       ],
-      enable_nested_fields: true,
+      enable_nested_fields: true
     };
     if (process.env.DROP_PRODUCT_INDEX === 'YES')
       await server.index
@@ -238,6 +211,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Register Routes
   server.register(AutoLoad, {
     dir: path.join(import.meta.dirname, 'routes'),
-    options: { prefix: ':projectId', ...opts },
+    options: { prefix: ':projectId', ...opts }
   });
 }

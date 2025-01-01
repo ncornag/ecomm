@@ -1,19 +1,26 @@
 import {
   ProductCommandTypes,
-  toStreamName,
+  toStreamName as toProductStreamName,
+  ENTITY_NAME as productEntityName
 } from '../../app/product/product.events.ts';
 import { ProductService } from '../../app/product/product.svc.ts';
+import {
+  ProductCategoryCommandTypes,
+  toStreamName as toProductCategoryStreamName,
+  ENTITY_NAME as productCategoryEntityName
+} from '../../app/productCategory/productCategory.events.ts';
+import { ProductCategoryService } from '../../app/productCategory/productCategory.svc.ts';
 import { nanoid } from 'nanoid';
 
 const catalogs = [
   {
     _id: 'stage',
-    name: 'Stage',
+    name: 'Stage'
   },
   {
     _id: 'online',
-    name: 'Online',
-  },
+    name: 'Online'
+  }
 ];
 const catalogSyncs = [
   {
@@ -26,8 +33,8 @@ const catalogSyncs = [
     runAt: '00 01 * * *',
     lastSync: '2023-01-15T00:00:00.000+00:00',
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
-  },
+    createdAt: '2023-01-15T00:00:00.000+00:00'
+  }
 ];
 const classificationCategories = [
   {
@@ -42,7 +49,7 @@ const classificationCategories = [
         isRequired: true,
         type: 'number',
         min: 1,
-        max: 18,
+        max: 18
       },
       {
         key: 'color',
@@ -52,29 +59,29 @@ const classificationCategories = [
         options: [
           {
             key: 'Y',
-            label: 'Yellow',
+            label: 'Yellow'
           },
           {
             key: 'O',
-            label: 'Orange',
+            label: 'Orange'
           },
           {
             key: 'G',
-            label: 'Green',
-          },
-        ],
+            label: 'Green'
+          }
+        ]
       },
       {
         key: 'options',
         label: 'Options',
         isRequired: false,
         type: 'list',
-        elementType: 'text',
-      },
+        elementType: 'text'
+      }
     ],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'hardware',
@@ -84,7 +91,7 @@ const classificationCategories = [
     attributes: [],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'cpu',
@@ -96,18 +103,18 @@ const classificationCategories = [
         key: 'speed',
         label: 'clockSpeed',
         isRequired: false,
-        type: 'number',
+        type: 'number'
       },
       {
         key: 'cache',
         label: 'Cache',
         isRequired: true,
-        type: 'text',
-      },
+        type: 'text'
+      }
     ],
     ancestors: ['hardware'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'photography',
@@ -118,19 +125,19 @@ const classificationCategories = [
         key: 'sensor',
         label: 'Sensor',
         isRequired: true,
-        type: 'text',
+        type: 'text'
       },
       {
         key: 'res',
         label: 'Resolutions',
         isRequired: true,
-        type: 'text',
-      },
+        type: 'text'
+      }
     ],
     parent: 'hardware',
     ancestors: ['hardware'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'electricity',
@@ -142,12 +149,12 @@ const classificationCategories = [
         key: 'curr',
         label: 'current',
         isRequired: true,
-        type: 'number',
-      },
+        type: 'number'
+      }
     ],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'machines',
@@ -159,25 +166,25 @@ const classificationCategories = [
         key: 'size',
         label: 'size',
         isRequired: true,
-        type: 'text',
+        type: 'text'
       },
       {
         key: 'weight',
         label: 'weight',
         isRequired: true,
-        type: 'number',
+        type: 'number'
       },
       {
         key: 'characteristics',
         label: 'Characteristics',
         isRequired: true,
         type: 'object',
-        ref: 'machine-properties',
-      },
+        ref: 'machine-properties'
+      }
     ],
     ancestors: ['electricity'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'software',
@@ -189,19 +196,19 @@ const classificationCategories = [
         key: 'req',
         label: 'requirements',
         isRequired: true,
-        type: 'text',
+        type: 'text'
       },
       {
         key: 'lan',
         label: 'language',
         isRequired: true,
-        type: 'text',
-      },
+        type: 'text'
+      }
     ],
     ancestors: ['electricity'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
-  },
+    createdAt: '2023-01-15T00:00:00.000+00:00'
+  }
 ];
 const classificationCategoriesShoes = [
   {
@@ -214,19 +221,19 @@ const classificationCategoriesShoes = [
         key: 'color',
         label: 'Color',
         isRequired: true,
-        type: 'text',
+        type: 'text'
       },
       {
         key: 'size',
         label: 'Size',
         isRequired: true,
-        type: 'text',
-      },
+        type: 'text'
+      }
     ],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
-  },
+    createdAt: '2023-01-15T00:00:00.000+00:00'
+  }
 ];
 const productCategories = [
   {
@@ -237,7 +244,7 @@ const productCategories = [
     classificationCategories: ['machines'],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'printers',
@@ -247,7 +254,7 @@ const productCategories = [
     classificationCategories: [],
     ancestors: ['mana'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'laptops',
@@ -257,8 +264,8 @@ const productCategories = [
     classificationCategories: ['cpu'],
     ancestors: ['mana'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
-  },
+    createdAt: '2023-01-15T00:00:00.000+00:00'
+  }
 ];
 const productCategoriesShoes = [
   {
@@ -269,7 +276,7 @@ const productCategoriesShoes = [
     classificationCategories: [],
     ancestors: [],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'running',
@@ -279,7 +286,7 @@ const productCategoriesShoes = [
     classificationCategories: [],
     ancestors: ['home'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
+    createdAt: '2023-01-15T00:00:00.000+00:00'
   },
   {
     _id: 'shoes',
@@ -289,8 +296,8 @@ const productCategoriesShoes = [
     classificationCategories: ['shoes'],
     ancestors: ['running'],
     version: 0,
-    createdAt: '2023-01-15T00:00:00.000+00:00',
-  },
+    createdAt: '2023-01-15T00:00:00.000+00:00'
+  }
 ];
 const productShoes = [
   {
@@ -298,53 +305,53 @@ const productShoes = [
     version: 0,
     catalogId: 'stage',
     name: {
-      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
+      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES'
     },
     description: {
-      en: 'Built with innovative technology and designed without ...',
+      en: 'Built with innovative technology and designed without ...'
     },
     slug: {
-      en: 'adizero-prime-x-2-strung-running-shoes',
+      en: 'adizero-prime-x-2-strung-running-shoes'
     },
     searchKeywords: {
       en: [
         {
-          text: 'adizero',
+          text: 'adizero'
         },
         {
-          text: 'prime',
+          text: 'prime'
         },
         {
-          text: 'x',
+          text: 'x'
         },
         {
-          text: 'running',
+          text: 'running'
         },
         {
-          text: 'shoes',
-        },
-      ],
+          text: 'shoes'
+        }
+      ]
     },
     categories: ['shoes'],
     type: 'base',
     assets: [
       {
         url: 'https://commercetools.com/cli/data/253245821_1.jpg',
-        tags: ['image', 'main', '800x500'],
+        tags: ['image', 'main', '800x500']
       },
       {
         label: 'User Manual',
         url: 'https://commercetools.com/cli/data/manual.pdf',
-        tags: ['pdf'],
-      },
-    ],
+        tags: ['pdf']
+      }
+    ]
   },
   {
     _id: 'adizeroPrimeX2-White-001',
     version: 0,
     catalogId: 'stage',
     name: {
-      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!',
+      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!'
     },
     sku: 'HP9708_570',
     searchKeywords: ['white'],
@@ -352,8 +359,8 @@ const productShoes = [
     parent: 'adizeroPrimeX2-base',
     attributes: {
       color: 'Cloud White',
-      size: 'M 6/W 7',
-    },
+      size: 'M 6/W 7'
+    }
   },
   {
     _id: 'adizeroPrimeX2-White-002',
@@ -364,8 +371,8 @@ const productShoes = [
     parent: 'adizeroPrimeX2-base',
     attributes: {
       color: 'Cloud White',
-      size: 'M 6.5/W 7.5',
-    },
+      size: 'M 6.5/W 7.5'
+    }
   },
   {
     _id: 'adizeroPrimeX2-Black-001',
@@ -376,9 +383,9 @@ const productShoes = [
     parent: 'adizeroPrimeX2-base',
     attributes: {
       color: 'Core Black',
-      size: 'M 6.5/W 7.5',
-    },
-  },
+      size: 'M 6.5/W 7.5'
+    }
+  }
 ];
 const productComposites = [
   {
@@ -386,10 +393,10 @@ const productComposites = [
     version: 0,
     catalogId: 'stage',
     name: {
-      en: 'Full Frame Mirrorless Camera Kit',
+      en: 'Full Frame Mirrorless Camera Kit'
     },
     description: {
-      en: 'Whatever you shoot, this kit lets you be creative ...',
+      en: 'Whatever you shoot, this kit lets you be creative ...'
     },
     slug: 'full-frame-mirrorless-camera-kit',
     searchKeywords: ['mirrorless', 'full-frame', 'kit'],
@@ -407,15 +414,15 @@ const productComposites = [
         references: [
           {
             category: 'mirrorless',
-            exceptions: ['canon-eos-r3'],
+            exceptions: ['canon-eos-r3']
           },
           {
-            product: 'canon-eos-r5',
+            product: 'canon-eos-r5'
           },
           {
-            product: 'canon-eos6-mark-ii',
-          },
-        ],
+            product: 'canon-eos6-mark-ii'
+          }
+        ]
       },
       {
         label: '2. Lens',
@@ -427,12 +434,12 @@ const productComposites = [
         max: 1,
         references: [
           {
-            category: 'ef-lens',
+            category: 'ef-lens'
           },
           {
-            category: 'rf-lens',
-          },
-        ],
+            category: 'rf-lens'
+          }
+        ]
       },
       {
         label: '3. Memory Card',
@@ -444,9 +451,9 @@ const productComposites = [
         max: 1,
         references: [
           {
-            category: 'sdxc-memory-cards',
-          },
-        ],
+            category: 'sdxc-memory-cards'
+          }
+        ]
       },
       {
         label: '4. Accessories',
@@ -458,21 +465,21 @@ const productComposites = [
         max: 5,
         references: [
           {
-            category: 'accessories',
-          },
-        ],
-      },
-    ],
+            category: 'accessories'
+          }
+        ]
+      }
+    ]
   },
   {
     _id: 'wood-business-card',
     version: 0,
     catalogId: 'stage',
     name: {
-      en: 'Modern wood business card',
+      en: 'Modern wood business card'
     },
     description: {
-      en: 'Modern wood grain look professional carpenter logo business card',
+      en: 'Modern wood grain look professional carpenter logo business card'
     },
     slug: 'modern-wood-business-card',
     searchKeywords: ['cards'],
@@ -486,13 +493,13 @@ const productComposites = [
         options: [
           {
             key: 'B',
-            label: 'Black Theme',
+            label: 'Black Theme'
           },
           {
             key: 'W',
-            label: 'White Theme',
-          },
-        ],
+            label: 'White Theme'
+          }
+        ]
       },
       {
         label: 'Size',
@@ -501,17 +508,17 @@ const productComposites = [
         options: [
           {
             key: 'S',
-            label: 'Standard, 3.5 x 2.0',
+            label: 'Standard, 3.5 x 2.0'
           },
           {
             key: 'M',
-            label: 'Mini, 3.0 x 1.0',
+            label: 'Mini, 3.0 x 1.0'
           },
           {
             key: 'E',
-            label: 'Euro, 3.346 x 2.165',
-          },
-        ],
+            label: 'Euro, 3.346 x 2.165'
+          }
+        ]
       },
       {
         label: 'Paper',
@@ -520,32 +527,32 @@ const productComposites = [
         options: [
           {
             key: 'S1',
-            label: 'Standard Matte',
+            label: 'Standard Matte'
           },
           {
             key: 'S2',
-            label: 'Standard Semi-Gloss',
+            label: 'Standard Semi-Gloss'
           },
           {
             key: 'SG',
-            label: 'Signature UV Gloss',
-          },
-        ],
+            label: 'Signature UV Gloss'
+          }
+        ]
       },
       {
         label: 'First Line',
         key: 'first-line',
         type: 'text',
         minLength: 1,
-        maxLength: 20,
+        maxLength: 20
       },
       {
         label: 'Second Line',
         key: 'second-line',
-        type: 'text',
-      },
-    ],
-  },
+        type: 'text'
+      }
+    ]
+  }
 ];
 
 /*
@@ -573,35 +580,91 @@ export async function up(params) {
   const db = params.context.server.mongo.db;
   await db.collection('Catalog').insertMany(catalogs);
   await db.collection('CatalogSync').insertMany(catalogSyncs);
-  await db
-    .collection('ClassificationCategory')
-    .insertMany(classificationCategories);
-  await db
-    .collection('ClassificationCategory')
-    .insertMany(classificationCategoriesShoes);
-  await db.collection('ProductCategory').insertMany(productCategories);
-  await db.collection('ProductCategory').insertMany(productCategoriesShoes);
+  await db.collection('ClassificationCategory').insertMany(classificationCategories);
+  await db.collection('ClassificationCategory').insertMany(classificationCategoriesShoes);
+  // await db.collection('ProductCategory').insertMany(productCategories);
+  // await db.collection('ProductCategory').insertMany(productCategoriesShoes);
   //await db.collection('ProductStage').insertMany(productShoes);
   //await db.collection('ProductStage').insertMany(productComposites);
 
-  const service = ProductService.getInstance(params.context.server);
+  const productService = ProductService.getInstance(params.context.server);
+  const productCategoryService = ProductCategoryService.getInstance(params.context.server);
 
-  for await (const record of productShoes) {
+  // Product
+  await send(
+    params.context.server,
+    productShoes,
+    productService.create,
+    toProductStreamName,
+    ProductCommandTypes.CREATE,
+    productEntityName,
+    'test',
+    'stage'
+  );
+
+  // ProductCategory
+  await send(
+    params.context.server,
+    productCategories,
+    productCategoryService.create,
+    toProductCategoryStreamName,
+    ProductCategoryCommandTypes.CREATE,
+    productCategoryEntityName,
+    'test'
+  );
+  await send(
+    params.context.server,
+    productCategoriesShoes,
+    productCategoryService.create,
+    toProductCategoryStreamName,
+    ProductCategoryCommandTypes.CREATE,
+    productCategoryEntityName,
+    'test'
+  );
+  // for await (const record of productShoes) {
+  //   const id = nanoid();
+  //   const { _id, version, catalogId, ...product } = record;
+  //   await params.context.server.es.create(productService.create, toProductStreamName(id), {
+  //     type: ProductCommandTypes.CREATE,
+  //     data: {
+  //       product
+  //     },
+  //     metadata: {
+  //       id,
+  //       catalogId: 'stage',
+  //       projectId: 'test'
+  //     }
+  //   });
+  // }
+}
+
+const send = async (
+  server: any,
+  records: any,
+  createService: any,
+  streamNameService: any,
+  type: any,
+  payloadName: string,
+  projectId: string,
+  catalogId?: string
+) => {
+  for await (const record of records) {
     const id = nanoid();
-    const { _id, version, catalogId, ...product } = record;
-    await params.context.server.es.create(service.create, toStreamName(id), {
-      type: ProductCommandTypes.CREATE,
-      data: {
-        product,
-      },
+    const { _id, version, catalogId, ...payload } = record;
+    const data: any = {};
+    data[payloadName] = payload;
+    const metadata: any = { id, projectId };
+    if (catalogId) metadata.catalogId = catalogId;
+    await server.es.create(createService, streamNameService(id), {
+      type,
+      data,
       metadata: {
         id,
-        catalogId: 'stage',
-        projectId: 'test',
-      },
+        projectId
+      }
     });
   }
-}
+};
 
 export async function down(params) {
   const db = params.context.server.mongo.db;
