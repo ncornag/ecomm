@@ -1,5 +1,5 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { AppError } from '@ecomm/app-error';
 import { green, red, magenta, yellow, bold } from 'kolorist';
 
 export interface IRepo<DAO> {
@@ -18,9 +18,7 @@ class UpdateChildAncestorsForIdListener {
   }
 
   public start() {
-    this.server.log.info(
-      `${yellow('UpdateChildAncestorsForIdService')} ${green('listening to')} [${this.TOPIC}]`,
-    );
+    this.server.log.info(`${yellow('UpdateChildAncestorsForIdService')} ${green('listening to')} [${this.TOPIC}]`);
     this.server.queues.subscribe(this.TOPIC, this.handler.bind(this));
   }
 
@@ -29,17 +27,17 @@ class UpdateChildAncestorsForIdListener {
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} updateChildAncestorsForId ${green(
-          JSON.stringify(data),
-        )}`,
+          JSON.stringify(data)
+        )}`
       );
     //
 
     const entityResult = await repo.find(
       { projectId: data.metadata.projectId, _id: data.id },
-      { projection: { _id: 1, ancestors: 1 } },
+      { projection: { _id: 1, ancestors: 1 } }
     );
-    if (entityResult.err) {
-      console.log('error: ' + entityResult.err);
+    if (entityResult.isErr()) {
+      console.log('error: ' + entityResult.isErr());
       return;
     }
 
@@ -47,23 +45,23 @@ class UpdateChildAncestorsForIdListener {
     const updateResult1 = await repo.update(
       { projectId: data.metadata.projectId, ancestors: data.id },
       {
-        $pull: { ancestors: { $in: data.oldAncestors } },
-      },
+        $pull: { ancestors: { $in: data.oldAncestors } }
+      }
     );
-    if (updateResult1.err) {
-      console.log('error: ' + updateResult1.err);
+    if (updateResult1.isErr()) {
+      console.log('error: ' + updateResult1.isErr());
       return;
     }
     const updateResult2 = await repo.update(
       { projectId: data.metadata.projectId, ancestors: data.id },
       {
         $push: {
-          ancestors: { $each: entityResult.val[0].ancestors, $position: 0 },
-        },
-      },
+          ancestors: { $each: entityResult.value[0].ancestors, $position: 0 }
+        }
+      }
     );
-    if (updateResult2.err) {
-      console.log('error: ' + updateResult2.err);
+    if (updateResult2.isErr()) {
+      console.log('error: ' + updateResult2.isErr());
       return;
     }
   };

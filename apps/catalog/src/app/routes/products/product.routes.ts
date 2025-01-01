@@ -1,11 +1,6 @@
-import { type Result } from 'ts-results';
-import {
-  type FastifyInstance,
-  type FastifyPluginOptions,
-  type FastifyReply,
-  type FastifyRequest,
-} from 'fastify';
-import { AppError } from '@ecomm/AppError';
+import { type Result } from 'ts-results-es';
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '@ecomm/app-error';
 import {
   type CreateProductBody,
   type UpdateProductBody,
@@ -13,23 +8,16 @@ import {
   postProductSchema,
   updateProductSchema,
   type FindProductQueryString,
-  FindProductQueryStringSchema,
-} from '../../product/product.schemas';
-import { ProductService } from '../../product/product.svc';
-import { type Product } from '../../product/product';
-import {
-  ProductCommandTypes,
-  ProductEvent,
-  toStreamName,
-} from '../../product/product.events';
+  FindProductQueryStringSchema
+} from '../../product/product.schemas.ts';
+import { ProductService } from '../../product/product.svc.ts';
+import { type Product } from '../../product/product.ts';
+import { ProductCommandTypes, type ProductEvent, toStreamName } from '../../product/product.events.ts';
 import { nanoid } from 'nanoid';
-import { projectId } from '@ecomm/RequestContext';
-import { ProjectBasedParams } from '../../base.schemas';
+import { projectId } from '@ecomm/request-context';
+import { type ProjectBasedParams } from '../../base.schemas.ts';
 
-export default async function (
-  server: FastifyInstance,
-  opts: FastifyPluginOptions,
-) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   const service = ProductService.getInstance(server);
 
   // CREATE
@@ -44,30 +32,26 @@ export default async function (
         Body: CreateProductBody;
         Querystring: FindProductQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       const id = nanoid();
-      const eventStoreResult = await server.es.create(
-        service.create,
-        toStreamName(id),
-        {
-          type: ProductCommandTypes.CREATE,
-          data: {
-            product: request.body,
-          },
-          metadata: {
-            projectId: projectId(),
-            id,
-            catalogId: request.query.catalogId,
-          },
+      const eventStoreResult = await server.es.create(service.create, toStreamName(id), {
+        type: ProductCommandTypes.CREATE,
+        data: {
+          product: request.body
         },
-      );
-      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-      return reply.code(201).send({
-        ...eventStoreResult.val.data.product,
-        version: eventStoreResult.val.metadata.version,
+        metadata: {
+          projectId: projectId(),
+          id,
+          catalogId: request.query.catalogId
+        }
       });
-    },
+      if (eventStoreResult.isErr()) return reply.sendAppError(eventStoreResult.error);
+      return reply.code(201).send({
+        ...eventStoreResult.value.data.product,
+        version: eventStoreResult.value.metadata.version
+      });
+    }
   });
 
   // UPDATE
@@ -82,7 +66,7 @@ export default async function (
         Body: UpdateProductBody;
         Querystring: FindProductQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       const eventStoreResult = await server.es.update(
         service.update,
@@ -92,21 +76,21 @@ export default async function (
           type: ProductCommandTypes.UPDATE,
           data: {
             productId: request.params.id,
-            actions: request.body.actions,
+            actions: request.body.actions
           },
           metadata: {
             projectId: projectId(),
             catalogId: request.query.catalogId,
-            expectedVersion: request.body.version,
-          },
-        },
+            expectedVersion: request.body.version
+          }
+        }
       );
-      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
+      if (eventStoreResult.isErr()) return reply.sendAppError(eventStoreResult.error);
       return reply.send({
-        ...eventStoreResult.val.metadata.expected,
-        version: eventStoreResult.val.metadata.version,
+        ...eventStoreResult.value.metadata.expected,
+        version: eventStoreResult.value.metadata.version
       });
-    },
+    }
   });
 
   // GET the entity from the ReadModel
@@ -115,23 +99,23 @@ export default async function (
     url: '/:id',
     config: { scopes: ['catalog:read'] },
     schema: {
-      querystring: FindProductQueryStringSchema,
+      querystring: FindProductQueryStringSchema
     },
     handler: async (
       request: FastifyRequest<{
         Params: FindProductParms;
         Querystring: FindProductQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       const result: Result<Product, AppError> = await service.findProductById(
         request.query.catalogId,
         request.params.id,
-        request.query.materialized,
+        request.query.materialized
       );
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 
   // GET the entity from the Stream
@@ -140,23 +124,23 @@ export default async function (
     url: '/:id/es',
     config: { scopes: ['catalog:read'] },
     schema: {
-      querystring: FindProductQueryStringSchema,
+      querystring: FindProductQueryStringSchema
     },
     handler: async (
       request: FastifyRequest<{
         Params: FindProductParms;
         Querystring: FindProductQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       // FIXME handle request.query.catalog,
       const result = await server.es.aggregateStream<Product, ProductEvent>(
         projectId(),
         toStreamName(request.params.id),
-        service.aggregate,
+        service.aggregate
       );
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 }

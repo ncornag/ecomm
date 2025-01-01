@@ -1,4 +1,4 @@
-import { AuditFields } from '@ecomm/Mongo';
+import { AuditFields } from '@ecomm/mongo';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
@@ -14,7 +14,7 @@ export const UpdatePromotionChangeNameSchema = Type.Object(
     action: Type.Literal(PromotionUpdateActionType.CHANGENAME),
     name: Type.String(),
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type UpdatePromotionChangeName = Static<
   typeof UpdatePromotionChangeNameSchema
@@ -42,7 +42,7 @@ export const CreateLineDiscountActionSchema = Type.Object(
     productId: Type.String(),
     discount: Type.Number(),
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type CreateLineDiscountAction = Static<
   typeof CreateLineDiscountActionSchema
@@ -53,7 +53,7 @@ export const CreateOrderDiscountActionSchema = Type.Object(
     action: Type.Literal(ThenActionType.CREATEORDERDISCOUNT),
     discount: Type.Number(),
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type CreateOrderDiscountAction = Static<
   typeof CreateOrderDiscountActionSchema
@@ -63,10 +63,10 @@ export const TagAsUsedActionSchema = Type.Object(
   {
     action: Type.Literal(ThenActionType.TAGASUSED),
     products: Type.Array(
-      Type.Object({ productId: Type.String(), quantity: Type.Number() }),
+      Type.Object({ productId: Type.String(), quantity: Type.Number() })
     ),
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type TagAsUsedAction = Static<typeof TagAsUsedActionSchema>;
 
@@ -75,14 +75,14 @@ export const ThenSchema = Type.Array(
     CreateLineDiscountActionSchema,
     CreateOrderDiscountActionSchema,
     TagAsUsedActionSchema,
-  ]),
+  ])
 );
 export type Then = Static<typeof ThenSchema>;
 
 // WHEN
 export const WhenSchema = Type.Record(
   Type.String({ pattern: '^[a-zA-Z0-9]{2,30}$' }),
-  Type.String(),
+  Type.String()
 );
 export type When = Static<typeof WhenSchema>;
 
@@ -97,6 +97,6 @@ export const PromotionSchema = Type.Object(
     active: Type.Optional(Type.Boolean({ default: true })),
     ...AuditFields,
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type Promotion = Static<typeof PromotionSchema>;

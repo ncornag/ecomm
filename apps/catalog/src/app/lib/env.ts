@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 const NodeEnv: Record<string, string> = {
   development: 'development',
   test: 'test',
-  production: 'production',
+  production: 'production'
 };
 
 export const envConfig = Type.Object({
@@ -35,8 +35,10 @@ export const envConfig = Type.Object({
   TYPESENSE_API_KEY: Type.Optional(Type.String()),
   CATALOGS_TO_INDEX: Type.Optional(Type.String()),
   PROMOTIONS_URL: Type.String(),
+  PUBLIC_KEY_FILE: Type.String(),
+  FASTIFY_AUTOLOAD_TYPESCRIPT: Type.Number({ default: 1 }),
   // Internal
   TOPIC_CREATE_SUFIX: Type.Optional(Type.String({ default: 'create' })),
   TOPIC_UPDATE_SUFIX: Type.Optional(Type.String({ default: 'update' })),
-  TOPIC_DELETE_SUFIX: Type.Optional(Type.String({ default: 'delete' })),
+  TOPIC_DELETE_SUFIX: Type.Optional(Type.String({ default: 'delete' }))
 });

@@ -1,33 +1,25 @@
-import { type Result, Ok, Err } from 'ts-results';
-import {
-  type FastifyInstance,
-  type FastifyPluginOptions,
-  type FastifyReply,
-  type FastifyRequest,
-} from 'fastify';
-import { AppError } from '@ecomm/AppError';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '@ecomm/app-error';
 import {
   type CreateProductCategoryBody,
   type UpdateProductCategoryBody,
   type FindProductCategoryParms,
   postProductCategorySchema,
-  updateProductCategorySchema,
-} from '../../productCategory/productCategory.schemas';
-import { ProductCategoryService } from '../../productCategory/productCategory.svc';
-import { type ProductCategory } from '../../productCategory/productCategory';
-import { ProjectBasedParams } from '../../base.schemas';
+  updateProductCategorySchema
+} from '../../productCategory/productCategory.schemas.ts';
+import { ProductCategoryService } from '../../productCategory/productCategory.svc.ts';
+import { type ProductCategory } from '../../productCategory/productCategory.ts';
+import { type ProjectBasedParams } from '../../base.schemas.ts';
 import { nanoid } from 'nanoid';
-import { projectId } from '@ecomm/RequestContext';
+import { projectId } from '@ecomm/request-context';
 import {
   ProductCategoryCommandTypes,
-  ProductCategoryEvent,
-  toStreamName,
-} from '../../productCategory/productCategory.events';
+  type ProductCategoryEvent,
+  toStreamName
+} from '../../productCategory/productCategory.events.ts';
 
-export default async function (
-  server: FastifyInstance,
-  opts: FastifyPluginOptions,
-) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   const service = ProductCategoryService.getInstance(server);
 
   // CREATE
@@ -41,29 +33,25 @@ export default async function (
         Params: ProjectBasedParams;
         Body: CreateProductCategoryBody;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       const id = nanoid();
-      const eventStoreResult = await server.es.create(
-        service.create,
-        toStreamName(id),
-        {
-          type: ProductCategoryCommandTypes.CREATE,
-          data: {
-            productCategory: request.body,
-          },
-          metadata: {
-            projectId: projectId(),
-            id,
-          },
+      const eventStoreResult = await server.es.create(service.create, toStreamName(id), {
+        type: ProductCategoryCommandTypes.CREATE,
+        data: {
+          productCategory: request.body
         },
-      );
-      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
-      return reply.code(201).send({
-        ...eventStoreResult.val.data.productCategory,
-        version: eventStoreResult.val.metadata.version,
+        metadata: {
+          projectId: projectId(),
+          id
+        }
       });
-    },
+      if (eventStoreResult.isErr()) return reply.sendAppError(eventStoreResult.error);
+      return reply.code(201).send({
+        ...eventStoreResult.value.data.productCategory,
+        version: eventStoreResult.value.metadata.version
+      });
+    }
   });
 
   // UPDATE
@@ -77,7 +65,7 @@ export default async function (
         Params: FindProductCategoryParms;
         Body: UpdateProductCategoryBody;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
       const eventStoreResult = await server.es.update(
         service.update,
@@ -87,20 +75,20 @@ export default async function (
           type: ProductCategoryCommandTypes.UPDATE,
           data: {
             productCategoryId: request.params.id,
-            actions: request.body.actions,
+            actions: request.body.actions
           },
           metadata: {
             projectId: projectId(),
-            expectedVersion: request.body.version,
-          },
-        },
+            expectedVersion: request.body.version
+          }
+        }
       );
-      if (!eventStoreResult.ok) return reply.sendAppError(eventStoreResult.val);
+      if (eventStoreResult.isErr()) return reply.sendAppError(eventStoreResult.error);
       return reply.send({
-        ...eventStoreResult.val.metadata.expected,
-        version: eventStoreResult.val.metadata.version,
+        ...eventStoreResult.value.metadata.expected,
+        version: eventStoreResult.value.metadata.version
       });
-    },
+    }
   });
 
   // GET the entity from the ReadModel
@@ -108,15 +96,11 @@ export default async function (
     method: 'GET',
     url: '/:id',
     config: { scopes: ['catalog:read'] },
-    handler: async (
-      request: FastifyRequest<{ Params: FindProductCategoryParms }>,
-      reply: FastifyReply,
-    ) => {
-      const result: Result<ProductCategory, AppError> =
-        await service.findProductCategoryById(request.params.id);
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+    handler: async (request: FastifyRequest<{ Params: FindProductCategoryParms }>, reply: FastifyReply) => {
+      const result: Result<ProductCategory, AppError> = await service.findProductCategoryById(request.params.id);
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 
   // GET the entity from the Stream
@@ -124,33 +108,25 @@ export default async function (
     method: 'GET',
     url: '/:id/es',
     config: { scopes: ['catalog:read'] },
-    handler: async (
-      request: FastifyRequest<{ Params: FindProductCategoryParms }>,
-      reply: FastifyReply,
-    ) => {
-      const result = await server.es.aggregateStream<
-        ProductCategory,
-        ProductCategoryEvent
-      >(projectId(), toStreamName(request.params.id), service.aggregate);
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+    handler: async (request: FastifyRequest<{ Params: FindProductCategoryParms }>, reply: FastifyReply) => {
+      const result = await server.es.aggregateStream<ProductCategory, ProductCategoryEvent>(
+        projectId(),
+        toStreamName(request.params.id),
+        service.aggregate
+      );
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 
   // VALIDATE
   server.route({
     method: 'POST',
     url: '/:id/validate',
-    handler: async (
-      request: FastifyRequest<{ Params: FindProductCategoryParms }>,
-      reply: FastifyReply,
-    ) => {
-      const result: Result<boolean, AppError> = await service.validate(
-        request.params.id,
-        request.body,
-      );
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+    handler: async (request: FastifyRequest<{ Params: FindProductCategoryParms }>, reply: FastifyReply) => {
+      const result: Result<boolean, AppError> = await service.valueidate(request.params.id, request.body);
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 }

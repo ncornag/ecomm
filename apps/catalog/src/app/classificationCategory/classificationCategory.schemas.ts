@@ -1,13 +1,10 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import {
-  UpdateClassificationCategoryAction,
-  ClassificationCategorySchema,
-} from './classificationCategory';
+import { UpdateClassificationCategoryAction, ClassificationCategorySchema } from './classificationCategory.ts';
 
 const defaultExample = {
   name: 'Root Category',
-  key: 'root',
+  key: 'root'
 };
 
 export const CreateClassificationCategoryBodySchema = Type.Omit(
@@ -15,44 +12,35 @@ export const CreateClassificationCategoryBodySchema = Type.Omit(
   ['id', 'ancestors', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
-    additionalProperties: false,
-  },
+    additionalProperties: false
+  }
 );
-export type ClassificationCategoryPayload = Static<
-  typeof CreateClassificationCategoryBodySchema
->;
+export type ClassificationCategoryPayload = Static<typeof CreateClassificationCategoryBodySchema>;
 
-export const ClassificationCategoryResponse = Type.Composite(
-  [ClassificationCategorySchema],
-  {
-    examples: [
-      {
-        id: '63cd0e4be59031edffa39f5c',
-        version: 0,
-        ...defaultExample,
-        createdAt: '2021-01-01T00:00:00.000Z',
-      },
-    ],
-  },
-);
+export const ClassificationCategoryResponse = Type.Composite([ClassificationCategorySchema], {
+  examples: [
+    {
+      id: '63cd0e4be59031edffa39f5c',
+      version: 0,
+      ...defaultExample,
+      createdAt: '2021-01-01T00:00:00.000Z'
+    }
+  ]
+});
 
 export const UpdateClassificationCategoryBodySchema = Type.Object(
   {
     version: Type.Number(),
-    actions: Type.Array(UpdateClassificationCategoryAction),
+    actions: Type.Array(UpdateClassificationCategoryAction)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateClassificationCategoryBody = Static<
-  typeof UpdateClassificationCategoryBodySchema
->;
+export type UpdateClassificationCategoryBody = Static<typeof UpdateClassificationCategoryBodySchema>;
 
 export const UpdateClassificationCategoryParmsSchema = Type.Object({
-  id: Type.String(),
+  id: Type.String()
 });
-export type UpdateClassificationCategoryParms = Static<
-  typeof UpdateClassificationCategoryParmsSchema
->;
+export type UpdateClassificationCategoryParms = Static<typeof UpdateClassificationCategoryParmsSchema>;
 
 // Routes schemas
 
@@ -62,8 +50,8 @@ export const postClassificationCategorySchema: FastifySchema = {
   summary: 'Creates new classificationCategory with given values',
   body: CreateClassificationCategoryBodySchema,
   response: {
-    201: { ...ClassificationCategoryResponse, description: 'Success' },
-  },
+    201: { ...ClassificationCategoryResponse, description: 'Success' }
+  }
 };
 
 export const updateClassificationCategorySchema: FastifySchema = {
@@ -73,6 +61,6 @@ export const updateClassificationCategorySchema: FastifySchema = {
   body: UpdateClassificationCategoryBodySchema,
   params: UpdateClassificationCategoryParmsSchema,
   response: {
-    201: { ...ClassificationCategoryResponse, description: 'Success' },
-  },
+    201: { ...ClassificationCategoryResponse, description: 'Success' }
+  }
 };

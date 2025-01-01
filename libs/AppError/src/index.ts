@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import { type FastifyPluginCallback } from 'fastify';
-import { Err as ErrBase } from 'ts-results';
+import { Err } from 'ts-results-es';
 
 export const ErrorCode: Record<string, number> = {
   NOT_MODIFIED: 304,
@@ -46,7 +46,7 @@ export class AppError extends Error {
 }
 
 // Redefine ts-results Err class to handle AppError based errors
-export class AppErrorResult<T = AppError> extends ErrBase<T> {
+export class AppErrorResult<T = AppError> extends Err<T> {
   constructor(
     statusCode: number = ErrorCode.BAD_REQUEST,
     message: string = ErrorName[statusCode],

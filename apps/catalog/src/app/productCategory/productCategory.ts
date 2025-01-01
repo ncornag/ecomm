@@ -1,22 +1,18 @@
-import {
-  TreeFieldsSchema,
-  type UpdateChangeParent,
-  UpdateChangeParentSchema,
-} from '../lib/tree';
-import { AuditFields } from '@ecomm/Mongo';
+import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '../lib/tree.ts';
+import { AuditFields } from '@ecomm/mongo';
 import { Type, type Static } from '@sinclair/typebox';
 
 const keyAttributes = {
   minLength: 2,
   maxLength: 256,
-  pattern: '^[A-Za-z0-9_-]+$',
+  pattern: '^[A-Za-z0-9_-]+$'
 };
 
 // Action Types
 export const ProductCategoryUpdateActionType: Record<string, string> = {
   SETKEY: 'setKey',
   CHANGENAME: 'changeName',
-  CHANGEPARENT: 'changeParent',
+  CHANGEPARENT: 'changeParent'
 };
 
 // ACTIONS
@@ -25,25 +21,21 @@ export const ProductCategoryUpdateActionType: Record<string, string> = {
 export const UpdateProductCategorySetKeySchema = Type.Object(
   {
     action: Type.Literal(ProductCategoryUpdateActionType.SETKEY),
-    key: Type.String(keyAttributes),
+    key: Type.String(keyAttributes)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateProductCategorySetKey = Static<
-  typeof UpdateProductCategorySetKeySchema
->;
+export type UpdateProductCategorySetKey = Static<typeof UpdateProductCategorySetKeySchema>;
 
 // changeName action
 export const UpdateProductCategoryChangeNameSchema = Type.Object(
   {
     action: Type.Literal(ProductCategoryUpdateActionType.CHANGENAME),
-    name: Type.String(),
+    name: Type.String()
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateProductCategoryChangeName = Static<
-  typeof UpdateProductCategoryChangeNameSchema
->;
+export type UpdateProductCategoryChangeName = Static<typeof UpdateProductCategoryChangeNameSchema>;
 
 export const UpdateProductCategoryChangeParentSchema = UpdateChangeParentSchema;
 export type UpdateProductCategoryChangeParent = UpdateChangeParent;
@@ -52,11 +44,9 @@ export type UpdateProductCategoryChangeParent = UpdateChangeParent;
 export const UpdateProductCategoryAction = Type.Union([
   UpdateProductCategorySetKeySchema,
   UpdateProductCategoryChangeNameSchema,
-  UpdateProductCategoryChangeParentSchema,
+  UpdateProductCategoryChangeParentSchema
 ]);
-export type UpdateProductCategoryAction = Static<
-  typeof UpdateProductCategoryAction
->;
+export type UpdateProductCategoryAction = Static<typeof UpdateProductCategoryAction>;
 
 // ENTITY
 export const ProductCategorySchema = Type.Object(
@@ -65,8 +55,8 @@ export const ProductCategorySchema = Type.Object(
     name: Type.String(),
     key: Type.Optional(Type.String(keyAttributes)),
     ...TreeFieldsSchema,
-    ...AuditFields,
+    ...AuditFields
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type ProductCategory = Static<typeof ProductCategorySchema>;

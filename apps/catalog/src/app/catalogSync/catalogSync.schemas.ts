@@ -1,10 +1,10 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { UpdateCatalogSyncAction, CatalogSyncSchema } from './catalogSync';
+import { UpdateCatalogSyncAction, CatalogSyncSchema } from './catalogSync.ts';
 
 const defaultExample = {
   name: 'Root Category',
-  key: 'root',
+  key: 'root'
 };
 
 const CatalogSyncResponse = Type.Composite([CatalogSyncSchema], {
@@ -13,9 +13,9 @@ const CatalogSyncResponse = Type.Composite([CatalogSyncSchema], {
       id: '63cd0e4be59031edffa39f5c',
       version: 0,
       ...defaultExample,
-      createdAt: '2021-01-01T00:00:00.000Z',
-    },
-  ],
+      createdAt: '2021-01-01T00:00:00.000Z'
+    }
+  ]
 });
 
 // CREATE
@@ -24,8 +24,8 @@ export const CreateCatalogSyncBodySchema = Type.Omit(
   ['id', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
-    additionalProperties: false,
-  },
+    additionalProperties: false
+  }
 );
 export type CreateCatalogSyncBody = Static<typeof CreateCatalogSyncBodySchema>;
 
@@ -33,9 +33,9 @@ export type CreateCatalogSyncBody = Static<typeof CreateCatalogSyncBodySchema>;
 export const UpdateCatalogSyncBodySchema = Type.Object(
   {
     version: Type.Number(),
-    actions: Type.Array(UpdateCatalogSyncAction),
+    actions: Type.Array(UpdateCatalogSyncAction)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type UpdateCatalogSyncBody = Static<typeof UpdateCatalogSyncBodySchema>;
 
@@ -45,11 +45,11 @@ export type FindCatalogSyncParms = Static<typeof FindCatalogSyncParmsSchema>;
 // SYNC
 export const SyncCatalogBodySchema = Type.Object(
   {
-    id: Type.String(),
+    id: Type.String()
   },
   {
-    additionalProperties: false,
-  },
+    additionalProperties: false
+  }
 );
 export type SyncCatalogBody = Static<typeof SyncCatalogBodySchema>;
 
@@ -61,8 +61,8 @@ export const postCatalogSyncSchema: FastifySchema = {
   summary: 'Creates new catalogSync with given values',
   body: CreateCatalogSyncBodySchema,
   response: {
-    201: { ...CatalogSyncResponse, description: 'Success' },
-  },
+    201: { ...CatalogSyncResponse, description: 'Success' }
+  }
 };
 
 export const updateCatalogSyncSchema: FastifySchema = {
@@ -72,14 +72,13 @@ export const updateCatalogSyncSchema: FastifySchema = {
   body: UpdateCatalogSyncBodySchema,
   params: FindCatalogSyncParmsSchema,
   response: {
-    201: { ...CatalogSyncResponse, description: 'Success' },
-  },
+    201: { ...CatalogSyncResponse, description: 'Success' }
+  }
 };
 
 export const syncCatalogSchema: FastifySchema = {
   description: 'Synchronize two Catalogs',
   tags: ['catalogSync'],
-  summary:
-    'Synchronize two catalogs using the rules in the CatalogSync collection',
-  body: SyncCatalogBodySchema,
+  summary: 'Synchronize two catalogs using the rules in the CatalogSync collection',
+  body: SyncCatalogBodySchema
 };

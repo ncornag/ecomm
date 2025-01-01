@@ -1,8 +1,8 @@
 import {
   ProductCommandTypes,
   toStreamName,
-} from '../../app/product/product.events';
-import { ProductService } from '../../app/product/product.svc';
+} from '../../app/product/product.events.ts';
+import { ProductService } from '../../app/product/product.svc.ts';
 import { nanoid } from 'nanoid';
 
 const catalogs = [

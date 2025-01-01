@@ -1,10 +1,10 @@
 import fp from 'fastify-plugin';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import mongo from '@fastify/mongodb';
 import { green, red, magenta, yellow, bold } from 'kolorist';
-import { Collection, Db, Document } from 'mongodb';
+import { Collection, Db } from 'mongodb';
 import { Record, Type } from '@fastify/type-provider-typebox';
-import { requestId } from '@ecomm/RequestContext';
+import { requestId } from '@ecomm/request-context';
 import pino from 'pino';
 
 interface Database {

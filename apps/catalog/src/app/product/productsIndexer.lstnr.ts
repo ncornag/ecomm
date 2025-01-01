@@ -1,7 +1,7 @@
-import { type Product, ProductType } from './product';
+import { type Product, ProductType } from './product.ts';
 import { Value } from '@sinclair/typebox/value';
 import { green, magenta, yellow, bold } from 'kolorist';
-import { type IProductService, ProductService } from './product.svc';
+import { type IProductService, ProductService } from './product.svc.ts';
 import { RateLimit } from 'async-sema';
 import { faker } from '@faker-js/faker';
 
@@ -15,9 +15,7 @@ export class ProductsIndexerListener {
   private TOPIC = '*.product.*';
 
   private lvl0Cats = ['Cell Phones'];
-  private lvl1Cats = Array.from({ length: 10 }, (_, i) =>
-    faker.commerce.department(),
-  );
+  private lvl1Cats = Array.from({ length: 10 }, (_, i) => faker.commerce.department());
 
   constructor(server: any) {
     this.server = server;
@@ -28,12 +26,14 @@ export class ProductsIndexerListener {
   public start() {
     if (!this.server.index) {
       this.server.log.warn(
-        `${yellow('ProductIndexingService not active because the indexing service is not available')}`,
+        `${yellow('ProductIndexingService not active because the indexing service is not available')}`
       );
       return;
     }
     this.server.log.info(
-      `${yellow('ProductIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`,
+      `${yellow('ProductIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${
+        this.catalogs
+      }] ${green('catalogs')}`
     );
     this.server.queues.subscribe(this.TOPIC, this.handler.bind(this));
   }
@@ -59,16 +59,14 @@ export class ProductsIndexerListener {
       categories: [
         this.lvl0Cats[this.randomIntFromInterval(0, this.lvl0Cats.length - 1)],
         this.lvl1Cats[this.randomIntFromInterval(0, this.lvl1Cats.length - 1)],
-        ...variant.categories,
+        ...variant.categories
       ],
       image: `https://picsum.photos/id/${this.num++}/200`,
-      vector: [],
+      vector: []
     };
     if (this.num > 1084) this.num = 0;
     doc.categories.forEach((category: string, index: number) => {
-      doc[`categories.lvl${index}`] = [
-        doc.categories.slice(0, index + 1).join(' > '),
-      ];
+      doc[`categories.lvl${index}`] = [doc.categories.slice(0, index + 1).join(' > ')];
     });
     return doc;
   }
@@ -81,7 +79,7 @@ export class ProductsIndexerListener {
     await this.lim();
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
-        `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`,
+        `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`
       );
     if (data.metadata.type === 'entityUpdated') {
       const updates = Value.Patch({}, data.difference);
@@ -91,39 +89,23 @@ export class ProductsIndexerListener {
       // TODO: filter what to index, including fields and locales
 
       // Get the materialized Variant
-      const productResult = await this.productService.findProductById(
-        data.metadata.catalogId,
-        data.source.id,
-        true,
-      );
-      if (productResult.err) {
-        this.server.log.error(
-          `Error indexing product ${data.source.id}`,
-          productResult.err,
-        );
+      const productResult = await this.productService.findProductById(data.metadata.catalogId, data.source.id, true);
+      if (productResult.isErr()) {
+        this.server.log.error(`Error indexing product ${data.source.id}`, productResult.isErr());
         return;
       }
       // Index the Variant as a serch document
       await this.server.index
         .collections('products')
         .documents()
-        .upsert(this.toIndexDocument(productResult.val))
+        .upsert(this.toIndexDocument(productResult.value))
         .catch((err: any) => {
-          console.log(
-            'Error indexing product',
-            productResult.val.id,
-            err.message,
-          );
+          console.log('Error indexing product', productResult.value.id, err.message);
         });
     }
   }
 
-  private async retryWithDelay(
-    fn: Function,
-    retries = 3,
-    interval = 500,
-    finalErr = 'Retry failed',
-  ): Promise<any> {
+  private async retryWithDelay(fn: Function, retries = 3, interval = 500, finalErr = 'Retry failed'): Promise<any> {
     try {
       await fn();
     } catch (err) {

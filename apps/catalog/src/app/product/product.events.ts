@@ -1,6 +1,6 @@
-import { Product, UpdateProductAction } from './product';
-import { Event, Command } from '@ecomm/EventStore';
-import { CreateProductBody } from './product.schemas';
+import type { Product, UpdateProductAction } from './product.ts';
+import type { Event, Command } from '@ecomm/event-store';
+import type { CreateProductBody } from './product.schemas.ts';
 
 export const ENTITY_NAME = 'product';
 
@@ -8,13 +8,13 @@ export const ENTITY_NAME = 'product';
 // Commands
 ///////////
 
-export const enum ProductCommandTypes {
-  CREATE = `${ENTITY_NAME}-create`,
-  UPDATE = `${ENTITY_NAME}-update`,
-}
+export const ProductCommandTypes = {
+  CREATE: `${ENTITY_NAME}-create`,
+  UPDATE: `${ENTITY_NAME}-update`
+} as const;
 
 export type CreateProduct = Command<
-  ProductCommandTypes.CREATE,
+  typeof ProductCommandTypes.CREATE,
   { product: CreateProductBody },
   {
     projectId: string;
@@ -24,7 +24,7 @@ export type CreateProduct = Command<
 >;
 
 export type UpdateProduct = Command<
-  ProductCommandTypes.UPDATE,
+  typeof ProductCommandTypes.UPDATE,
   {
     productId: Product['id'];
     actions: UpdateProductAction[];
@@ -40,13 +40,13 @@ export type UpdateProduct = Command<
 // Events
 /////////
 
-export const enum ProductEventTypes {
-  CREATED = `${ENTITY_NAME}-created`,
-  UPDATED = `${ENTITY_NAME}-upated`,
-}
+export const ProductEventTypes = {
+  CREATED: `${ENTITY_NAME}-created`,
+  UPDATED: `${ENTITY_NAME}-updated`
+} as const;
 
 export type ProductCreated = Event<
-  ProductEventTypes.CREATED,
+  typeof ProductEventTypes.CREATED,
   {
     product: Product;
   },
@@ -54,7 +54,7 @@ export type ProductCreated = Event<
 >;
 
 export type ProductUpdated = Event<
-  ProductEventTypes.UPDATED,
+  typeof ProductEventTypes.UPDATED,
   {
     productId: Product['id'];
     actions: UpdateProductAction[];

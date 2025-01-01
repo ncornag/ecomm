@@ -1,43 +1,30 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError, ErrorCode } from '@ecomm/AppError';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { AppError, ErrorCode } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type CatalogSync, UpdateCatalogSyncAction } from './catalogSync';
-import {
-  type SyncCatalogBody,
-  type CreateCatalogSyncBody,
-} from './catalogSync.schemas';
-import { type CatalogSyncDAO } from './catalogSync.dao.schema';
-import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
-import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler';
-import { type ICatalogSyncRepository } from './catalogSync.repo';
-import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
-import { type Config } from '@ecomm/Config';
+import { type CatalogSync, UpdateCatalogSyncAction } from './catalogSync.ts';
+import { type SyncCatalogBody, type CreateCatalogSyncBody } from './catalogSync.schemas.ts';
+import { type CatalogSyncDAO } from './catalogSync.dao.schema.ts';
+import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
+import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler.ts';
+import { type ICatalogSyncRepository } from './catalogSync.repo.ts';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
+import { type Config } from '@ecomm/config';
 import patch from 'mongo-update';
-import { Queues } from '@ecomm/Queues';
+import { type Queues } from '@ecomm/queues';
 
 // SERVICE INTERFACE
 export interface ICatalogSyncService {
-  createCatalogSync: (
-    payload: CreateCatalogSyncBody,
-  ) => Promise<Result<CatalogSync, AppError>>;
-  updateCatalogSync: (
-    id: string,
-    version: number,
-    actions: any,
-  ) => Promise<Result<CatalogSync, AppError>>;
+  createCatalogSync: (payload: CreateCatalogSyncBody) => Promise<Result<CatalogSync, AppError>>;
+  updateCatalogSync: (id: string, version: number, actions: any) => Promise<Result<CatalogSync, AppError>>;
   findCatalogSyncById: (id: string) => Promise<Result<CatalogSync, AppError>>;
-  saveCatalogSync: (
-    category: CatalogSync,
-  ) => Promise<Result<CatalogSync, AppError>>;
-  syncCatalogs: (
-    payload: SyncCatalogBody,
-  ) => Promise<Result<boolean, AppError>>;
+  saveCatalogSync: (category: CatalogSync) => Promise<Result<CatalogSync, AppError>>;
+  syncCatalogs: (payload: SyncCatalogBody) => Promise<Result<boolean, AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: CatalogSyncDAO): CatalogSync => ({
   id: _id,
-  ...remainder,
+  ...remainder
 });
 
 const mongoPatch = function (patch: any) {
@@ -87,12 +74,9 @@ export class CatalogSyncService implements ICatalogSyncService {
     this.cols = server.db.col.product;
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
-      changeDescription: new ChangeDescriptionActionHandler(server),
+      changeDescription: new ChangeDescriptionActionHandler(server)
     };
-    this.actionsRunner = new ActionsRunner<
-      CatalogSyncDAO,
-      ICatalogSyncRepository
-    >();
+    this.actionsRunner = new ActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>();
     this.config = server.config;
     this.queues = server.queues;
     this.log = server.log;
@@ -108,36 +92,34 @@ export class CatalogSyncService implements ICatalogSyncService {
   }
 
   // CREATE CATALOGSYNC
-  public async createCatalogSync(
-    payload: CreateCatalogSyncBody,
-  ): Promise<Result<CatalogSync, AppError>> {
+  public async createCatalogSync(payload: CreateCatalogSyncBody): Promise<Result<CatalogSync, AppError>> {
     // Save the entity
     const result = await this.repo.create({
       id: nanoid(),
-      ...payload,
+      ...payload
     });
-    if (result.err) return result;
+    if (result.isErr()) return result;
     // Send new entity via messagging
     this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.val),
+      source: toEntity(result.value),
       metadata: {
         type: 'entityCreated',
-        entity: this.ENTITY,
-      },
+        entity: this.ENTITY
+      }
     });
-    return new Ok(toEntity(result.val));
+    return new Ok(toEntity(result.value));
   }
 
   // UPDATE CATALOGSYNC
   public async updateCatalogSync(
     id: string,
     version: number,
-    actions: UpdateCatalogSyncAction[],
+    actions: UpdateCatalogSyncAction[]
   ): Promise<Result<CatalogSync, AppError>> {
     // Find the Entity
     const result = await this.repo.findOne(id, version);
-    if (result.err) return result;
-    const entity: CatalogSyncDAO = result.val;
+    if (result.isErr()) return result;
+    const entity: CatalogSyncDAO = result.value;
     const toUpdateEntity = Value.Clone(entity);
     // Execute actions
     const actionRunnerResults = await this.actionsRunner.run(
@@ -145,37 +127,33 @@ export class CatalogSyncService implements ICatalogSyncService {
       toUpdateEntity,
       this.repo,
       this.actionHandlers,
-      actions,
+      actions
     );
-    if (actionRunnerResults.err) return actionRunnerResults;
+    if (actionRunnerResults.isErr()) return actionRunnerResults;
     // Compute difference, and save if needed
     const difference = Value.Diff(entity, toUpdateEntity);
     if (difference.length > 0) {
       // Save the entity
-      const saveResult = await this.repo.updateOne(
-        id,
-        version,
-        actionRunnerResults.val.update,
-      );
-      if (saveResult.err) return saveResult;
+      const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
+      if (saveResult.isErr()) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
       this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.val._id },
+        source: { id: result.value._id },
         difference,
         metadata: {
           type: 'entityUpdated',
-          entity: this.ENTITY,
-        },
+          entity: this.ENTITY
+        }
       });
       // Send side effects via messagging
-      actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
+      actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
           metadata: {
             type: sideEffect.action,
-            entity: this.ENTITY,
-          },
+            entity: this.ENTITY
+          }
         });
       });
     }
@@ -184,74 +162,66 @@ export class CatalogSyncService implements ICatalogSyncService {
   }
 
   // FIND CATALOGSYNC
-  public async findCatalogSyncById(
-    id: string,
-  ): Promise<Result<CatalogSync, AppError>> {
+  public async findCatalogSyncById(id: string): Promise<Result<CatalogSync, AppError>> {
     const result = await this.repo.findOne(id);
-    if (result.err) return result;
-    return new Ok(toEntity(result.val));
+    if (result.isErr()) return result;
+    return new Ok(toEntity(result.value));
   }
 
   // SAVE CATALOGSYNC
-  public async saveCatalogSync(
-    category: CatalogSync,
-  ): Promise<Result<CatalogSync, AppError>> {
+  public async saveCatalogSync(category: CatalogSync): Promise<Result<CatalogSync, AppError>> {
     const result = await this.repo.save(category);
-    if (result.err) return result;
-    return new Ok(toEntity(result.val));
+    if (result.isErr()) return result;
+    return new Ok(toEntity(result.value));
   }
 
   // SYNC CATALOGSYNC
-  public async syncCatalogs(
-    payload: SyncCatalogBody,
-  ): Promise<Result<boolean, AppError>> {
+  public async syncCatalogs(payload: SyncCatalogBody): Promise<Result<boolean, AppError>> {
     // Find the Sync
     const catalogSyncResult = await this.repo.findOne(payload.id);
-    if (catalogSyncResult.err) return catalogSyncResult;
+    if (catalogSyncResult.isErr()) return catalogSyncResult;
     // Sync configuration
-    const createNewItems = catalogSyncResult.val.createNewItems;
-    const removeNonExistent = catalogSyncResult.val.removeNonExistent;
+    const createNewItems = catalogSyncResult.value.createNewItems;
+    const removeNonExistent = catalogSyncResult.value.removeNonExistent;
     // Hold the source and target catalogs
-    const sourceCatalog = catalogSyncResult.val.sourceCatalog;
-    const targetCatalog = catalogSyncResult.val.targetCatalog;
+    const sourceCatalog = catalogSyncResult.value.sourceCatalog;
+    const targetCatalog = catalogSyncResult.value.targetCatalog;
     const sourceCol = this.cols[sourceCatalog];
     const targetCol = this.cols[targetCatalog];
     // Loop the source catalog products and sync them to the target catalog
     this.log.info(
       `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], start`,
-      catalogSyncResult.val.lastSync,
+      catalogSyncResult.value.lastSync
     );
     const productsToUpdate = await sourceCol.find({
       $or: [
-        { createdAt: { $gte: catalogSyncResult.val.lastSync } },
-        { lastModifiedAt: { $gte: catalogSyncResult.val.lastSync } },
-      ],
+        { createdAt: { $gte: catalogSyncResult.value.lastSync } },
+        { lastModifiedAt: { $gte: catalogSyncResult.value.lastSync } }
+      ]
     });
     let count = 0;
     let start = new Date().getTime();
     let updates = [];
     for await (const product of productsToUpdate) {
       const productId = product._id;
-      const targetProductResult = await targetCol
-        .find({ _id: productId })
-        .toArray();
+      const targetProductResult = await targetCol.find({ _id: productId }).toArray();
       if (targetProductResult.length === 1) {
         // Product exists, update
         const update = patch(targetProductResult[0], product, {
           version: 0,
           createdAt: 0,
           lastModifiedAt: 0,
-          catalogId: 0,
+          catalogId: 0
         });
         if (update.$set) {
           const u = {
             updateOne: {
               filter: {
                 _id: productId,
-                version: targetProductResult[0].version,
+                version: targetProductResult[0].version
               },
-              update: update,
-            },
+              update: update
+            }
           };
           updates.push(u as never);
           count = count + 1;
@@ -264,8 +234,8 @@ export class CatalogSyncService implements ICatalogSyncService {
         delete product.lastModifiedAt;
         const u = {
           insertOne: {
-            document: product,
-          },
+            document: product
+          }
         };
         updates.push(u as never);
         count = count + 1;
@@ -277,7 +247,7 @@ export class CatalogSyncService implements ICatalogSyncService {
           `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
             (this.batchSize * 1000) /
             (end - start)
-          ).toFixed()} products/second`,
+          ).toFixed()} products/second`
         );
         start = new Date().getTime();
         updates = [];
@@ -290,7 +260,7 @@ export class CatalogSyncService implements ICatalogSyncService {
         `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
           (this.batchSize * 1000) /
           (end - start)
-        ).toFixed()} products/second`,
+        ).toFixed()} products/second`
       );
     }
 
@@ -298,19 +268,13 @@ export class CatalogSyncService implements ICatalogSyncService {
     if (removeNonExistent === true) {
     }
 
-    this.log.info(
-      `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], end`,
-    );
+    this.log.info(`Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], end`);
 
     // Update the last sync time
-    const result = await this.repo.updateOne(
-      catalogSyncResult.val._id,
-      catalogSyncResult.val.version!,
-      {
-        $set: { lastSync: new Date().toISOString() },
-      },
-    );
-    if (result.err) return result;
+    const result = await this.repo.updateOne(catalogSyncResult.value._id, catalogSyncResult.value.version!, {
+      $set: { lastSync: new Date().toISOString() }
+    });
+    if (result.isErr()) return result;
     return new Ok(true);
   }
 }

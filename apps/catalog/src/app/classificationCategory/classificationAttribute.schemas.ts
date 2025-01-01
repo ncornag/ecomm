@@ -1,35 +1,27 @@
 import { type FastifySchema } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { ClassificationAttributeSchema } from './classificationAttribute';
+import { ClassificationAttributeSchema } from './classificationAttribute.ts';
 import { type Static } from '@fastify/type-provider-typebox';
 
 const defaultExample = {
   name: 'title',
   label: 'Title',
-  isRequired: true,
+  isRequired: true
 };
 
-export const ClassificationAttributePayloadSchema = Type.Union(
-  ClassificationAttributeSchema.anyOf,
-  {
-    examples: [defaultExample],
-  },
-);
-export type ClassificationAttributePayload = Static<
-  typeof ClassificationAttributePayloadSchema
->;
+export const ClassificationAttributePayloadSchema = Type.Union(ClassificationAttributeSchema.anyOf, {
+  examples: [defaultExample]
+});
+export type ClassificationAttributePayload = Static<typeof ClassificationAttributePayloadSchema>;
 
-export const ClassificationAttributeResponse = Type.Union(
-  ClassificationAttributeSchema.anyOf,
-  {
-    examples: [
-      {
-        id: '63cd0e4be59031edffa39f5c',
-        ...defaultExample,
-      },
-    ],
-  },
-);
+export const ClassificationAttributeResponse = Type.Union(ClassificationAttributeSchema.anyOf, {
+  examples: [
+    {
+      id: '63cd0e4be59031edffa39f5c',
+      ...defaultExample
+    }
+  ]
+});
 
 export const postClassificationAttributeSchema: FastifySchema = {
   description: 'Create a new classificationAttribute',
@@ -37,6 +29,6 @@ export const postClassificationAttributeSchema: FastifySchema = {
   summary: 'Creates new classificationAttribute with given values',
   body: ClassificationAttributePayloadSchema,
   response: {
-    201: { ...ClassificationAttributeResponse, description: 'Success' },
-  },
+    201: { ...ClassificationAttributeResponse, description: 'Success' }
+  }
 };

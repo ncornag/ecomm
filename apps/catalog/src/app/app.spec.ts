@@ -1,13 +1,13 @@
-import { FastifyInstance } from 'fastify';
-import serverBuilder from '@ecomm/Server';
+import { type FastifyInstance } from 'fastify';
+import serverBuilder from '@ecomm/server';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoDBStorage, Umzug } from 'umzug';
 import assert from 'node:assert';
 import { default as request } from 'supertest';
 import { Value } from '@sinclair/typebox/value';
-import { type ProductDAO } from './product/product.dao.schema';
-import { type Product } from './product/product';
-import { toEntity as toProductEntity } from './product/product.svc';
+import { type ProductDAO } from './product/product.dao.schema.ts';
+import { type Product } from './product/product.ts';
+import { toEntity as toProductEntity } from './product/product.svc.ts';
 import { envConfig } from './lib/env';
 import { app } from './app';
 const productShoes = [
@@ -17,47 +17,47 @@ const productShoes = [
     projectId: 'TestProject',
     catalog: 'stage',
     name: {
-      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
+      en: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES'
     },
     description: {
-      en: 'Built with innovative technology and designed without ...',
+      en: 'Built with innovative technology and designed without ...'
     },
     slug: {
-      en: 'adizero-prime-x-2-strung-running-shoes',
+      en: 'adizero-prime-x-2-strung-running-shoes'
     },
     searchKeywords: {
       en: [
         {
-          text: 'adizero',
+          text: 'adizero'
         },
         {
-          text: 'prime',
+          text: 'prime'
         },
         {
-          text: 'x',
+          text: 'x'
         },
         {
-          text: 'running',
+          text: 'running'
         },
         {
-          text: 'shoes',
-        },
-      ],
+          text: 'shoes'
+        }
+      ]
     },
     categories: ['shoes'],
     type: 'base',
     assets: [
       {
         url: 'https://commercetools.com/cli/data/253245821_1.jpg',
-        tags: ['image', 'main', '800x500'],
+        tags: ['image', 'main', '800x500']
       },
       {
         label: 'User Manual',
         url: 'https://commercetools.com/cli/data/manual.pdf',
-        tags: ['pdf'],
-      },
-    ],
-  },
+        tags: ['pdf']
+      }
+    ]
+  }
 ];
 
 let server: FastifyInstance;
@@ -115,12 +115,12 @@ describe('Product', () => {
     const migrator = new Umzug({
       migrations: { glob: path },
       storage: new MongoDBStorage({
-        collection: server.mongo.db!.collection('migrations'),
+        collection: server.mongo.db!.collection('migrations')
       }),
       logger: server.logger,
       context: {
-        server,
-      },
+        server
+      }
     });
     await migrator.down();
     // App down
@@ -133,20 +133,14 @@ describe('Product', () => {
 
   test('findOneProduct', async () => {
     const pId = 'adizeroPrimeX2-base';
-    const expected: Product = toProductEntity(
-      productShoes.find((p) => p._id == pId) as unknown as ProductDAO,
-    );
+    const expected: Product = toProductEntity(productShoes.find((p) => p._id == pId) as unknown as ProductDAO);
     // const expected = p1;
     const response = await request(listeningApp)
       .get(`/products/${pId}?catalog=${catalogParam}`)
       .expect(200)
       .expect('Content-Type', 'application/json; charset=utf-8');
     assert.strictEqual(response.body.id, pId);
-    assert.deepEqual(
-      response.body,
-      expected,
-      `Differences: ${Value.Diff(response.body, expected)}`,
-    );
+    assert.deepEqual(response.body, expected, `Differences: ${Value.Diff(response.body, expected)}`);
   });
 
   test('createProduct [BASE]', async () => {
@@ -156,7 +150,7 @@ describe('Product', () => {
       slug: { en: 'slug1' },
       searchKeywords: { en: [{ text: 'keyword1' }] },
       categories: ['shoes'],
-      type: 'base',
+      type: 'base'
     };
     const response = await request(listeningApp)
       .post(`/products?catalog=${catalogParam}`)
@@ -171,22 +165,20 @@ describe('Product', () => {
         categories: [],
         version: 0,
         id: response.body.id,
-        createdAt: response.body.createdAt,
+        createdAt: response.body.createdAt
       },
-      requestData,
+      requestData
     );
     assert.deepEqual(
       response.body,
       expected,
-      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`,
+      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`
     );
   });
 
   test('createProduct [VARIANT]', async () => {
     const parentId = 'adizeroPrimeX2-base';
-    const parentResponse = await request(listeningApp)
-      .get(`/products/${parentId}?catalog=${catalogParam}`)
-      .expect(200);
+    const parentResponse = await request(listeningApp).get(`/products/${parentId}?catalog=${catalogParam}`).expect(200);
     const requestData = {
       name: { en: 'English Variant text' },
       sku: 'HP9708_570',
@@ -194,9 +186,9 @@ describe('Product', () => {
       parent: parentResponse.body.id,
       attributes: {
         color: 'Cloud White',
-        size: 'M 6/W 7',
+        size: 'M 6/W 7'
       },
-      type: 'variant',
+      type: 'variant'
     };
     const response = await request(listeningApp)
       .post(`/products?catalog=${catalogParam}`)
@@ -211,30 +203,28 @@ describe('Product', () => {
         categories: [],
         version: 0,
         id: response.body.id,
-        createdAt: response.body.createdAt,
+        createdAt: response.body.createdAt
       },
-      requestData,
+      requestData
     );
     assert.deepEqual(
       response.body,
       expected,
-      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`,
+      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`
     );
   });
 
   test('updateProduct [changeName]', async () => {
     const pId = 'adizeroPrimeX2-base';
     const newName = 'TestName';
-    const before = await request(listeningApp)
-      .get(`/products/${pId}?catalog=${catalogParam}`)
-      .expect(200);
+    const before = await request(listeningApp).get(`/products/${pId}?catalog=${catalogParam}`).expect(200);
     const requestData = {
       version: before.body.version,
-      actions: [{ action: 'changeName', name: { en: newName } }],
+      actions: [{ action: 'changeName', name: { en: newName } }]
     };
     const expected = Object.assign(before.body, {
       name: { en: newName },
-      version: before.body.version + 1,
+      version: before.body.version + 1
     });
     const response = await request(listeningApp)
       .patch(`/products/${pId}?catalog=${catalogParam}`)
@@ -246,7 +236,7 @@ describe('Product', () => {
     assert.deepEqual(
       response.body,
       expected,
-      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`,
+      `Differences: ${JSON.stringify(Value.Diff(response.body, expected), null, 2)}`
     );
   });
 
@@ -260,13 +250,11 @@ describe('Product', () => {
           type: 'update',
           path: '/name/en',
           value: 'TestName',
-          oldValue: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES',
-        },
+          oldValue: 'ADIZERO PRIME X 2 STRUNG RUNNING SHOES'
+        }
       ];
 
-      const auditLogRecords = request(listeningApp)
-        .get(`/auditLogs?catalog=${catalogParam}`)
-        .expect(200);
+      const auditLogRecords = request(listeningApp).get(`/auditLogs?catalog=${catalogParam}`).expect(200);
 
       const records = await retryPromiseWithDelay(auditLogRecords, 5, 250);
 

@@ -1,22 +1,11 @@
-import { type Result, Ok, Err } from 'ts-results';
-import {
-  type FastifyInstance,
-  type FastifyPluginOptions,
-  type FastifyReply,
-  type FastifyRequest,
-} from 'fastify';
-import { AppError } from '@ecomm/AppError';
-import { AuditLogService } from './auditLog.svc';
-import {
-  FindAuditLogParms,
-  FindAuditLogsQueryString,
-} from './auditLog.schemas';
-import { AuditLog } from './auditLog.entity';
+import { type Result, Ok, Err } from 'ts-results-es';
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
+import { AppError } from '@ecomm/app-error';
+import { AuditLogService } from './auditLog.svc.ts';
+import type { FindAuditLogParms, FindAuditLogsQueryString } from './auditLog.schemas.ts';
+import type { AuditLog } from './auditLog.entity.ts';
 
-export default async function (
-  server: FastifyInstance,
-  opts: FastifyPluginOptions,
-) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   const service = AuditLogService.getInstance(server);
 
   // GET ONE
@@ -28,14 +17,12 @@ export default async function (
         Params: FindAuditLogParms;
         Querystring: FindAuditLogsQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
-      const result: Result<AuditLog, AppError> = await service.findAuditLogById(
-        request.params.id,
-      );
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+      const result: Result<AuditLog, AppError> = await service.findAuditLogById(request.params.id);
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 
   // FIND
@@ -46,13 +33,11 @@ export default async function (
       request: FastifyRequest<{
         Querystring: FindAuditLogsQueryString;
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
-      const result: Result<AuditLog[], AppError> = await service.findAuditLogs(
-        {},
-      );
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.send(result.val);
-    },
+      const result: Result<AuditLog[], AppError> = await service.findAuditLogs({});
+      if (result.isErr()) return reply.sendAppError(result.error);
+      return reply.send(result.value);
+    }
   });
 }

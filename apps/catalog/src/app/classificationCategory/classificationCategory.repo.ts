@@ -1,54 +1,33 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { ErrorCode, AppError } from '@ecomm/AppError';
-import { type ITreeRepo } from '../lib/tree';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { ErrorCode, AppError } from '@ecomm/app-error';
+import { type ITreeRepo } from '../lib/tree.ts';
 import { Db, Collection } from 'mongodb';
-import { type ClassificationCategory } from './classificationCategory';
-import { type ClassificationCategoryDAO } from './classificationCategory.dao.schema';
-import { type ClassificationAttributeDAO } from './classificationAttribute.dao.schema';
-import { type ClassificationAttributePayload } from './classificationAttribute.schemas';
+import { type ClassificationCategory } from './classificationCategory.ts';
+import { type ClassificationCategoryDAO } from './classificationCategory.dao.schema.ts';
+import { type ClassificationAttributeDAO } from './classificationAttribute.dao.schema.ts';
+import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
 
 export interface IClassificationCategoryRepository {
-  create: (
-    category: ClassificationCategory,
-  ) => Promise<Result<ClassificationCategoryDAO, AppError>>;
-  save: (
-    category: ClassificationCategory,
-  ) => Promise<Result<ClassificationCategoryDAO, AppError>>;
-  updateOne: (
-    id: string,
-    categoryVersion: number,
-    update: any,
-  ) => Promise<Result<any, AppError>>;
+  create: (category: ClassificationCategory) => Promise<Result<ClassificationCategoryDAO, AppError>>;
+  save: (category: ClassificationCategory) => Promise<Result<ClassificationCategoryDAO, AppError>>;
+  updateOne: (id: string, categoryVersion: number, update: any) => Promise<Result<any, AppError>>;
   update: (filter: any, update: any) => Promise<Result<any, AppError>>;
-  findOne: (
-    id: string,
-    version?: number,
-  ) => Promise<Result<ClassificationCategoryDAO, AppError>>;
-  find: (
-    query: any,
-    options?: any,
-  ) => Promise<Result<ClassificationCategoryDAO[], AppError>>;
-  aggregate: (
-    pipeline: any[],
-    options?: any,
-  ) => Promise<Result<any[], AppError>>;
+  findOne: (id: string, version?: number) => Promise<Result<ClassificationCategoryDAO, AppError>>;
+  find: (query: any, options?: any) => Promise<Result<ClassificationCategoryDAO[], AppError>>;
+  aggregate: (pipeline: any[], options?: any) => Promise<Result<any[], AppError>>;
   createClassificationAttribute: (
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload,
+    payload: ClassificationAttributePayload
   ) => Promise<Result<ClassificationAttributeDAO, AppError>>;
 }
 
-export const getClassificationCategoryCollection = (
-  db: Db,
-): Collection<ClassificationCategoryDAO> => {
+export const getClassificationCategoryCollection = (db: Db): Collection<ClassificationCategoryDAO> => {
   return db.collection<ClassificationCategoryDAO>('ClassificationCategory');
 };
 
 export class ClassificationCategoryRepository
-  implements
-    IClassificationCategoryRepository,
-    ITreeRepo<ClassificationCategoryDAO>
+  implements IClassificationCategoryRepository, ITreeRepo<ClassificationCategoryDAO>
 {
   private col: Collection<ClassificationCategoryDAO>;
 
@@ -57,53 +36,38 @@ export class ClassificationCategoryRepository
   }
 
   // CREATE CATEGORY
-  async create(
-    category: ClassificationCategory,
-  ): Promise<Result<ClassificationCategoryDAO, AppError>> {
+  async create(category: ClassificationCategory): Promise<Result<ClassificationCategoryDAO, AppError>> {
     const { id: _id, ...data } = category;
     const categoryDAO = { _id, ...data };
     const result = await this.col.insertOne(categoryDAO);
     if (!result || result.insertedId == '')
       // TODO: Check if this is the correct way to check for succesul inserts
-      return new Err(
-        new AppError(ErrorCode.BAD_REQUEST, `Can't save category [${_id}]`),
-      );
+      return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't save category [${_id}]`));
     return new Ok(categoryDAO);
   }
 
   // SAVE CATEGORY
-  async save(
-    category: ClassificationCategory,
-  ): Promise<Result<ClassificationCategoryDAO, AppError>> {
+  async save(category: ClassificationCategory): Promise<Result<ClassificationCategoryDAO, AppError>> {
     const { id: _id, ...data } = category;
     const categoryDAO = { _id, ...data };
     const version = categoryDAO.version!;
     const result = await this.col.updateOne({ _id }, { $set: categoryDAO });
     if (!result || result.modifiedCount != 1)
-      return new Err(
-        new AppError(ErrorCode.BAD_REQUEST, `Can't save category [${_id}]`),
-      );
+      return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't save category [${_id}]`));
     categoryDAO.version = version + 1;
     return new Ok(categoryDAO);
   }
 
   // UPDATE ONE CATEGORY
-  async updateOne(
-    id: string,
-    categoryVersion: number,
-    update: any,
-  ): Promise<Result<any, AppError>> {
+  async updateOne(id: string, categoryVersion: number, update: any): Promise<Result<any, AppError>> {
     const result = await this.col.updateOne(
       {
         _id: id,
-        version: categoryVersion,
+        version: categoryVersion
       },
-      update,
+      update
     );
-    if (result.modifiedCount != 1)
-      return new Err(
-        new AppError(ErrorCode.BAD_REQUEST, `Can't update category.`),
-      );
+    if (result.modifiedCount != 1) return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't update category.`));
     return new Ok({});
   }
 
@@ -115,29 +79,18 @@ export class ClassificationCategoryRepository
   }
 
   // FIND ONE CATEGORY
-  async findOne(
-    id: string,
-    version?: number,
-  ): Promise<Result<ClassificationCategoryDAO, AppError>> {
+  async findOne(id: string, version?: number): Promise<Result<ClassificationCategoryDAO, AppError>> {
     const filter: any = { _id: id };
     if (version !== undefined) filter.version = version;
     const entity = await this.col.findOne(filter);
     if (!entity) {
-      return new Err(
-        new AppError(
-          ErrorCode.BAD_REQUEST,
-          `Can't find category with id [${id}]`,
-        ),
-      );
+      return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't find category with id [${id}]`));
     }
     return new Ok(entity);
   }
 
   // FIND MANY CATEGORIES
-  async find(
-    query: any,
-    options: any,
-  ): Promise<Result<ClassificationCategoryDAO[], AppError>> {
+  async find(query: any, options: any): Promise<Result<ClassificationCategoryDAO[], AppError>> {
     // TODO: Add query limit?
     const entities = await this.col.find(query, options).toArray();
     // if (entities.length === 0) {
@@ -147,10 +100,7 @@ export class ClassificationCategoryRepository
   }
 
   // AGGREGATE CATEGORIES
-  async aggregate(
-    pipeline: any[],
-    options: any,
-  ): Promise<Result<any, AppError>> {
+  async aggregate(pipeline: any[], options: any): Promise<Result<any, AppError>> {
     const result: any[] = [];
     const cursor = this.col.aggregate(pipeline, options);
     for await (const doc of cursor) {
@@ -162,7 +112,7 @@ export class ClassificationCategoryRepository
   async createClassificationAttribute(
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload,
+    payload: ClassificationAttributePayload
   ): Promise<Result<ClassificationAttributeDAO, AppError>> {
     // TODO: Rewrite with validations and attribute uniqueness
     const result = await this.col.updateOne(
@@ -170,18 +120,13 @@ export class ClassificationCategoryRepository
         _id: id,
         version: categoryVersion,
         'attributes.key': {
-          $ne: payload.key,
-        },
+          $ne: payload.key
+        }
       },
-      { $push: { attributes: payload } },
+      { $push: { attributes: payload } }
     );
     if (result.modifiedCount != 1) {
-      return Err(
-        new AppError(
-          ErrorCode.BAD_REQUEST,
-          `Can't create attribute [${payload.key}]`,
-        ),
-      );
+      return Err(new AppError(ErrorCode.BAD_REQUEST, `Can't create attribute [${payload.key}]`));
     }
     return new Ok(payload);
   }

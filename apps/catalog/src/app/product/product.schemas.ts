@@ -1,11 +1,11 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { UpdateProductAction, ProductSchema } from './product';
-import { ProjectBasedParamsSchema } from '../base.schemas';
+import { UpdateProductAction, ProductSchema } from './product.ts';
+import { ProjectBasedParamsSchema } from '../base.schemas.ts';
 
 const defaultExample = {
   name: 'Root Category',
-  key: 'root',
+  key: 'root'
 };
 
 const ProductResponse = Type.Omit(ProductSchema, ['catalogId'], {
@@ -14,9 +14,9 @@ const ProductResponse = Type.Omit(ProductSchema, ['catalogId'], {
       id: '63cd0e4be59031edffa39f5c',
       version: 0,
       ...defaultExample,
-      createdAt: '2021-01-01T00:00:00.000Z',
-    },
-  ],
+      createdAt: '2021-01-01T00:00:00.000Z'
+    }
+  ]
 });
 
 // CREATE
@@ -25,8 +25,8 @@ export const CreateProductBodySchema = Type.Omit(
   ['id', 'catalogId', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
-    additionalProperties: false,
-  },
+    additionalProperties: false
+  }
 );
 export type CreateProductBody = Static<typeof CreateProductBodySchema>;
 
@@ -34,25 +34,20 @@ export type CreateProductBody = Static<typeof CreateProductBodySchema>;
 export const UpdateProductBodySchema = Type.Object(
   {
     version: Type.Number(),
-    actions: Type.Array(UpdateProductAction),
+    actions: Type.Array(UpdateProductAction)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
 
 // FIND
-export const FindProductParmsSchema = Type.Composite([
-  ProjectBasedParamsSchema,
-  Type.Object({ id: Type.String() }),
-]);
+export const FindProductParmsSchema = Type.Composite([ProjectBasedParamsSchema, Type.Object({ id: Type.String() })]);
 export const FindProductQueryStringSchema = Type.Object({
   catalogId: Type.String(),
-  materialized: Type.Boolean({ default: false }),
+  materialized: Type.Boolean({ default: false })
 });
 export type FindProductParms = Static<typeof FindProductParmsSchema>;
-export type FindProductQueryString = Static<
-  typeof FindProductQueryStringSchema
->;
+export type FindProductQueryString = Static<typeof FindProductQueryStringSchema>;
 
 // ROUTE SCHEMAS
 
@@ -62,8 +57,8 @@ export const postProductSchema: FastifySchema = {
   summary: 'Creates new product with given values',
   body: CreateProductBodySchema,
   response: {
-    201: { ...ProductResponse, description: 'Success' },
-  },
+    201: { ...ProductResponse, description: 'Success' }
+  }
 };
 
 export const updateProductSchema: FastifySchema = {
@@ -73,6 +68,6 @@ export const updateProductSchema: FastifySchema = {
   body: UpdateProductBodySchema,
   params: FindProductParmsSchema,
   response: {
-    201: { ...ProductResponse, description: 'Success' },
-  },
+    201: { ...ProductResponse, description: 'Success' }
+  }
 };

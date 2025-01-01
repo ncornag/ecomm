@@ -2,7 +2,7 @@ import { Db, MongoClient } from 'mongodb';
 import args from 'args';
 
 const server = {
-  config: process.env,
+  config: process.env
 };
 
 class PromotionsCreator {
@@ -36,22 +36,22 @@ class PromotionsCreator {
         // minPrice: `$min(items['${cat2}' in categories].value.centAmount)`,
         // secondProduct: `items['${cat2}' in categories and value.centAmount=$minPrice][0]`
         baseProduct: `$productInCategory(items, '${cat1}')`,
-        secondProduct: `$lowestPricedProductInCategory(items, '${cat2}')`,
+        secondProduct: `$lowestPricedProductInCategory(items, '${cat2}')`
       },
       then: [
         {
           action: 'createLineDiscount',
           sku: '$secondProduct.sku',
-          discount: '$secondProduct.value.centAmount * 0.1',
+          discount: '$secondProduct.value.centAmount * 0.1'
         },
         {
           action: 'tagAsUsed',
           items: [
             { productId: '$baseProduct.id', quantity: '1' },
-            { productId: '$secondProduct.id', quantity: '1' },
-          ],
-        },
-      ],
+            { productId: '$secondProduct.id', quantity: '1' }
+          ]
+        }
+      ]
     };
     return result;
   }
@@ -62,15 +62,13 @@ class PromotionsCreator {
     start: number,
     collection: any,
     promotions: any[],
-    force = false,
+    force = false
   ) {
     if (count % logCount === 0 || force) {
       await collection.insertMany(promotions);
       promotions.splice(0, promotions.length);
       const end = new Date().getTime();
-      console.log(
-        `Inserted ${count} promotions at ${((count * 1000) / (end - start)).toFixed()} items/s`,
-      );
+      console.log(`Inserted ${count} promotions at ${((count * 1000) / (end - start)).toFixed()} items/s`);
     }
   }
 
@@ -93,23 +91,10 @@ class PromotionsCreator {
       const p = this.createRandomPromotion('TestProject');
       promotions.push(p);
       count++;
-      await this.writeAndLog(
-        count,
-        this.logCount,
-        start,
-        collection,
-        promotions,
-      );
+      await this.writeAndLog(count, this.logCount, start, collection, promotions);
     }
     if (promotions.length > 0) {
-      await this.writeAndLog(
-        count,
-        this.logCount,
-        start,
-        collection,
-        promotions,
-        true,
-      );
+      await this.writeAndLog(count, this.logCount, start, collection, promotions, true);
     }
     console.log('Database seeded! :)');
   }
@@ -117,14 +102,10 @@ class PromotionsCreator {
 
 args.option('promotions', 'The quantity of promotions to create');
 
-const argv = [
-  process.argv[0],
-  'nx run createPromotions:run --args="',
-  ...(process.argv[2] || '').split(' '),
-];
+const argv = [process.argv[0], 'nx run createPromotions:run --args="', ...(process.argv[2] || '').split(' ')];
 
 const flags = args.parse(argv, {
-  value: args.printMainColor.reset.yellow('"'),
+  value: args.printMainColor.reset.yellow('"')
 });
 
 if (!flags.promotions) {

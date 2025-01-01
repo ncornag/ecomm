@@ -1,9 +1,6 @@
-import {
-  ProductCategory,
-  UpdateProductCategoryAction,
-} from './productCategory';
-import { Event, Command } from '@ecomm/EventStore';
-import { CreateProductCategoryBody } from './productCategory.schemas';
+import type { ProductCategory, UpdateProductCategoryAction } from './productCategory.ts';
+import type { Event, Command } from '@ecomm/event-store';
+import type { CreateProductCategoryBody } from './productCategory.schemas.ts';
 
 export const ENTITY_NAME = 'productCategory';
 
@@ -11,13 +8,13 @@ export const ENTITY_NAME = 'productCategory';
 // Commands
 ///////////
 
-export const enum ProductCategoryCommandTypes {
-  CREATE = `${ENTITY_NAME}-create`,
-  UPDATE = `${ENTITY_NAME}-update`,
-}
+export const ProductCategoryCommandTypes = {
+  CREATE: `${ENTITY_NAME}-create`,
+  UPDATE: `${ENTITY_NAME}-update`
+} as const;
 
 export type CreateProductCategory = Command<
-  ProductCategoryCommandTypes.CREATE,
+  typeof ProductCategoryCommandTypes.CREATE,
   { productCategory: CreateProductCategoryBody },
   {
     projectId: string;
@@ -26,7 +23,7 @@ export type CreateProductCategory = Command<
 >;
 
 export type UpdateProductCategory = Command<
-  ProductCategoryCommandTypes.UPDATE,
+  typeof ProductCategoryCommandTypes.UPDATE,
   {
     productCategoryId: ProductCategory['id'];
     actions: UpdateProductCategoryAction[];
@@ -41,13 +38,13 @@ export type UpdateProductCategory = Command<
 // Events
 /////////
 
-export const enum ProductCategoryEventTypes {
-  CREATED = `${ENTITY_NAME}-created`,
-  UPDATED = `${ENTITY_NAME}-updated`,
-}
+export const ProductCategoryEventTypes = {
+  CREATED: `${ENTITY_NAME}-create`,
+  UPDATED: `${ENTITY_NAME}-update`
+} as const;
 
 export type ProductCategoryCreated = Event<
-  ProductCategoryEventTypes.CREATED,
+  typeof ProductCategoryEventTypes.CREATED,
   {
     productCategory: ProductCategory;
   },
@@ -55,7 +52,7 @@ export type ProductCategoryCreated = Event<
 >;
 
 export type ProductCategoryUpdated = Event<
-  ProductCategoryEventTypes.UPDATED,
+  typeof ProductCategoryEventTypes.UPDATED,
   {
     productCategoryId: ProductCategory['id'];
     actions: UpdateProductCategoryAction[];
@@ -63,9 +60,7 @@ export type ProductCategoryUpdated = Event<
   { projectId: string; entity: string; [key: string]: any }
 >;
 
-export type ProductCategoryEvent =
-  | ProductCategoryCreated
-  | ProductCategoryUpdated;
+export type ProductCategoryEvent = ProductCategoryCreated | ProductCategoryUpdated;
 
 /////////
 // Stream

@@ -1,4 +1,4 @@
-import { AuditFields } from './auditFields';
+import { AuditFields } from './auditFields.ts';
 import { Type, type Static } from '@sinclair/typebox';
 
 // ENTITY
@@ -11,8 +11,8 @@ export const AuditLogSchema = Type.Object(
     updateType: Type.String(),
     source: Type.Any(),
     edits: Type.Any(),
-    ...AuditFields,
+    ...AuditFields
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type AuditLog = Static<typeof AuditLogSchema>;

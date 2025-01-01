@@ -1,4 +1,4 @@
-import { AuditFields } from '@ecomm/Mongo';
+import { AuditFields } from '@ecomm/mongo';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
@@ -14,7 +14,7 @@ export const UpdateCatalogSyncChangeNameSchema = Type.Object(
     action: Type.Literal(CatalogSyncUpdateActionType.CHANGENAME),
     name: Type.String(),
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type UpdateCatalogSyncChangeName = Static<
   typeof UpdateCatalogSyncChangeNameSchema
@@ -39,6 +39,6 @@ export const CatalogSyncSchema = Type.Object(
     lastSync: Type.String({ format: 'date-time' }),
     ...AuditFields,
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type CatalogSync = Static<typeof CatalogSyncSchema>;

@@ -3,8 +3,8 @@ import { Type, type Static } from '@sinclair/typebox';
 import {
   UpdateProductCategoryAction,
   ProductCategorySchema,
-} from './productCategory';
-import { ProjectBasedParamsSchema } from '../base.schemas';
+} from './productCategory.ts';
+import { ProjectBasedParamsSchema } from '../base.schemas.ts';
 
 const defaultExample = {
   name: 'Root Category',

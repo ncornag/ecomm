@@ -1,41 +1,43 @@
 {
-  "compileOnSave": false,
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    /* Language and Environment */
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    /* Modules */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
-    "rootDir": ".",
-    "baseUrl": ".",
+    // "rootDir": "src",
+    // "rootDirs": ["src", "tests"],
+    /* Emit */
+    "outDir": "./dist",
+    "noEmit": true,
     "sourceMap": true,
-    "declaration": false,
-    "importHelpers": true,
+    /* Interop Constraints */
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": false,
+    "allowJs": true,
+    /* Type Checking */
     "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": false,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": ["ESNext", "dom"],
-    "paths": {
-      "@ecomm/ActionsRunner": ["libs/ActionsRunner/src/index.ts"],
-      "@ecomm/AppError": ["libs/AppError/src/index.ts"],
-      "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"],
-      "@ecomm/CT": ["libs/CT/src/index.ts"],
-      "@ecomm/Config": ["libs/Config/src/index.ts"],
-      "@ecomm/Docs": ["libs/Docs/src/index.ts"],
-      "@ecomm/Expressions": ["libs/Expressions/src/index.ts"],
-      "@ecomm/Mongo": ["libs/Mongo/src/index.ts"],
-      "@ecomm/MongoErrors": ["libs/MongoErrors/src/index.ts"],
-      "@ecomm/Queues": ["libs/Queues/src/index.ts"],
-      "@ecomm/RequestContext": ["libs/RequestContext/src/index.ts"],
-      "@ecomm/Search": ["libs/Search/src/index.ts"],
-      "@ecomm/Server": ["libs/Server/src/index.ts"],
-      "@ecomm/EventStore": ["libs/EventStore/src/index.ts"]
-    }
-  },
-  "exclude": ["node_modules", "tmp"],
-  "include": ["src/**/*.ts"]
+    /* Completeness */
+    "skipLibCheck": true
+  }
+  // "paths": {
+  //   "@ecomm/ActionsRunner": ["libs/ActionsRunner/src/index.ts"],
+  //   "@ecomm/AppError": ["libs/AppError/src/index.ts"],
+  //   "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"],
+  //   "@ecomm/CT": ["libs/CT/src/index.ts"],
+  //   "@ecomm/Config": ["libs/Config/src/index.ts"],
+  //   "@ecomm/Docs": ["libs/Docs/src/index.ts"],
+  //   "@ecomm/Expressions": ["libs/Expressions/src/index.ts"],
+  //   "@ecomm/Mongo": ["libs/Mongo/src/index.ts"],
+  //   "@ecomm/MongoErrors": ["libs/MongoErrors/src/index.ts"],
+  //   "@ecomm/Queues": ["libs/Queues/src/index.ts"],
+  //   "@ecomm/RequestContext": ["libs/RequestContext/src/index.ts"],
+  //   "@ecomm/Search": ["libs/Search/src/index.ts"],
+  //   "@ecomm/Server": ["libs/Server/src/index.ts"],
+  //   "@ecomm/EventStore": ["libs/EventStore/src/index.ts"]
+  // }
 }

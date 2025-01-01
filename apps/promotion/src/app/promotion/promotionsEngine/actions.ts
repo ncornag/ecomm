@@ -1,4 +1,4 @@
-import { Expressions } from '@ecomm/Expressions';
+import { Expressions } from '@ecomm/expressions';
 import { green, yellow } from 'kolorist';
 
 export class EngineActions {
@@ -14,27 +14,29 @@ export class EngineActions {
     facts: any,
     bindings: any,
     promotionId: any,
-    action: any,
+    action: any
   ) {
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(yellow('    ACTION: LineDiscount'));
     const skuExpressionResult = await this.expressions.evaluate(
       action.sku,
       facts,
-      bindings,
+      bindings
     );
     const discountExpressionResult = await this.expressions.evaluate(
       action.discount,
       facts,
-      bindings,
+      bindings
     );
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
-        `      ${green('sku')}: ${action.sku} = ${green(skuExpressionResult)}`,
+        `      ${green('sku')}: ${action.sku} = ${green(skuExpressionResult)}`
       );
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
-        `      ${green('discount')}: ${action.discount} = ${green(discountExpressionResult)}`,
+        `      ${green('discount')}: ${action.discount} = ${green(
+          discountExpressionResult
+        )}`
       );
     bindings.discounts.push({
       promotionId,
@@ -48,18 +50,20 @@ export class EngineActions {
     facts: any,
     bindings: any,
     promotionId: any,
-    action: any,
+    action: any
   ) {
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(yellow('    ACTION: OrderDiscount'));
     const discountExpressionResult = await this.expressions.evaluate(
       action.discount,
       facts,
-      bindings,
+      bindings
     );
     if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
-        `      ${green('discount')}: ${action.discount} = ${green(discountExpressionResult)}`,
+        `      ${green('discount')}: ${action.discount} = ${green(
+          discountExpressionResult
+        )}`
       );
     bindings.discounts.push({
       promotionId,
@@ -75,24 +79,26 @@ export class EngineActions {
       const productIdExpressionResult = await this.expressions.evaluate(
         item.productId,
         facts,
-        bindings,
+        bindings
       );
       const productIndex = facts.items.findIndex(
-        (p: any) => p.id === productIdExpressionResult,
+        (p: any) => p.id === productIdExpressionResult
       );
       if (productIndex != -1) {
         const quantityExpressionResult = await this.expressions.evaluate(
           item.quantity,
           facts,
-          bindings,
+          bindings
         );
         if (this.server.logger.isLevelEnabled('debug'))
           this.server.log.debug(
-            `      ${green('productId')}: ${item.productId} = ${green(productIdExpressionResult)} | ${green(
-              'quantity',
-            )}: ${item.quantity} = ${green(quantityExpressionResult)} | ${facts.items[productIndex].quantity} => ${
+            `      ${green('productId')}: ${item.productId} = ${green(
+              productIdExpressionResult
+            )} | ${green('quantity')}: ${item.quantity} = ${green(
+              quantityExpressionResult
+            )} | ${facts.items[productIndex].quantity} => ${
               facts.items[productIndex].quantity - quantityExpressionResult
-            }`,
+            }`
           );
         facts.items[productIndex].quantity -= quantityExpressionResult;
         if (facts.items[productIndex].quantity <= 0) {
@@ -100,7 +106,7 @@ export class EngineActions {
         }
       } else {
         throw new Error(
-          `Product ${item.productId} ${productIdExpressionResult} not found`,
+          `Product ${item.productId} ${productIdExpressionResult} not found`
         );
       }
     }

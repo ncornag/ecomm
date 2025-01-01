@@ -1,11 +1,11 @@
-import { type Result, Ok, Err } from 'ts-results';
+import { type Result, Ok, Err } from 'ts-results-es';
 import { Db, Collection } from 'mongodb';
-import { ErrorCode, AppError } from '@ecomm/AppError';
-import { type Product, ProductType } from './product';
-import { type ProductDAO } from './product.dao.schema';
-import { collectionName } from './projector.lstnr';
-import { FastifyInstance } from 'fastify';
-import { projectId } from '@ecomm/RequestContext';
+import { ErrorCode, AppError } from '@ecomm/app-error';
+import { type Product, ProductType } from './product.ts';
+import { type ProductDAO } from './product.dao.schema.ts';
+import { collectionName } from './projector.lstnr.ts';
+import { type FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/request-context';
 
 export interface IProductRepository {
   create: (

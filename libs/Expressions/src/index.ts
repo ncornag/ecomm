@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance } from 'fastify';
+import { type FastifyInstance } from 'fastify';
 import jsonata, { type Expression } from 'jsonata';
 import NodeCache from 'node-cache';
 
@@ -11,15 +11,15 @@ export class Expressions {
   private cache = new NodeCache({
     useClones: false,
     stdTTL: 60 * 60 * 24,
-    checkperiod: 60 * 60,
+    checkperiod: 60 * 60
   });
   private functions: any;
 
   constructor(
     server: FastifyInstance,
     options: ExpressionsOptions = {
-      functions: [],
-    },
+      functions: []
+    }
   ) {
     this.server = server;
     this.functions = options.functions;

@@ -1,4 +1,4 @@
-import { CT } from '@ecomm/CT';
+import { CT } from '@ecomm/ct';
 import { CartPagedQueryResponse } from '@commercetools/platform-sdk';
 
 const server = {
@@ -20,13 +20,16 @@ class CartTools {
     logCount: number,
     start: number,
     carts: any[],
-    force = false,
+    force = false
   ) {
     if (count % logCount === 0 || force) {
       carts.splice(0, carts.length);
       const end = new Date().getTime();
       console.log(
-        `Found ${count} carts at ${((count * 1000) / (end - start)).toFixed()} items/s`,
+        `Found ${count} carts at ${(
+          (count * 1000) /
+          (end - start)
+        ).toFixed()} items/s`
       );
     }
   }
@@ -34,7 +37,7 @@ class CartTools {
   public async findBigCarts(
     firstCartToCheck = 0,
     cartsToFind = 1,
-    numberOfLines = 0,
+    numberOfLines = 0
   ) {
     const carts: any = [];
     const pageSize = 10;
@@ -54,14 +57,16 @@ class CartTools {
       }
       body = (await this.ct.api.carts().get({ queryArgs }).execute()).body;
       console.log(
-        `offset: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(queryArgs)}`,
+        `offset: ${body.offset} limit: ${body.limit} count: ${
+          body.count
+        } query: ${JSON.stringify(queryArgs)}`
       );
       for (let c = 0; c < body.results.length; c++) {
         const cart = body.results[c];
         if (cart.lineItems.length >= numberOfLines) {
           carts.push(cart);
           console.log(
-            `Found cart ${cart.id} with ${cart.lineItems.length} line items`,
+            `Found cart ${cart.id} with ${cart.lineItems.length} line items`
           );
           cartsFound++;
         }

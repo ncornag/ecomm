@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import { Client } from 'typesense';
 import { green, yellow } from 'kolorist';
 
@@ -10,11 +10,7 @@ declare module 'fastify' {
 }
 
 const searchPlugin: FastifyPluginAsync = async (server) => {
-  const {
-    TYPESENSE_HOST: ts_host,
-    TYPESENSE_PORT: ts_port,
-    TYPESENSE_API_KEY: ts_key,
-  } = server.config;
+  const { TYPESENSE_HOST: ts_host, TYPESENSE_PORT: ts_port, TYPESENSE_API_KEY: ts_key } = server.config;
 
   if (ts_host === '') {
     return;
@@ -25,29 +21,25 @@ const searchPlugin: FastifyPluginAsync = async (server) => {
       {
         host: ts_host!,
         port: Number(ts_port!),
-        protocol: 'http',
-      },
+        protocol: 'http'
+      }
     ],
     apiKey: ts_key!,
     connectionTimeoutSeconds: 2,
-    logLevel: 'error',
+    logLevel: 'error'
   });
 
   try {
     await client.collections().retrieve();
     server.decorate('index', client);
-    server.log.info(
-      `${yellow('TyseSense')} ${green('starting in')} [${ts_host}:${ts_port}]`,
-    );
+    server.log.info(`${yellow('TyseSense')} ${green('starting in')} [${ts_host}:${ts_port}]`);
   } catch (e) {
     server.decorate('index', undefined);
-    server.log.warn(
-      `${yellow('TyseSense')} error connecting to [${ts_host}:${ts_port}]`,
-    );
+    server.log.warn(`${yellow('TyseSense')} error connecting to [${ts_host}:${ts_port}]`);
   }
 };
 
 export default fp(searchPlugin, {
   fastify: '5.x',
-  name: 'search-plugin',
+  name: 'search-plugin'
 });

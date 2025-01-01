@@ -1,19 +1,19 @@
-import { type Result, Ok } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
+import { type Result, Ok } from 'ts-results-es';
+import { AppError } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
 import { type Promotion, UpdatePromotionAction } from './promotion';
-import { type CreatePromotionBody } from './promotion.schemas';
-import { type PromotionDAO } from './promotion.dao.schema';
-import { type IPromotionRepository } from './promotion.repo';
-import { ActionsRunner, type ActionHandlersList } from '@ecomm/ActionsRunner';
-import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
-import { type Config } from '@ecomm/Config';
+import { type CreatePromotionBody } from './promotion.schemas.ts';
+import { type PromotionDAO } from './promotion.dao.schema.ts';
+import { type IPromotionRepository } from './promotion.repo.ts';
+import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
+import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
+import { type Config } from '@ecomm/config';
 import { green, magenta } from 'kolorist';
-import { CT } from '@ecomm/CT';
-import { Queues } from '@ecomm/Queues';
+import { CT } from '@ecomm/ct';
+import { type Queues } from '@ecomm/queues';
 import { PromotionsEngine } from './promotionsEngine/engine';
-import { FastifyInstance } from 'fastify';
+import { type FastifyInstance } from 'fastify';
 
 class CTAdapter {
   private server;
@@ -23,7 +23,7 @@ class CTAdapter {
     ['SKU1', 'shoes'],
     ['SKU2', 'trainers'],
     ['SKU3', 'shirts'],
-    ['SKU4', 'shirts'],
+    ['SKU4', 'shirts']
   ]);
 
   constructor(server: any) {
@@ -38,12 +38,12 @@ class CTAdapter {
       sku: lineItem.variant.sku,
       centAmount: lineItem.price.value.centAmount,
       quantity: lineItem.quantity,
-      categories: [this.Categories.get(lineItem.variant.sku)],
+      categories: [this.Categories.get(lineItem.variant.sku)]
     }));
     return {
       customer: this.Customer,
       products,
-      total: cart.totalPrice.centAmount,
+      total: cart.totalPrice.centAmount
     };
   }
 
@@ -96,28 +96,28 @@ class CTAdapter {
           actions: cart.customLineItems
             .map((customLineItem: any) => ({
               action: 'removeCustomLineItem',
-              customLineItemId: customLineItem.id,
+              customLineItemId: customLineItem.id
             }))
             .concat(
               discounts.map((discount: any) => ({
                 action: 'addCustomLineItem',
                 name: {
-                  en: `Discount [${discount.promotionId}] for ${discount.sku ? discount.sku : 'order'}`,
+                  en: `Discount [${discount.promotionId}] for ${discount.sku ? discount.sku : 'order'}`
                 },
                 quantity: 1,
                 money: {
                   currencyCode: 'EUR',
-                  centAmount: discount.centAmount,
+                  centAmount: discount.centAmount
                 },
                 slug: `discount-${discount.sku ? discount.sku : 'order'}-${count++}`,
                 taxCategory: {
                   typeId: 'tax-category',
-                  id: '42e4dd43-da43-4c7a-b0df-e660eb527c05',
+                  id: '42e4dd43-da43-4c7a-b0df-e660eb527c05'
                 },
-                priceMode: 'External',
-              })),
-            ),
-        },
+                priceMode: 'External'
+              }))
+            )
+        }
       })
       .execute()
       .then((r) => r.body)
@@ -127,27 +127,17 @@ class CTAdapter {
 
 // SERVICE INTERFACE
 export interface IPromotionService {
-  createPromotion: (
-    payload: CreatePromotionBody,
-  ) => Promise<Result<Promotion, AppError>>;
-  updatePromotion: (
-    id: string,
-    version: number,
-    actions: any,
-  ) => Promise<Result<Promotion, AppError>>;
+  createPromotion: (payload: CreatePromotionBody) => Promise<Result<Promotion, AppError>>;
+  updatePromotion: (id: string, version: number, actions: any) => Promise<Result<Promotion, AppError>>;
   findPromotionById: (id: string) => Promise<Result<Promotion, AppError>>;
   find: (query: any, options?: any) => Promise<Result<Promotion[], AppError>>;
   savePromotion: (category: Promotion) => Promise<Result<Promotion, AppError>>;
-  calculate: (
-    cartId: string,
-    facts: any,
-    promotionId: string,
-  ) => Promise<Result<any, AppError>>;
+  calculate: (cartId: string, facts: any, promotionId: string) => Promise<Result<any, AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: PromotionDAO): Promotion => ({
   id: _id,
-  ...remainder,
+  ...remainder
 });
 
 // SERVICE IMPLEMENTATION
@@ -169,12 +159,9 @@ export class PromotionService implements IPromotionService {
     this.server = server;
     this.repo = server.db.repo.promotionRepository as IPromotionRepository;
     this.actionHandlers = {
-      changeName: new ChangeNameActionHandler(server),
+      changeName: new ChangeNameActionHandler(server)
     };
-    this.actionsRunner = new ActionsRunner<
-      PromotionDAO,
-      IPromotionRepository
-    >();
+    this.actionsRunner = new ActionsRunner<PromotionDAO, IPromotionRepository>();
     this.config = server.config;
     this.queues = server.queues;
     this.ctAdapter = new CTAdapter(server);
@@ -191,36 +178,34 @@ export class PromotionService implements IPromotionService {
   }
 
   // CREATE PROMOTION
-  public async createPromotion(
-    payload: CreatePromotionBody,
-  ): Promise<Result<Promotion, AppError>> {
+  public async createPromotion(payload: CreatePromotionBody): Promise<Result<Promotion, AppError>> {
     // Save the entity
     const result = await this.repo.create({
       id: nanoid(),
-      ...payload,
+      ...payload
     });
-    if (result.err) return result;
+    if (result.isErr()) return result;
     // Send new entity via messagging
     this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.val),
+      source: toEntity(result.value),
       metadata: {
         type: 'entityCreated',
-        entity: this.ENTITY,
-      },
+        entity: this.ENTITY
+      }
     });
-    return new Ok(toEntity(result.val));
+    return new Ok(toEntity(result.value));
   }
 
   // UPDATE PROMOTION
   public async updatePromotion(
     id: string,
     version: number,
-    actions: UpdatePromotionAction[],
+    actions: UpdatePromotionAction[]
   ): Promise<Result<Promotion, AppError>> {
     // Find the Entity
     const result = await this.repo.findOne(id, version);
-    if (result.err) return result;
-    const entity: PromotionDAO = result.val;
+    if (result.isErr()) return result;
+    const entity: PromotionDAO = result.value;
     const toUpdateEntity = Value.Clone(entity);
     // Execute actions
     const actionRunnerResults = await this.actionsRunner.run(
@@ -228,37 +213,33 @@ export class PromotionService implements IPromotionService {
       toUpdateEntity,
       this.repo,
       this.actionHandlers,
-      actions,
+      actions
     );
-    if (actionRunnerResults.err) return actionRunnerResults;
+    if (actionRunnerResults.isErr()) return actionRunnerResults;
     // Compute difference, and save if needed
     const difference = Value.Diff(entity, toUpdateEntity);
     if (difference.length > 0) {
       // Save the entity
-      const saveResult = await this.repo.updateOne(
-        id,
-        version,
-        actionRunnerResults.val.update,
-      );
-      if (saveResult.err) return saveResult;
+      const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
+      if (saveResult.isErr()) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
       this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.val._id },
+        source: { id: result.value._id },
         difference,
         metadata: {
           type: 'entityUpdated',
-          entity: this.ENTITY,
-        },
+          entity: this.ENTITY
+        }
       });
       // Send side effects via messagging
-      actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
+      actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {
           ...sideEffect.data,
           metadata: {
             type: sideEffect.action,
-            entity: this.ENTITY,
-          },
+            entity: this.ENTITY
+          }
         });
       });
     }
@@ -267,36 +248,28 @@ export class PromotionService implements IPromotionService {
   }
 
   // FIND PROMOTION
-  public async findPromotionById(
-    id: string,
-  ): Promise<Result<Promotion, AppError>> {
+  public async findPromotionById(id: string): Promise<Result<Promotion, AppError>> {
     const result = await this.repo.findOne(id);
-    if (result.err) return result;
-    return new Ok(toEntity(result.val));
+    if (result.isErr()) return result;
+    return new Ok(toEntity(result.value));
   }
 
   // FIND MANY PROMOTIONS
   async find(query: any, options: any): Promise<Result<Promotion[], AppError>> {
     const result = await this.repo.find(query, options);
-    if (result.err) return result;
-    return new Ok(result.val.map((e: PromotionDAO) => toEntity(e)));
+    if (result.isErr()) return result;
+    return new Ok(result.value.map((e: PromotionDAO) => toEntity(e)));
   }
 
   // SAVE PROMOTION
-  public async savePromotion(
-    category: Promotion,
-  ): Promise<Result<Promotion, AppError>> {
+  public async savePromotion(category: Promotion): Promise<Result<Promotion, AppError>> {
     const result = await this.repo.save(category);
-    if (result.err) return result;
-    return new Ok(toEntity(result.val));
+    if (result.isErr()) return result;
+    return new Ok(toEntity(result.value));
   }
 
   // CALCULATE PROMOTIONS
-  public async calculate(
-    cartId: string,
-    facts: any,
-    promotionId: string,
-  ): Promise<Result<any, AppError>> {
+  public async calculate(cartId: string, facts: any, promotionId: string): Promise<Result<any, AppError>> {
     //console.log('Calculating promotions for', cartId ? cartId : '[body data]');
     let cart: any;
     if (cartId) {
@@ -304,19 +277,16 @@ export class PromotionService implements IPromotionService {
       facts = this.ctAdapter.convertCart(cart);
       //console.log(facts);
     } else {
-      facts.total = facts.items.reduce(
-        (acc: number, item: any) => acc + item.centAmount * item.quantity,
-        0,
-      ); // Added for quick testing
+      facts.total = facts.items.reduce((acc: number, item: any) => acc + item.centAmount * item.quantity, 0); // Added for quick testing
     }
     const result = await this.promotionsEngine.run(facts, promotionId);
-    if (result.err) return result;
-    // console.log(result.val);
+    if (result.isErr()) return result;
+    // console.log(result.value);
     // if (cartId) {
-    //   const discountsResult = await this.ctAdapter.addDiscounts(cart, result.val);
+    //   const discountsResult = await this.ctAdapter.addDiscounts(cart, result.value);
     //   if (discountsResult.errors)
     //     return new Err(new AppError(ErrorCode.BAD_REQUEST, discountsResult.errors[0].message));
     // }
-    return Ok(result.val);
+    return Ok(result.value);
   }
 }

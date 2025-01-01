@@ -1,10 +1,10 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { UpdateCatalogAction, CatalogSchema } from './catalog';
+import { UpdateCatalogAction, CatalogSchema } from './catalog.ts';
 
 const defaultExample = {
   name: 'Root Category',
-  key: 'root',
+  key: 'root'
 };
 
 const CatalogResponse = Type.Composite([CatalogSchema], {
@@ -13,29 +13,25 @@ const CatalogResponse = Type.Composite([CatalogSchema], {
       id: '63cd0e4be59031edffa39f5c',
       version: 0,
       ...defaultExample,
-      createdAt: '2021-01-01T00:00:00.000Z',
-    },
-  ],
+      createdAt: '2021-01-01T00:00:00.000Z'
+    }
+  ]
 });
 
 // CREATE
-export const CreateCatalogBodySchema = Type.Omit(
-  CatalogSchema,
-  ['id', 'createdAt', 'lastModifiedAt', 'version'],
-  {
-    examples: [defaultExample],
-    additionalProperties: false,
-  },
-);
+export const CreateCatalogBodySchema = Type.Omit(CatalogSchema, ['id', 'createdAt', 'lastModifiedAt', 'version'], {
+  examples: [defaultExample],
+  additionalProperties: false
+});
 export type CreateCatalogBody = Static<typeof CreateCatalogBodySchema>;
 
 // UPDATE
 export const UpdateCatalogBodySchema = Type.Object(
   {
     version: Type.Number(),
-    actions: Type.Array(UpdateCatalogAction),
+    actions: Type.Array(UpdateCatalogAction)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
 export type UpdateCatalogBody = Static<typeof UpdateCatalogBodySchema>;
 
@@ -50,8 +46,8 @@ export const postCatalogSchema: FastifySchema = {
   summary: 'Creates new catalog with given values',
   body: CreateCatalogBodySchema,
   response: {
-    201: { ...CatalogResponse, description: 'Success' },
-  },
+    201: { ...CatalogResponse, description: 'Success' }
+  }
 };
 
 export const updateCatalogSchema: FastifySchema = {
@@ -61,6 +57,6 @@ export const updateCatalogSchema: FastifySchema = {
   body: UpdateCatalogBodySchema,
   params: FindCatalogParmsSchema,
   response: {
-    201: { ...CatalogResponse, description: 'Success' },
-  },
+    201: { ...CatalogResponse, description: 'Success' }
+  }
 };

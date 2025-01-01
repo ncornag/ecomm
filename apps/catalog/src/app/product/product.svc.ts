@@ -1,32 +1,28 @@
-import { type Result, Ok } from 'ts-results';
-import { AppErrorResult, AppError, ErrorCode } from '@ecomm/AppError';
+import { type Result, Ok } from 'ts-results-es';
+import { AppErrorResult, AppError, ErrorCode } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
-import { type Product, ProductType } from './product';
-import { type CartProduct } from '../cart/cart';
-import { type ProductDAO } from './product.dao.schema';
-import { ChangeNameActionHandler } from '../lib/actions/changeName.handler';
-import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler';
-import { ChangeKeywordsActionHandler } from '../lib/actions/changeKeywords.handler';
-import {
-  ActionsRunner,
-  ActionsRunner2,
-  type ActionHandlersList,
-} from '@ecomm/ActionsRunner';
-import { ProductRepository, type IProductRepository } from './product.repo';
+import { type Product, ProductType } from './product.ts';
+import { type CartProduct } from '../cart/cart.ts';
+import { type ProductDAO } from './product.dao.schema.ts';
+import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
+import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler.ts';
+import { ChangeKeywordsActionHandler } from '../lib/actions/changeKeywords.handler.ts';
+import { ActionsRunner, ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
+import { ProductRepository, type IProductRepository } from './product.repo.ts';
 import NodeCache from 'node-cache';
-import { Queues } from '@ecomm/Queues';
-import { FastifyInstance } from 'fastify';
+import { type Queues } from '@ecomm/queues';
+import { type FastifyInstance } from 'fastify';
 import {
   ProductEventTypes,
-  CreateProduct,
-  ProductCreated,
-  UpdateProduct,
-  ProductUpdated,
-  ProductEvent,
+  type CreateProduct,
+  type ProductCreated,
+  type UpdateProduct,
+  type ProductUpdated,
+  type ProductEvent,
   ENTITY_NAME,
-  toStreamName,
-} from './product.events';
-import { toRecordedEvent, RecordedEvent } from '@ecomm/EventStore';
+  toStreamName
+} from './product.events.ts';
+import { toRecordedEvent, type RecordedEvent } from '@ecomm/event-store';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -34,28 +30,16 @@ export interface IProductService {
   update: (command: UpdateProduct) => Promise<Result<ProductUpdated, AppError>>;
   aggregate: (
     currentState: Product,
-    event: RecordedEvent<ProductEvent>,
+    event: RecordedEvent<ProductEvent>
   ) => Promise<Result<{ entity: Product; update?: any }, AppError>>;
-  findProductById: (
-    catalogId: string,
-    id: string,
-    materialized: boolean,
-  ) => Promise<Result<Product, AppError>>;
-  findProducts: (
-    catalogId: string,
-    query: any,
-    options: any,
-  ) => Promise<Result<Product[], AppError>>;
-  cartProducById: (
-    catalogId: string,
-    ids: string[],
-    locale: string,
-  ) => Promise<Result<CartProduct[], AppError>>;
+  findProductById: (catalogId: string, id: string, materialized: boolean) => Promise<Result<Product, AppError>>;
+  findProducts: (catalogId: string, query: any, options: any) => Promise<Result<Product[], AppError>>;
+  cartProducById: (catalogId: string, ids: string[], locale: string) => Promise<Result<CartProduct[], AppError>>;
 }
 
 export const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
   id: _id,
-  ...remainder,
+  ...remainder
 });
 
 // FIXME use ActionsRunner, not ActionsRunner2
@@ -81,7 +65,7 @@ export class ProductService implements IProductService {
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
       changeDescription: new ChangeDescriptionActionHandler(server),
-      changeKeywords: new ChangeKeywordsActionHandler(server),
+      changeKeywords: new ChangeKeywordsActionHandler(server)
     };
     this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
     this.actionsRunner2 = new ActionsRunner2<Product, IProductRepository>();
@@ -90,7 +74,7 @@ export class ProductService implements IProductService {
     this.cartProductsCache = new NodeCache({
       useClones: false,
       stdTTL: 60 * 60,
-      checkperiod: 60,
+      checkperiod: 60
     });
   }
 
@@ -102,41 +86,33 @@ export class ProductService implements IProductService {
   }
 
   // CREATE
-  public create = async (
-    command: CreateProduct,
-  ): Promise<Result<ProductCreated, AppError>> => {
+  public create = async (command: CreateProduct): Promise<Result<ProductCreated, AppError>> => {
     const { id, ...remainder } = command.metadata;
-    if (command.data.product.parent)
-      command.data.product.type = ProductType.VARIANT;
+    if (command.data.product.parent) command.data.product.type = ProductType.VARIANT;
 
     return new Ok({
       type: ProductEventTypes.CREATED,
       data: { product: { id, ...command.data.product } },
-      metadata: { entity: ENTITY_NAME, ...remainder },
+      metadata: { entity: ENTITY_NAME, ...remainder }
     } as ProductCreated);
   };
 
   // UPDATE
-  public update = async (
-    command: UpdateProduct,
-  ): Promise<Result<ProductUpdated, AppError>> => {
-    const aggregateResult = await this.server.es.aggregateStream<
-      Product,
-      ProductEvent
-    >(
+  public update = async (command: UpdateProduct): Promise<Result<ProductUpdated, AppError>> => {
+    const aggregateResult = await this.server.es.aggregateStream<Product, ProductEvent>(
       command.metadata.projectId,
       toStreamName(command.data.productId),
-      this.aggregate,
+      this.aggregate
     );
-    if (!aggregateResult.ok) return aggregateResult;
+    if (aggregateResult.isErr()) return aggregateResult;
 
     const expectedResult = await this.aggregate(
-      aggregateResult.val,
-      toRecordedEvent(ProductEventTypes.UPDATED, ENTITY_NAME, command),
+      aggregateResult.value,
+      toRecordedEvent(ProductEventTypes.UPDATED, ENTITY_NAME, command)
     );
-    if (!expectedResult.ok) return expectedResult;
+    if (expectedResult.isErr()) return expectedResult;
 
-    if (!expectedResult.val.update.length) {
+    if (!Object.keys(expectedResult.value.update).length) {
       return new AppErrorResult(ErrorCode.NOT_MODIFIED);
     }
 
@@ -145,40 +121,32 @@ export class ProductService implements IProductService {
       data: command.data,
       metadata: {
         entity: ENTITY_NAME,
-        expected: expectedResult.val.entity,
-        ...command.metadata,
-      },
+        expected: expectedResult.value.entity,
+        ...command.metadata
+      }
     } as ProductUpdated);
   };
 
   // AGGREGATE
   public aggregate = async (
     currentState: Product,
-    event: RecordedEvent<ProductEvent>,
+    event: RecordedEvent<ProductEvent>
   ): Promise<Result<{ entity: Product; update?: any }, AppError>> => {
     const e = event as ProductEvent;
     switch (e.type) {
       case ProductEventTypes.CREATED: {
-        if (currentState)
-          return new AppErrorResult(
-            ErrorCode.UNPROCESSABLE_ENTITY,
-            'Entity already exists',
-          );
+        if (currentState) return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Entity already exists');
         return new Ok({
           entity: Object.assign(e.data.product, {
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
-            createdAt: event.createdAt,
-          }),
+            createdAt: event.createdAt
+          })
         });
       }
 
       case ProductEventTypes.UPDATED: {
-        if (!currentState)
-          return new AppErrorResult(
-            ErrorCode.UNPROCESSABLE_ENTITY,
-            'Empty entity',
-          );
+        if (!currentState) return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Empty entity');
         // Execute actions
         const toUpdateEntity = Value.Clone(currentState);
         const actionRunnerResults = await this.actionsRunner2.run(
@@ -186,25 +154,22 @@ export class ProductService implements IProductService {
           toUpdateEntity,
           this.repo,
           this.actionHandlers,
-          e.data.actions,
+          e.data.actions
         );
-        if (actionRunnerResults.err) return actionRunnerResults;
+        if (actionRunnerResults.isErr()) return actionRunnerResults;
 
         return new Ok({
           entity: Object.assign(toUpdateEntity, {
             catalogId: e.metadata.catalogId,
             version: e.metadata.version,
-            lastModifiedAt: event.createdAt,
+            lastModifiedAt: event.createdAt
           }),
-          update: actionRunnerResults.val.update,
+          update: actionRunnerResults.value.update
         });
       }
 
       default: {
-        return new AppErrorResult(
-          ErrorCode.UNPROCESSABLE_ENTITY,
-          `Unknown event type: ${(e as any).type}`,
-        );
+        return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, `Unknown event type: ${(e as any).type}`);
       }
     }
   };
@@ -213,12 +178,12 @@ export class ProductService implements IProductService {
   public async findProductById(
     catalogId: string,
     productId: string,
-    materialized = false,
+    materialized = false
   ): Promise<Result<Product, AppError>> {
     if (!!materialized === false) {
       const result = await this.repo.findOne(catalogId, productId);
-      if (result.err) return result;
-      return new Ok(toEntity(result.val));
+      if (result.isErr()) return result;
+      return new Ok(toEntity(result.value));
     } else {
       // FIXME use right col names
       const result = await this.repo.aggregate(catalogId, [
@@ -228,16 +193,16 @@ export class ProductService implements IProductService {
             from: this.cols[catalogId].collectionName,
             localField: '_id',
             foreignField: 'parent',
-            as: 'variants',
-          },
+            as: 'variants'
+          }
         },
         {
           $lookup: {
             from: this.cols[catalogId].collectionName,
             localField: 'parent',
             foreignField: '_id',
-            as: 'base',
-          },
+            as: 'base'
+          }
         },
         {
           $project: {
@@ -246,14 +211,13 @@ export class ProductService implements IProductService {
             'variants.catalogId': 0,
             'variants.createdAt': 0,
             'variants.lastModifiedAt': 0,
-            'variants.version': 0,
-          },
-        },
+            'variants.version': 0
+          }
+        }
       ]);
-      if (result.err) return result;
-      if (result.val.length === 0)
-        return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
-      const entity = result.val[0];
+      if (result.isErr()) return result;
+      if (result.value.length === 0) return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
+      const entity = result.value[0];
       if (entity.type === ProductType.BASE) {
         delete entity.base;
       } else if (entity.type === ProductType.VARIANT) {
@@ -266,14 +230,10 @@ export class ProductService implements IProductService {
     }
   }
 
-  public async findProducts(
-    catalogId: string,
-    query: any,
-    options: any,
-  ): Promise<Result<Product[], AppError>> {
+  public async findProducts(catalogId: string, query: any, options: any): Promise<Result<Product[], AppError>> {
     const result = await this.repo.find(catalogId, query, options);
-    if (result.err) return result;
-    return new Ok(result.val.map((entity) => toEntity(entity)));
+    if (result.isErr()) return result;
+    return new Ok(result.value.map((entity) => toEntity(entity)));
   }
 
   private inheritFields(entity: any, locale?: string) {
@@ -283,29 +243,19 @@ export class ProductService implements IProductService {
       entity.inheritedFields.push('name');
     }
     if (!entity.description) {
-      entity.description = locale
-        ? entity.base[0].description[locale]
-        : entity.base[0].description;
+      entity.description = locale ? entity.base[0].description[locale] : entity.base[0].description;
       entity.inheritedFields.push('description');
     }
     if (entity.base[0].searchKeywords) {
       entity.searchKeywords = entity.searchKeywords ?? {};
-      Object.entries(entity.base[0].searchKeywords).forEach(
-        ([key, value]: [string, any]) => {
-          entity.searchKeywords[key] = (
-            entity.searchKeywords[key] ?? []
-          ).concat(...value);
-        },
-      );
-      entity.searchKeywords = locale
-        ? entity.searchKeywords[locale]
-        : entity.searchKeywords;
+      Object.entries(entity.base[0].searchKeywords).forEach(([key, value]: [string, any]) => {
+        entity.searchKeywords[key] = (entity.searchKeywords[key] ?? []).concat(...value);
+      });
+      entity.searchKeywords = locale ? entity.searchKeywords[locale] : entity.searchKeywords;
       entity.inheritedFields.push('searchKeywords');
     }
     if (entity.base[0].categories.length > 0) {
-      entity.categories = (entity.categories ?? []).concat(
-        ...entity.base[0].categories,
-      );
+      entity.categories = (entity.categories ?? []).concat(...entity.base[0].categories);
       entity.inheritedFields.push('categories');
     }
   }
@@ -314,7 +264,7 @@ export class ProductService implements IProductService {
   public async cartProducById(
     catalogId: string,
     ids: string[],
-    locale: string,
+    locale: string
   ): Promise<Result<CartProduct[], AppError>> {
     const cachedProducts = this.cartProductsCache.mget(ids);
     ids = ids.filter((id) => !cachedProducts[id]);
@@ -322,16 +272,16 @@ export class ProductService implements IProductService {
       const result = await this.repo.aggregate(catalogId, [
         {
           $match: {
-            _id: { $in: ids },
-          },
+            _id: { $in: ids }
+          }
         },
         {
           $lookup: {
             from: this.cols[catalogId].collectionName,
             localField: 'parent',
             foreignField: '_id',
-            as: 'base',
-          },
+            as: 'base'
+          }
         },
         {
           $project: {
@@ -341,20 +291,18 @@ export class ProductService implements IProductService {
             'base.name': 1,
             'base.description': 1,
             'base.searchKeywords': 1,
-            'base.categories': 1,
-          },
-        },
+            'base.categories': 1
+          }
+        }
       ]);
-      if (result.err) return result;
-      if (result.val.length === 0)
-        return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
-      result.val.forEach((entity) => {
+      if (result.isErr()) return result;
+      if (result.value.length === 0) return new AppErrorResult(ErrorCode.NOT_FOUND, 'Product not found');
+      result.value.forEach((entity) => {
         entity.inheritedFields = [];
         this.inheritFields(entity, locale);
         delete entity.base;
         cachedProducts[entity._id] = entity;
-        if (this.cacheCartProducts === true)
-          this.cartProductsCache.set(entity._id, entity);
+        if (this.cacheCartProducts === true) this.cartProductsCache.set(entity._id, entity);
       });
     }
     return new Ok(
@@ -363,9 +311,9 @@ export class ProductService implements IProductService {
           productId: value._id,
           sku: value.sku,
           name: value.name,
-          categories: value.categories,
+          categories: value.categories
         };
-      }),
+      })
     );
   }
 }

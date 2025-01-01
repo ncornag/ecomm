@@ -1,7 +1,7 @@
-import { type Result, Ok } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
-import { ProductRepository, type IProductRepository } from './product.repo';
-import { CT } from '@ecomm/CT';
+import { type Result, Ok } from 'ts-results-es';
+import { AppError } from '@ecomm/app-error';
+import { ProductRepository, type IProductRepository } from './product.repo.ts';
+import { CT } from '@ecomm/ct';
 
 // SERVICE INTERFACE
 export interface IProductServiceV1 {
@@ -16,7 +16,7 @@ export class ProductServiceV1 implements IProductServiceV1 {
   private ct: CT;
   private Catalog = {
     STAGE: 'stage',
-    ONLINE: 'online',
+    ONLINE: 'online'
   };
 
   private constructor(server: any) {
@@ -35,22 +35,13 @@ export class ProductServiceV1 implements IProductServiceV1 {
   // FIND PRODUCT BY ID
   public async findProductById(id: string): Promise<Result<any, AppError>> {
     // Return the product+prices from the staged catalog
-    const productResultStaged = await this.getProductFromCatalog(
-      this.Catalog.STAGE,
-      id,
-    );
-    if (productResultStaged.err) return productResultStaged;
+    const productResultStaged = await this.getProductFromCatalog(this.Catalog.STAGE, id);
+    if (productResultStaged.isErr()) return productResultStaged;
     // Return the product+prices from the current catalog
-    const productResultOnline = await this.getProductFromCatalog(
-      this.Catalog.ONLINE,
-      id,
-    );
-    if (productResultOnline.err) return productResultOnline;
+    const productResultOnline = await this.getProductFromCatalog(this.Catalog.ONLINE, id);
+    if (productResultOnline.isErr()) return productResultOnline;
     // Return the converted Product
-    const productV1 = this.ct.toCTProduct(
-      productResultStaged.val[0],
-      productResultOnline.val[0],
-    );
+    const productV1 = this.ct.toCTProduct(productResultStaged.value[0], productResultOnline.value[0]);
     return new Ok(productV1);
   }
 
@@ -63,16 +54,16 @@ export class ProductServiceV1 implements IProductServiceV1 {
           from: this.cols.product[catalogId].collectionName,
           localField: '_id',
           foreignField: 'parent',
-          as: 'variants',
-        },
+          as: 'variants'
+        }
       },
       {
         $lookup: {
           from: this.cols.price[catalogId].collectionName,
           localField: 'variants.sku',
           foreignField: 'sku',
-          as: 'prices',
-        },
+          as: 'prices'
+        }
       },
       {
         $project: {
@@ -87,9 +78,9 @@ export class ProductServiceV1 implements IProductServiceV1 {
           'prices.createdAt': 0,
           'prices.lastModifiedAt': 0,
           'prices.version': 0,
-          'prices.prices.predicate': 0,
-        },
-      },
+          'prices.prices.predicate': 0
+        }
+      }
     ]);
   }
 }

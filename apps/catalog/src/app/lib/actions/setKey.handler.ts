@@ -1,8 +1,8 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { AppError } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
-import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
-import { type UpdateClassificationCategorySetKey } from '../../classificationCategory/classificationCategory';
+import { type ActionHandlerResult } from '@ecomm/actions-runner';
+import { type UpdateClassificationCategorySetKey } from '../../classificationCategory/classificationCategory.ts';
 
 interface DAOwithKey {
   [key: string]: any;

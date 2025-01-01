@@ -1,6 +1,6 @@
-import server from '@ecomm/Server';
-import { envConfig } from './app/lib/env';
-import { app } from './app/app';
+import server from '@ecomm/server';
+import { envConfig } from './app/lib/env.ts';
+import { app } from './app/app.ts';
 
 async function main() {
   await server(app, envConfig);

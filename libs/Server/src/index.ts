@@ -1,19 +1,16 @@
-import fastify, { FastifyInstance, type FastifyServerOptions } from 'fastify';
+import fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import pino from 'pino';
 import ajvFormats from 'ajv-formats';
 import fastifyRequestLogger from '@mgcrea/fastify-request-logger';
 import { fastifyRequestContext } from '@fastify/request-context';
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import { AppError, ErrorCode, default as sendAppError } from '@ecomm/AppError';
-import { errorName } from '@ecomm/MongoErrors';
+import { AppError, ErrorCode, default as sendAppError } from '@ecomm/app-error';
+import { errorName } from '@ecomm/mongo-errors';
 import { yellow } from 'kolorist';
-import config from '@ecomm/Config';
+import config from '@ecomm/config';
 import docs from '@ecomm/Docs';
-import {
-  default as requestContextProvider,
-  getRequestIdFastifyAppConfig,
-} from '@ecomm/RequestContext';
-import authorization from './authorization';
+import { default as requestContextProvider, getRequestIdFastifyAppConfig } from '@ecomm/request-context';
+import authorization from './authorization.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -40,10 +37,10 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
       customOptions: {
         removeAdditional: false,
         coerceTypes: 'array',
-        useDefaults: true,
+        useDefaults: true
         //keywords: ['kind', 'modifier']
       },
-      plugins: [ajvFormats],
+      plugins: [ajvFormats]
     },
     logger: {
       level: process.env.LOG_LEVEL,
@@ -52,12 +49,12 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
         options: {
           translateTime: 'yyyy-mm-dd HH:MM:ss.l',
           colorize: true,
-          ignore: 'pid,hostname,plugin',
-        },
-      },
+          ignore: 'pid,hostname,plugin'
+        }
+      }
     },
     disableRequestLogging: true,
-    ...getRequestIdFastifyAppConfig(),
+    ...getRequestIdFastifyAppConfig()
   };
   const server = fastify(serverOptions).withTypeProvider<TypeBoxTypeProvider>();
   server.logger = server.log as pino.Logger;
@@ -66,26 +63,24 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   }
 
   server.logger.info(
-    `${yellow('APP:')} [${process.env.APP_NAME}] ${yellow('ENV:')} [${process.env.NODE_ENV}] ${yellow('PRJ:')} [${process.env.PROJECT_ID}] `,
+    `${yellow('APP:')} [${process.env.APP_NAME}] ${yellow('ENV:')} [${process.env.NODE_ENV}] ${yellow('PRJ:')} [${
+      process.env.PROJECT_ID
+    }] `
   );
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
     //console.log(JSON.stringify(error, null, 2));
-    if (error.validation) {
-      const additionalProperty = error.validation[0]?.params?.additionalProperty
-        ? ' [' + error.validation[0]?.params?.additionalProperty + ']'
+    if (error.valueidation) {
+      const additionalProperty = error.valueidation[0]?.params?.additionalProperty
+        ? ' [' + error.valueidation[0]?.params?.additionalProperty + ']'
         : '';
-      const instancePath = error.validation[0]?.instancePath
-        ? ' [' + error.validation[0]?.instancePath + ']'
-        : '';
-      const message = error.validation[0]
-        ? error.validation[0].message + instancePath + additionalProperty
+      const instancePath = error.valueidation[0]?.instancePath ? ' [' + error.valueidation[0]?.instancePath + ']' : '';
+      const message = error.valueidation[0]
+        ? error.valueidation[0].message + instancePath + additionalProperty
         : error.message;
       reply.send(new AppError(ErrorCode.UNPROCESSABLE_ENTITY, message));
     } else if (error.name == 'MongoServerError') {
-      reply.send(
-        new AppError(ErrorCode.BAD_REQUEST, errorName(error.code as any)),
-      );
+      reply.send(new AppError(ErrorCode.BAD_REQUEST, errorName(error.code as any)));
     } else {
       reply.send(error);
     }
@@ -93,7 +88,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
 
   // Register Plugins
   await server.register(config, {
-    envType: envConfig,
+    envType: envConfig
   });
   await server.register(fastifyRequestLogger);
   await server.register(docs);
@@ -104,10 +99,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
 
   // Print Routes
   if (server.config.PRINT_ROUTES === true) {
-    const importDynamic = new Function(
-      'modulePath',
-      'return import(modulePath)',
-    );
+    const importDynamic = new Function('modulePath', 'return import(modulePath)');
     const fastifyPrintRoutes = await importDynamic('fastify-print-routes');
     await server.register(fastifyPrintRoutes);
   }
@@ -118,7 +110,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   // Start listening.
   await server.listen({
     host: server.config.API_HOST,
-    port: server.config.API_PORT,
+    port: server.config.API_PORT
   });
 
   process.on('unhandledRejection', (err) => {

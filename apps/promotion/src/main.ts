@@ -1,4 +1,4 @@
-import server from '@ecomm/Server';
+import server from '@ecomm/server';
 import { envConfig } from './app/lib/env';
 import { app } from './app/app';
 

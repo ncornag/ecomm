@@ -1,8 +1,8 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { AppError } from '@ecomm/AppError';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { AppError } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
-import { type ActionHandlerResult } from '@ecomm/ActionsRunner';
-import { type UpdateProductChangeDescription } from '../../product/product';
+import { type ActionHandlerResult } from '@ecomm/actions-runner';
+import { type UpdateProductChangeDescription } from '../../product/product.ts';
 
 interface DAOwithDescription {
   [key: string]: any;

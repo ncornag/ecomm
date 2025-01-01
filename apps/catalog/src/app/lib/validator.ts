@@ -1,13 +1,13 @@
-import { type Result, Ok, Err } from 'ts-results';
+import { type Result, Ok, Err } from 'ts-results-es';
 import { Ajv } from 'ajv';
-import { AppError, ErrorCode } from '@ecomm/AppError';
+import { AppError, ErrorCode } from '@ecomm/app-error';
 import {
   type ClassificationAttribute,
-  ClassificationAttributeType,
-} from '../classificationCategory/classificationAttribute';
+  ClassificationAttributeType
+} from '../classificationCategory/classificationAttribute.ts';
 import { Type } from '@sinclair/typebox';
-import { type IProductCategoryRepository } from '../productCategory/productCategory.repo';
-import { type IClassificationCategoryRepository } from '../classificationCategory/classificationCategory.repo';
+import { type IProductCategoryRepository } from '../productCategory/productCategory.repo.ts';
+import { type IClassificationCategoryRepository } from '../classificationCategory/classificationCategory.repo.ts';
 
 export class Validator {
   private server: any;
@@ -20,12 +20,11 @@ export class Validator {
   constructor(server: any) {
     this.server = server;
     this.productCategoryRepository = server.db.repo.productCategoryRepository;
-    this.classificationCategoryRepository =
-      server.db.repo.classificationCategoryRepository;
-    this.validator = new Ajv({
+    this.classificationCategoryRepository = server.db.repo.classificationCategoryRepository;
+    this.valueidator = new Ajv({
       coerceTypes: 'array',
       useDefaults: true,
-      addUsedSchema: false,
+      addUsedSchema: false
     });
   }
 
@@ -62,17 +61,14 @@ export class Validator {
           break;
         }
         case ClassificationAttributeType.ENUM: {
-          const options: any = curr.options.map((o: any) =>
-            Type.Literal(o.key),
-          );
+          const options: any = curr.options.map((o: any) => Type.Literal(o.key));
           t = Type.Union(options);
           break;
         }
         case ClassificationAttributeType.OBJECT: {
-          const result: Result<any, AppError> =
-            await this.getClassificationCategorySchema(curr.ref);
-          if (!result.ok) return new Err(result.val);
-          t = result.val.z;
+          const result: Result<any, AppError> = await this.getClassificationCategorySchema(curr.ref);
+          if (result.isErr()) return result;
+          t = result.value.z;
           break;
         }
         case ClassificationAttributeType.LIST: {
@@ -120,8 +116,8 @@ export class Validator {
             from: 'ProductCategory',
             localField: 'ancestors',
             foreignField: '_id',
-            as: 'ancestors',
-          },
+            as: 'ancestors'
+          }
         },
         { $unwind: '$ancestors' },
         { $unwind: '$ancestors.classificationCategories' },
@@ -129,27 +125,16 @@ export class Validator {
           $project: {
             _id: 0,
             classificationCategories: 1,
-            ancestors: '$ancestors.classificationCategories',
-          },
-        },
+            ancestors: '$ancestors.classificationCategories'
+          }
+        }
       ]);
-      if (resultCatCC.err) return Err(resultCatCC.val);
-      const catCC = resultCatCC.val;
-      if (catCC.length < 1)
-        return Err(
-          new AppError(ErrorCode.NOT_FOUND, `Entity [${id}] not found`),
-        );
+      if (resultCatCC.isErr()) return resultCatCC;
+      const catCC = resultCatCC.value;
+      if (catCC.length < 1) return Err(new AppError(ErrorCode.NOT_FOUND, `Entity [${id}] not found`));
+      cCategories = cCategories.concat(catCC[0]?.classificationCategories || []);
       cCategories = cCategories.concat(
-        catCC[0]?.classificationCategories || [],
-      );
-      cCategories = cCategories.concat(
-        catCC.reduce(
-          (flattenedArray: any, element: any) => [
-            ...flattenedArray,
-            element.ancestors,
-          ],
-          [],
-        ),
+        catCC.reduce((flattenedArray: any, element: any) => [...flattenedArray, element.ancestors], [])
       );
 
       // Get the Classification's Attributes
@@ -160,53 +145,37 @@ export class Validator {
             from: 'ClassificationCategory',
             localField: 'ancestors',
             foreignField: '_id',
-            as: 'ancestors',
-          },
+            as: 'ancestors'
+          }
         },
         { $unwind: '$ancestors' },
         {
           $project: {
             _id: 1,
             attributes: 1,
-            ancestors: '$ancestors.attributes',
-          },
-        },
+            ancestors: '$ancestors.attributes'
+          }
+        }
       ]);
-      if (resultCC.err) return Err(resultCC.val);
-      const cc = resultCC.val;
+      if (resultCC.isErr()) return resultCC;
+      const cc = resultCC.value;
       attributes = attributes.concat(
-        cc.reduce(
-          (flattenedArray: any, element: any) => [
-            ...flattenedArray,
-            element.attributes,
-          ],
-          [],
-        ),
+        cc.reduce((flattenedArray: any, element: any) => [...flattenedArray, element.attributes], [])
       );
       attributes = attributes
-        .concat(
-          cc.reduce(
-            (flattenedArray: any, element: any) => [
-              ...flattenedArray,
-              element.ancestors,
-            ],
-            [],
-          ),
-        )
+        .concat(cc.reduce((flattenedArray: any, element: any) => [...flattenedArray, element.ancestors], []))
         .flat();
 
       const result = await this.generateSchema(attributes);
-      if (!result.ok) return Err(result.val);
-      schema = { jsonSchema: result.val, z: result.val };
+      if (result.isErr()) return result;
+      schema = { jsonSchema: result.value, z: result.value };
       if (this.server.config.CACHE_JSON_SCHEMAS) this.cache.set(id, schema);
     }
     return Ok(schema);
   }
 
   // CLASSIFICATION CATEGORY
-  async getClassificationCategorySchema(
-    id: string,
-  ): Promise<Result<any, AppError>> {
+  async getClassificationCategorySchema(id: string): Promise<Result<any, AppError>> {
     let schema = this.cache.get(id);
     if (!schema) {
       console.log('Generating schema for ' + id);
@@ -217,29 +186,29 @@ export class Validator {
             from: 'ClassificationCategory',
             localField: 'ancestors',
             foreignField: '_id',
-            as: 'ancestors',
-          },
+            as: 'ancestors'
+          }
         },
         {
           $project: {
             _id: 1,
             attributes: 1,
-            ancestors: '$ancestors.attributes',
-          },
-        },
+            ancestors: '$ancestors.attributes'
+          }
+        }
       ]);
-      const entity = (result.val as any)[0];
+      const entity = (result.value as any)[0];
       const attributes = entity.attributes.concat(entity.ancestors).flat();
       const schemaResult = await this.generateSchema(attributes);
-      if (!schemaResult.ok) return Err(schemaResult.val);
-      schema = { jsonSchema: schemaResult.val, z: schemaResult.val };
+      if (schemaResult.isErr()) return schemaResult;
+      schema = { jsonSchema: schemaResult.value, z: schemaResult.value };
       if (this.server.config.CACHE_JSON_SCHEMAS) this.cache.set(id, schema);
     }
     return Ok(schema);
   }
 
   validate(schema: any, data: any): Result<any, AppError> {
-    const validateFn = this.validator.compile(schema);
+    const validateFn = this.valueidator.compile(schema);
     const valid = validateFn(data);
     if (!valid) {
       return Err(
@@ -247,8 +216,8 @@ export class Validator {
           ErrorCode.BAD_REQUEST,
           `${validateFn.errors![0].instancePath || '/'} ${validateFn.errors![0].message} ${
             validateFn.errors![0].params.additionalProperty || ''
-          }`,
-        ),
+          }`
+        )
       );
     }
     return Ok(true);

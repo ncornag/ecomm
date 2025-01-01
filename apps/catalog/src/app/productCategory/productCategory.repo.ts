@@ -1,12 +1,12 @@
-import { type Result, Ok, Err } from 'ts-results';
-import { ErrorCode, AppError } from '@ecomm/AppError';
-import { type ITreeRepo } from '../lib/tree';
+import { type Result, Ok, Err } from 'ts-results-es';
+import { ErrorCode, AppError } from '@ecomm/app-error';
+import { type ITreeRepo } from '../lib/tree.ts';
 import { Db, Collection } from 'mongodb';
-import { type ProductCategory } from './productCategory';
-import { type ProductCategoryDAO } from './productCategory.dao.schema';
-import { FastifyInstance } from 'fastify';
-import { projectId } from '@ecomm/RequestContext';
-import { collectionName } from '../product/projector.lstnr';
+import { type ProductCategory } from './productCategory.ts';
+import { type ProductCategoryDAO } from './productCategory.dao.schema.ts';
+import { type FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/request-context';
+import { collectionName } from '../product/projector.lstnr.ts';
 
 export interface IProductCategoryRepository {
   create: (
@@ -44,7 +44,7 @@ export interface IProductCategoryRepository {
 export class ProductCategoryRepository
   implements IProductCategoryRepository, ITreeRepo<ProductCategoryDAO>
 {
-  private ENTITY = 'productCategory';
+  private ENTITY = 'productCategory.ts';
   private server: FastifyInstance;
   private col: Collection<ProductCategoryDAO>;
 

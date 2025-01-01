@@ -1,38 +1,38 @@
 import * as path from 'path';
-import { FastifyInstance } from 'fastify';
+import { type FastifyInstance } from 'fastify';
 import AutoLoad from '@fastify/autoload';
-import search from '@ecomm/Search';
-import queues from '@ecomm/Queues';
-import eventStore from '@ecomm/EventStore';
-import mongo from '@ecomm/Mongo';
+import search from '@ecomm/search';
+import queues from '@ecomm/queues';
+import eventStore from '@ecomm/event-store';
+import mongo from '@ecomm/mongo';
 import { Umzug, MongoDBStorage } from 'umzug';
 import {
   ClassificationCategoryRepository,
   getClassificationCategoryCollection,
-} from './classificationCategory/classificationCategory.repo';
+} from './classificationCategory/classificationCategory.repo.ts';
 // import {
 //   getProductCategoryCollection,
 //   ProductCategoryRepository,
-// } from './productCategory/productCategory.repo';
-import { getPriceCollection, PriceRepository } from './price/price.repo';
+// } from './productCategory/productCategory.repo.ts';
+import { getPriceCollection, PriceRepository } from './price/price.repo.ts';
 import {
   CatalogRepository,
   getCatalogCollection,
-} from './catalog/catalog.repo';
+} from './catalog/catalog.repo.ts';
 import {
   CatalogSyncRepository,
   getCatalogSyncCollection,
-} from './catalogSync/catalogSync.repo';
+} from './catalogSync/catalogSync.repo.ts';
 import {
   AuditLogRepository,
   getAuditLogCollection,
   auditLogListener,
-} from '@ecomm/AuditLog';
-import { productsIndexerListener } from './product/productsIndexer.lstnr';
-import { pricesIndexerListener } from './price/pricesIndexer.lstnr';
-import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr';
-import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
-import { projectorListener } from './product/projector.lstnr';
+} from '@ecomm/audit-log';
+import { productsIndexerListener } from './product/productsIndexer.lstnr.ts';
+import { pricesIndexerListener } from './price/pricesIndexer.lstnr.ts';
+import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr.ts';
+import { type CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
+import { projectorListener } from './product/projector.lstnr.ts';
 
 /* eslint-disable-next-line */
 export interface AppOptions {}
@@ -57,7 +57,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
     migrations: {
       glob: [
         migGlob,
-        { cwd: path.normalize(path.join(__dirname, '../../../../')) },
+        { cwd: path.normalize(path.join(import.meta.dirname, '../../../../')) },
       ],
       // glob: path,
     },
@@ -237,7 +237,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
 
   // Register Routes
   server.register(AutoLoad, {
-    dir: path.join(__dirname, 'routes'),
+    dir: path.join(import.meta.dirname, 'routes'),
     options: { prefix: ':projectId', ...opts },
   });
 }

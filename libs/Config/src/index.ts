@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance, type FastifyPluginAsync } from 'fastify';
-import { type Static, TObject } from '@sinclair/typebox';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { Static, TObject } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import { Ajv } from 'ajv';
 
@@ -9,7 +9,7 @@ const ajv = new Ajv({
   removeAdditional: true,
   useDefaults: true,
   coerceTypes: true,
-  allowUnionTypes: true,
+  allowUnionTypes: true
 });
 
 type ConfigOptions = {
@@ -18,17 +18,11 @@ type ConfigOptions = {
 
 let c;
 
-const plugin: FastifyPluginAsync<ConfigOptions> = async (
-  fastify: FastifyInstance,
-  options: ConfigOptions,
-) => {
+const plugin: FastifyPluginAsync<ConfigOptions> = async (fastify: FastifyInstance, options: ConfigOptions) => {
   const validate = ajv.compile(options.envType);
   const valid = validate(process.env);
   if (!valid) {
-    throw new Error(
-      '.env file validation failed - ' +
-        JSON.stringify(validate.errors, null, 2),
-    );
+    throw new Error('.env file validation failed - ' + JSON.stringify(validate.errors, null, 2));
   }
   const config = Value.Parse(options.envType, process.env);
   c = options.envType;
@@ -45,5 +39,5 @@ declare module 'fastify' {
 
 export default fp(plugin, {
   fastify: '5.x',
-  name: 'config-plugin',
+  name: 'config-plugin'
 });

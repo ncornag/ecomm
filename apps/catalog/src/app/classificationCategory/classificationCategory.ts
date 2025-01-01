@@ -1,23 +1,19 @@
 import { Type, type Static } from '@sinclair/typebox';
-import { ClassificationAttributeSchema } from './classificationAttribute';
-import {
-  TreeFieldsSchema,
-  type UpdateChangeParent,
-  UpdateChangeParentSchema,
-} from '../lib/tree';
-import { AuditFields } from '@ecomm/Mongo';
+import { ClassificationAttributeSchema } from './classificationAttribute.ts';
+import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '../lib/tree.ts';
+import { AuditFields } from '@ecomm/mongo';
 
 const keyAttributes = {
   minLength: 2,
   maxLength: 256,
-  pattern: '^[A-Za-z0-9_-]+$',
+  pattern: '^[A-Za-z0-9_-]+$'
 };
 
 // Action Types
 export const ClassificationCategoryUpdateActionType: Record<string, string> = {
   SETKEY: 'setKey',
   CHANGENAME: 'changeName',
-  CHANGEPARENT: 'changeParent',
+  CHANGEPARENT: 'changeParent'
 };
 // ACTIONS
 
@@ -25,39 +21,32 @@ export const ClassificationCategoryUpdateActionType: Record<string, string> = {
 export const UpdateClassificationCategorySetKeySchema = Type.Object(
   {
     action: Type.Literal(ClassificationCategoryUpdateActionType.SETKEY),
-    key: Type.String(keyAttributes),
+    key: Type.String(keyAttributes)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateClassificationCategorySetKey = Static<
-  typeof UpdateClassificationCategorySetKeySchema
->;
+export type UpdateClassificationCategorySetKey = Static<typeof UpdateClassificationCategorySetKeySchema>;
 
 // changeName action
 export const UpdateClassificationCategoryChangeNameSchema = Type.Object(
   {
     action: Type.Literal(ClassificationCategoryUpdateActionType.CHANGENAME),
-    name: Type.String(),
+    name: Type.String()
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateClassificationCategoryChangeName = Static<
-  typeof UpdateClassificationCategoryChangeNameSchema
->;
+export type UpdateClassificationCategoryChangeName = Static<typeof UpdateClassificationCategoryChangeNameSchema>;
 
-export const UpdateClassificationCategoryChangeParentSchema =
-  UpdateChangeParentSchema;
+export const UpdateClassificationCategoryChangeParentSchema = UpdateChangeParentSchema;
 export type UpdateClassificationCategoryChangeParent = UpdateChangeParent;
 
 // ACTION
 export const UpdateClassificationCategoryAction = Type.Union([
   UpdateClassificationCategorySetKeySchema,
   UpdateClassificationCategoryChangeNameSchema,
-  UpdateClassificationCategoryChangeParentSchema,
+  UpdateClassificationCategoryChangeParentSchema
 ]);
-export type UpdateClassificationCategoryAction = Static<
-  typeof UpdateClassificationCategoryAction
->;
+export type UpdateClassificationCategoryAction = Static<typeof UpdateClassificationCategoryAction>;
 
 // ENTITY
 export const ClassificationCategorySchema = Type.Object(
@@ -65,14 +54,10 @@ export const ClassificationCategorySchema = Type.Object(
     id: Type.String(),
     name: Type.String(),
     key: Type.Optional(Type.String(keyAttributes)),
-    attributes: Type.Optional(
-      Type.Array(ClassificationAttributeSchema, { default: [] }),
-    ),
+    attributes: Type.Optional(Type.Array(ClassificationAttributeSchema, { default: [] })),
     ...TreeFieldsSchema,
-    ...AuditFields,
+    ...AuditFields
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type ClassificationCategory = Static<
-  typeof ClassificationCategorySchema
->;
+export type ClassificationCategory = Static<typeof ClassificationCategorySchema>;

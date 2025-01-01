@@ -1,0 +1,30 @@
+{
+  "name": "@ecomm/promotion",
+  "version": "1.0.0",
+  "main": "src/main.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig-build.json",
+    "start": "node --no-warnings --experimental-strip-types --env-file=.env src/main.ts",
+    "dev": "node --no-warnings --experimental-strip-types --env-file=../../.env --env-file=.env --watch src/main.ts",
+    "test": "node --no-warnings --experimental-strip-types --env-file=test.env --test **/*.spec.ts"
+  },
+  "license": "UNLICENCED",
+  "type": "module",
+  "dependencies": {
+    "@ecomm/actions-runner": "1.0.0",
+    "@ecomm/app-error": "1.0.0",
+    "@ecomm/audit-log": "1.0.0",
+    "@ecomm/config": "1.0.0",
+    "@ecomm/ct": "1.0.0",
+    "@ecomm/docs": "1.0.0",
+    "@ecomm/event-store": "1.0.0",
+    "@ecomm/expressions": "1.0.0",
+    "@ecomm/mongo": "1.0.0",
+    "@ecomm/mongo-errors": "1.0.0",
+    "@ecomm/queues": "1.0.0",
+    "@ecomm/request-context": "1.0.0",
+    "@ecomm/search": "1.0.0",
+    "@ecomm/server": "1.0.0"
+  },
+  "devDependencies": {}
+}

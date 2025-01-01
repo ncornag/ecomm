@@ -1,11 +1,11 @@
-import { type Result, Ok } from 'ts-results';
-import { AppErrorResult, AppError, ErrorCode } from '@ecomm/AppError';
+import { type Result, Ok } from 'ts-results-es';
+import { AppErrorResult, AppError, ErrorCode } from '@ecomm/app-error';
 import fp from 'fastify-plugin';
-import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { green, yellow } from 'kolorist';
 import { Collection } from 'mongodb';
-import { Queues } from '@ecomm/Queues';
-import { requestId, projectId } from '@ecomm/RequestContext';
+import { type Queues } from '@ecomm/queues';
+import { requestId, projectId } from '@ecomm/request-context';
 
 const NEW = 'new';
 type ExpectedRevision = typeof NEW | number;
@@ -16,7 +16,7 @@ export type MetadataType = JSONType;
 export type Command<
   Type extends string = string,
   Data extends JSONType = JSONType,
-  Metadata extends MetadataType = MetadataType,
+  Metadata extends MetadataType = MetadataType
 > = {
   type: Type;
   data: Data;
@@ -26,7 +26,7 @@ export type Command<
 export type Event<
   Type extends string = string,
   Data extends JSONType = JSONType,
-  Metadata extends MetadataType = MetadataType,
+  Metadata extends MetadataType = MetadataType
 > = {
   type: Type;
   data: Data;
@@ -57,7 +57,7 @@ export const toRecordedEvent = (type, entity, command) =>
       isLastEvent: false,
       requestId: '',
       createdAt: new Date(),
-      lastModifiedAt: new Date(),
+      lastModifiedAt: new Date()
     },
     {
       type,
@@ -65,14 +65,14 @@ export const toRecordedEvent = (type, entity, command) =>
       data: command.data,
       metadata: {
         version: command.metadata.expectedVersion,
-        ...command.metadata,
-      },
-    },
+        ...command.metadata
+      }
+    }
   );
 
 export type ApplyEvent<Entity, E extends Event> = (
   currentState: Entity,
-  event: RecordedEvent<E>,
+  event: RecordedEvent<E>
 ) => Promise<Result<{ entity: Entity; update?: any }, AppError>>;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -89,28 +89,23 @@ class EventStore {
   }
 
   public start() {
-    this.server.log.info(
-      `${yellow('EventStore')} ${green('listening to')} [${this.server.config.MONGO_URL}]`,
-    );
+    this.server.log.info(`${yellow('EventStore')} ${green('listening to')} [${this.server.config.MONGO_URL}]`);
     return this;
   }
 
   public aggregateStream = async <Entity, StreamEvents extends Event>(
     projectId: string,
     streamName: string,
-    when: ApplyEvent<Entity, StreamEvents>,
+    when: ApplyEvent<Entity, StreamEvents>
   ): Promise<Result<Entity, AppError>> => {
     let currentState: Entity = undefined as any;
-    const cursor = this.col.find(
-      { 'metadata.projectId': projectId, streamName },
-      { sort: { version: -1 } },
-    );
+    const cursor = this.col.find({ 'metadata.projectId': projectId, streamName }, { sort: { version: -1 } });
     for await (const event of cursor) {
       if (!event) continue;
 
       const aggregateResult = await when(currentState, event);
-      if (aggregateResult.err) return aggregateResult;
-      currentState = aggregateResult.val.entity;
+      if (aggregateResult.isErr()) return aggregateResult;
+      currentState = aggregateResult.value.entity;
     }
     return new Ok(currentState);
   };
@@ -119,8 +114,8 @@ class EventStore {
     streamName: string,
     event: Event,
     options: { expectedRevision: ExpectedRevision } = {
-      expectedRevision: NEW,
-    },
+      expectedRevision: NEW
+    }
   ): Promise<Result<Event, AppError>> => {
     // Verify expected version and update it
     if (options.expectedRevision === NEW) {
@@ -129,17 +124,14 @@ class EventStore {
       const result = await this.col.updateOne(
         {
           streamName,
-          'metadata.version': options.expectedRevision,
+          'metadata.version': options.expectedRevision
         },
         {
-          $set: { isLastEvent: false },
-        },
+          $set: { isLastEvent: false }
+        }
       );
       if (result.modifiedCount === 0) {
-        return new AppErrorResult(
-          ErrorCode.CONFLICT,
-          `Event with version ${options.expectedRevision} doesn't exist`,
-        );
+        return new AppErrorResult(ErrorCode.CONFLICT, `Event with version ${options.expectedRevision} doesn't exist`);
       }
       event.metadata.version = options.expectedRevision + 1;
     }
@@ -153,17 +145,13 @@ class EventStore {
       requestId: requestId(),
       type: event.type,
       data: event.data,
-      metadata,
+      metadata
     } as RecordedEvent;
     const result = await this.col.insertOne(recordedEvent);
-    if (result.acknowledged === false)
-      return new AppErrorResult(ErrorCode.SERVER_ERROR, 'Error saving event');
+    if (result.acknowledged === false) return new AppErrorResult(ErrorCode.SERVER_ERROR, 'Error saving event');
 
     // Publish global event
-    this.queues.publish(
-      `es.${event.metadata.projectId}.${event.metadata.entity}`,
-      recordedEvent,
-    );
+    this.queues.publish(`es.${event.metadata.projectId}.${event.metadata.entity}`, recordedEvent);
 
     return new Ok(event);
   };
@@ -171,12 +159,12 @@ class EventStore {
   public create = async <CommandType extends Command>(
     handle: (command: CommandType) => Promise<Result<Event, AppError>>,
     streamName: string,
-    command: CommandType,
+    command: CommandType
   ): Promise<Result<Event, AppError>> => {
     const handleResult = await handle(command);
-    if (handleResult.err) return handleResult;
-    return await this.appendToStream(streamName, handleResult.val, {
-      expectedRevision: NEW,
+    if (handleResult.isErr()) return handleResult;
+    return await this.appendToStream(streamName, handleResult.value, {
+      expectedRevision: NEW
     });
   };
 
@@ -184,12 +172,12 @@ class EventStore {
     handle: (command: CommandType) => Promise<Result<Event, AppError>>,
     streamName: string,
     expectedRevision: number,
-    command: CommandType,
+    command: CommandType
   ): Promise<Result<Event, AppError>> => {
     const handleResult = await handle(command);
-    if (handleResult.err) return handleResult;
-    return await this.appendToStream(streamName, handleResult.val, {
-      expectedRevision,
+    if (handleResult.isErr()) return handleResult;
+    return await this.appendToStream(streamName, handleResult.value, {
+      expectedRevision
     });
   };
 }
@@ -207,5 +195,5 @@ const eventStorePlugin: FastifyPluginAsync = async (server) => {
 export default fp(eventStorePlugin, {
   fastify: '5.x',
   name: 'eventStore-plugin',
-  dependencies: ['mongo-plugin'],
+  dependencies: ['mongo-plugin']
 });

@@ -1,18 +1,10 @@
 import { green, magenta, yellow, bold } from 'kolorist';
 import pino from 'pino';
-import { RecordedEvent } from '@ecomm/EventStore';
-import { type IProductService, ProductService } from '../product/product.svc';
-import {
-  ProductEvent,
-  ProductEventTypes,
-  ProductUpdated,
-} from './product.events';
+import type { RecordedEvent } from '@ecomm/event-store';
+import { type IProductService, ProductService } from '../product/product.svc.ts';
+import { type ProductEvent, ProductEventTypes, type ProductUpdated } from './product.events.ts';
 
-export const collectionName = (
-  projectId: string,
-  entity: string,
-  catalogId?: string,
-) => {
+export const collectionName = (projectId: string, entity: string, catalogId?: string) => {
   return `${entity}${catalogId ? `_${catalogId}` : ''}`;
 };
 
@@ -27,53 +19,42 @@ export class ProjectorListener {
     this.productService = ProductService.getInstance(server);
     this.logger = server.log.child(
       {},
-      { level: server.config.LOG_LEVEL_AGGREGATOR ?? server.config.LOG_LEVEL },
+      { level: server.config.LOG_LEVEL_AGGREGATOR ?? server.config.LOG_LEVEL }
     ) as pino.Logger;
   }
 
   public start() {
     const TOPIC = 'es.*.product';
     this.server.queues.subscribe(TOPIC, this.handler.bind(this));
-    this.server.log.info(
-      `${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`,
-    );
+    this.server.log.info(`${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`);
   }
 
   private toDAO = ({ id, ...remainder }) => ({
     _id: id,
-    ...remainder,
+    ...remainder
   });
 
   private handler = async (event: RecordedEvent<ProductEvent>) => {
     if (this.logger.isLevelEnabled('debug')) {
       const txt = `${event.metadata.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
-      this.logger.debug(
-        `${magenta('#' + (event.requestId || ''))} ${this.msgIn} aggregatting entity ${green(txt)}`,
-      );
+      this.logger.debug(`${magenta('#' + (event.requestId || ''))} ${this.msgIn} aggregatting entity ${green(txt)}`);
     }
 
     const db = await this.server.db.getDb(event.metadata.projectId);
 
-    const colName = collectionName(
-      event.metadata.projectId,
-      event.metadata.entity,
-      event.metadata.catalogId,
-    );
+    const colName = collectionName(event.metadata.projectId, event.metadata.entity, event.metadata.catalogId);
     const col = db.collection(colName);
 
     if (event.type === ProductEventTypes.CREATED) {
-      const entity = await this.productService.aggregate(
-        undefined as any,
-        event,
-      );
-      if (entity.err) {
-        this.logger.error(entity.err);
+      const entity = await this.productService.aggregate(undefined as any, event);
+      if (entity.isErr()) {
+        this.logger.error(entity.isErr());
         return;
       }
-      const result = await col.insertOne(this.toDAO(entity.val.entity));
+      const result = await col.insertOne(this.toDAO(entity.value.entity));
       if (result.acknowledged === false) {
         this.logger.error(
-          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error saving event')} [${event.id}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error saving event')} [${event.id}]`
         );
         return;
       }
@@ -81,38 +62,35 @@ export class ProjectorListener {
       const e = event as ProductUpdated;
       const entity = await col.findOne({
         _id: e.data.productId,
-        version: event.metadata.expectedVersion,
+        version: event.metadata.expectedVersion
       });
       if (entity === null) {
         this.logger.error(
-          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error getting entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error getting entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`
         );
         return;
       }
-      const aggregateResult = await this.productService.aggregate(
-        entity,
-        event,
-      );
-      if (aggregateResult.err) {
-        this.logger.error(aggregateResult.err);
+      const aggregateResult = await this.productService.aggregate(entity, event);
+      if (aggregateResult.isErr()) {
+        this.logger.error(aggregateResult.isErr());
         return;
       }
       const updateResult = await col.updateOne(
         {
           _id: e.data.productId,
-          version: event.metadata.expectedVersion,
+          version: event.metadata.expectedVersion
         },
-        aggregateResult.val.update,
+        aggregateResult.value.update
       );
       if (updateResult.acknowledged === false) {
         this.logger.error(
-          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error updating entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`,
+          `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error updating entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`
         );
         return;
       }
     } else {
       this.logger.error(
-        `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Type not implemented:')} [${event.type}]`,
+        `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Type not implemented:')} [${event.type}]`
       );
     }
   };

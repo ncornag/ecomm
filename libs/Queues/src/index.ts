@@ -1,8 +1,8 @@
 import fp from 'fastify-plugin';
 import { type PublishOptions, JSONCodec, connect } from 'nats';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import { requestContext } from '@fastify/request-context';
-import { requestId, projectId } from '@ecomm/RequestContext';
+import { requestId, projectId } from '@ecomm/request-context';
 import { green, yellow, magenta, bold } from 'kolorist';
 import pino from 'pino';
 
@@ -20,7 +20,7 @@ declare module 'fastify' {
 const natsPlugin: FastifyPluginAsync = async (server) => {
   const options: any = {
     connection_name: 'catalog',
-    drainOnClose: true,
+    drainOnClose: true
   };
   const msgOut = bold(yellow('→')) + yellow('MSG');
   const { NATS_URL: nats_url } = server.config;
@@ -32,13 +32,13 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
       },
       publish: () => {
         return;
-      },
+      }
     });
     return;
   }
   const logger = server.log.child(
     {},
-    { level: server.config.LOG_LEVEL_NATS ?? server.config.LOG_LEVEL },
+    { level: server.config.LOG_LEVEL_NATS ?? server.config.LOG_LEVEL }
   ) as pino.Logger;
   const connectParams = { name: options.connection_name, servers: nats_url };
 
@@ -62,41 +62,37 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
             }
             const data = JSONCodec().decode(msg.data);
             handler(data);
-          },
+          }
         });
       },
       publish: (subject, payload, options?) => {
         const metadata = payload.metadata || {};
-        if (!payload.projectId)
-          metadata.projectId = metadata.projectId || projectId();
-        if (!payload.requestId)
-          metadata.requestId = metadata.requestId || requestId();
+        if (!payload.projectId) metadata.projectId = metadata.projectId || projectId();
+        if (!payload.requestId) metadata.requestId = metadata.requestId || requestId();
         if (logger.isLevelEnabled('debug'))
           logger.debug(
-            `${magenta('#' + requestId())} ${msgOut} ${green('publishing to')} [${subject}] ${green(JSON.stringify(payload))}`,
+            `${magenta('#' + requestId())} ${msgOut} ${green('publishing to')} [${subject}] ${green(
+              JSON.stringify(payload)
+            )}`
           );
         nc.publish(subject, JSONCodec().encode(payload), options);
-      },
+      }
     });
-    server.log.info(
-      `${yellow('Queues')} ${green('starting in')} [${nats_url}]`,
-    );
+    server.log.info(`${yellow('Queues')} ${green('starting in')} [${nats_url}]`);
   } catch (err) {
-    server.log.warn(
-      `${yellow('Queues')} error connecting to ${JSON.stringify(connectParams)}`,
-    );
+    server.log.warn(`${yellow('Queues')} error connecting to ${JSON.stringify(connectParams)}`);
     server.decorate('queues', {
       subscribe: () => {
         return;
       },
       publish: () => {
         return;
-      },
+      }
     });
   }
 };
 
 export default fp(natsPlugin, {
   fastify: '5.x',
-  name: 'queues-plugin',
+  name: 'queues-plugin'
 });
