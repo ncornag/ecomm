@@ -18,13 +18,12 @@ export class ChangeKeywordsActionHandler<Repository> {
     entity: DAOwithKeywords,
     toUpdateEntity: DAOwithKeywords,
     action: UpdateProductChangeKeywords,
-    repository: Repository,
+    repository: Repository
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    const difference = Value.Diff(entity.searchKeywords, action.searchKeywords);
-    if (difference.length === 0) return new Ok({ update: {} });
+    if (Value.Equal(entity.searchKeywords, action.searchKeywords)) return new Ok({ update: {} });
     toUpdateEntity.searchKeywords = action.searchKeywords;
     return new Ok({
-      update: { $set: { searchKeywords: action.searchKeywords } },
+      update: { $set: { searchKeywords: action.searchKeywords } }
     });
   }
 }

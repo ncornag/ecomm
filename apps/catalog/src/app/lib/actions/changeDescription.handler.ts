@@ -18,10 +18,9 @@ export class ChangeDescriptionActionHandler<Repository> {
     entity: DAOwithDescription,
     toUpdateEntity: DAOwithDescription,
     action: UpdateProductChangeDescription,
-    classificationCategoryRepository: Repository,
+    classificationCategoryRepository: Repository
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    const difference = Value.Diff(entity.description, action.description);
-    if (difference.length === 0) return new Ok({ update: {} });
+    if (Value.Equal(entity.description, action.description)) return new Ok({ update: {} });
     toUpdateEntity.description = action.description;
     return new Ok({ update: { $set: { description: action.description } } });
   }

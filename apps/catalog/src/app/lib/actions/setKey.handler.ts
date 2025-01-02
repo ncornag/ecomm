@@ -18,10 +18,9 @@ export class SetKeyActionHandler<Repository> {
     entity: DAOwithKey,
     toUpdateEntity: DAOwithKey,
     action: UpdateClassificationCategorySetKey,
-    classificationCategoryRepository: Repository,
+    classificationCategoryRepository: Repository
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    const difference = Value.Diff(entity.key, action.key);
-    if (difference.length === 0) return new Ok({ update: {} });
+    if (Value.Equal(entity.key, action.key)) return new Ok({ update: {} });
     toUpdateEntity.key = action.key;
     return new Ok({ update: { $set: { key: action.key } } });
   }

@@ -20,8 +20,7 @@ export class ChangeNameActionHandler<Repository> {
     action: UpdateClassificationCategoryChangeName,
     repo: Repository
   ): Promise<Result<ActionHandlerResult, AppError>> {
-    const difference = Value.Diff(entity.name, action.name);
-    if (difference.length === 0) return new Ok({ update: {} });
+    if (Value.Equal(entity.name, action.name)) return new Ok({ update: {} });
     toUpdateEntity.name = action.name;
     return new Ok({ update: { $set: { name: action.name } } });
   }
