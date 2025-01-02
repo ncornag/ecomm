@@ -70,13 +70,13 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
     //console.log(JSON.stringify(error, null, 2));
-    if (error.valueidation) {
-      const additionalProperty = error.valueidation[0]?.params?.additionalProperty
-        ? ' [' + error.valueidation[0]?.params?.additionalProperty + ']'
+    if (error.validation) {
+      const additionalProperty = error.validation[0]?.params?.additionalProperty
+        ? ' [' + error.validation[0]?.params?.additionalProperty + ']'
         : '';
-      const instancePath = error.valueidation[0]?.instancePath ? ' [' + error.valueidation[0]?.instancePath + ']' : '';
-      const message = error.valueidation[0]
-        ? error.valueidation[0].message + instancePath + additionalProperty
+      const instancePath = error.validation[0]?.instancePath ? ' [' + error.validation[0]?.instancePath + ']' : '';
+      const message = error.validation[0]
+        ? error.validation[0].message + instancePath + additionalProperty
         : error.message;
       reply.send(new AppError(ErrorCode.UNPROCESSABLE_ENTITY, message));
     } else if (error.name == 'MongoServerError') {
