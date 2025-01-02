@@ -1,7 +1,7 @@
 import { type FastifySchema } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { ClassificationAttributeSchema } from './classificationAttribute.ts';
-import { type Static } from '@fastify/type-provider-typebox';
+import { type Static } from '@sinclair/typebox';
 
 const defaultExample = {
   name: 'title',

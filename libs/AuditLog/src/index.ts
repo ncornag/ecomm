@@ -1,4 +1,5 @@
 import { type AuditLog } from './auditLog.entity.ts';
+import { AuditFields } from './auditLog.fields.ts';
 import { AuditLogService, type IAuditLogService } from './auditLog.svc.ts';
 import { AuditLogListener, auditLogListener } from './auditLog.lstnr.ts';
 import type { FindAuditLogParms, FindAuditLogsQueryString } from './auditLog.schemas.ts';
@@ -16,5 +17,6 @@ export {
   type IAuditLogService,
   type FindAuditLogParms,
   type FindAuditLogsQueryString,
-  auditLogRoutes
+  auditLogRoutes,
+  AuditFields
 };

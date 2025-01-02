@@ -1,4 +1,4 @@
-import { AuditFields } from '@ecomm/mongo';
+import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
@@ -98,7 +98,6 @@ export const ProductSchema = Type.Object(
     //? lastModifiedBy: { isPlatformClient: true},
     //? createdBy: {isPlatformClient: true},
     //? availability
-    //? lastVariantId
     ...AuditFields
   },
   { additionalProperties: false }

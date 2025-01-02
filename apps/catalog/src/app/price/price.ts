@@ -1,4 +1,4 @@
-import { AuditFields } from '@ecomm/mongo';
+import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 export const ValueSchema = Type.Object(
@@ -6,7 +6,7 @@ export const ValueSchema = Type.Object(
     type: Type.String(),
     currencyCode: Type.String(),
     centAmount: Type.Number(),
-    fractionDigits: Type.Number(),
+    fractionDigits: Type.Number()
   },
   { additionalProperties: false }
 );
@@ -23,8 +23,8 @@ export const PredicateSchema = Type.Object(
       channel: Type.Optional(Type.String()),
       validFrom: Type.Optional(Type.String({ format: 'date-time' })),
       validUntil: Type.Optional(Type.String({ format: 'date-time' })),
-      minimumQuantity: Type.Optional(Type.Number()),
-    }),
+      minimumQuantity: Type.Optional(Type.Number())
+    })
   },
   { additionalProperties: false }
 );
@@ -40,7 +40,7 @@ export const PriceSchema = Type.Object(
     order: Type.Number(),
     sku: Type.String(),
     predicates: Type.Array(PredicateSchema),
-    ...AuditFields,
+    ...AuditFields
   },
   { additionalProperties: false }
 );

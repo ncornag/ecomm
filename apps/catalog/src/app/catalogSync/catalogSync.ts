@@ -1,9 +1,9 @@
-import { AuditFields } from '@ecomm/mongo';
+import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
 export const CatalogSyncUpdateActionType: Record<string, string> = {
-  CHANGENAME: 'changeName',
+  CHANGENAME: 'changeName'
 };
 
 // ACTIONS
@@ -12,18 +12,14 @@ export const CatalogSyncUpdateActionType: Record<string, string> = {
 export const UpdateCatalogSyncChangeNameSchema = Type.Object(
   {
     action: Type.Literal(CatalogSyncUpdateActionType.CHANGENAME),
-    name: Type.String(),
+    name: Type.String()
   },
   { additionalProperties: false }
 );
-export type UpdateCatalogSyncChangeName = Static<
-  typeof UpdateCatalogSyncChangeNameSchema
->;
+export type UpdateCatalogSyncChangeName = Static<typeof UpdateCatalogSyncChangeNameSchema>;
 
 // ACTION
-export const UpdateCatalogSyncAction = Type.Union([
-  UpdateCatalogSyncChangeNameSchema,
-]);
+export const UpdateCatalogSyncAction = Type.Union([UpdateCatalogSyncChangeNameSchema]);
 export type UpdateCatalogSyncAction = Static<typeof UpdateCatalogSyncAction>;
 
 // ENTITY
@@ -37,7 +33,7 @@ export const CatalogSyncSchema = Type.Object(
     propertiesToSync: Type.Array(Type.String()),
     runAt: Type.String(),
     lastSync: Type.String({ format: 'date-time' }),
-    ...AuditFields,
+    ...AuditFields
   },
   { additionalProperties: false }
 );

@@ -3,7 +3,6 @@ import { type FastifyPluginAsync } from 'fastify';
 import mongo from '@fastify/mongodb';
 import { green, red, magenta, yellow, bold } from 'kolorist';
 import { Collection, Db } from 'mongodb';
-import { Record, Type } from '@fastify/type-provider-typebox';
 import { requestId } from '@ecomm/request-context';
 import pino from 'pino';
 
@@ -13,11 +12,7 @@ interface Database {
   repo: { [key: string]: any };
   getDb: (projectId: string) => Db;
   getCol: (projectId: string, entity: string, catalogId?: string) => Collection;
-  collectionName: (
-    projectId: string,
-    entity: string,
-    catalogId?: string,
-  ) => string;
+  collectionName: (projectId: string, entity: string, catalogId?: string) => string;
 }
 
 declare module 'fastify' {
@@ -37,22 +32,12 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
     return newDb;
   };
 
-  const getCol = (
-    projectId: string,
-    entity: string,
-    catalogId?: string,
-  ): Collection => {
-    const col: Collection = getDb(projectId).collection(
-      collectionName(projectId, entity, catalogId),
-    );
+  const getCol = (projectId: string, entity: string, catalogId?: string): Collection => {
+    const col: Collection = getDb(projectId).collection(collectionName(projectId, entity, catalogId));
     return col;
   };
 
-  const collectionName = (
-    projectId: string,
-    entity: string,
-    catalogId?: string,
-  ) => {
+  const collectionName = (projectId: string, entity: string, catalogId?: string) => {
     return `${entity}${catalogId ? `_${catalogId}` : ''}`;
   };
 
@@ -62,7 +47,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
     collectionName,
     mongo,
     col: {},
-    repo: {},
+    repo: {}
   });
 
   // Register
@@ -70,7 +55,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   await server.register(mongo, {
     forceClose: true,
     url: mongoUrl,
-    monitorCommands: true,
+    monitorCommands: true
   });
 
   server.log.info(`${yellow('MongoDB')} ${green('starting in')} [${mongoUrl}]`);
@@ -78,41 +63,21 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   // Log
   const dbOut = bold(yellow('→')) + yellow('DB ');
   const dbIn = bold(yellow('←')) + yellow('DB ');
-  const ignoredCommandsForLogging = [
-    'createIndexes',
-    'listCollections',
-    'currentOp',
-    'drop',
-  ];
-  const logger = server.log.child(
-    {},
-    { level: server.config.LOG_LEVEL_DB ?? server.config.LOG_LEVEL },
-  ) as pino.Logger;
+  const ignoredCommandsForLogging = ['createIndexes', 'listCollections', 'currentOp', 'drop'];
+  const logger = server.log.child({}, { level: server.config.LOG_LEVEL_DB ?? server.config.LOG_LEVEL }) as pino.Logger;
 
   server.mongo.client.on('commandStarted', (event) => {
     if (ignoredCommandsForLogging.includes(event.commandName)) return;
     if (logger.isLevelEnabled('debug'))
-      logger.debug(
-        `${magenta('#' + requestId())} ${dbOut} ${event.requestId} ${green(
-          JSON.stringify(event.command),
-        )}`,
-      );
+      logger.debug(`${magenta('#' + requestId())} ${dbOut} ${event.requestId} ${green(JSON.stringify(event.command))}`);
   });
   server.mongo.client.on('commandSucceeded', (event) => {
     if (ignoredCommandsForLogging.includes(event.commandName)) return;
     if (logger.isLevelEnabled('debug'))
-      logger.debug(
-        `${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${green(
-          JSON.stringify(event.reply),
-        )}`,
-      );
+      logger.debug(`${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${green(JSON.stringify(event.reply))}`);
   });
   server.mongo.client.on('commandFailed', (event) =>
-    logger.warn(
-      `${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${red(
-        JSON.stringify(event, null, 2),
-      )}`,
-    ),
+    logger.warn(`${magenta('#' + requestId())} ${dbIn} ${event.requestId} ${red(JSON.stringify(event, null, 2))}`)
   );
 
   // Iterceptor targets
@@ -139,12 +104,7 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
 
   // Update Interceptor -- Update timestamp / version
-  const updateOne = function (
-    this: any,
-    collectionName: string,
-    filter: any,
-    update: any,
-  ) {
+  const updateOne = function (this: any, collectionName: string, filter: any, update: any) {
     if (negativeFilterInterceptor[collectionName]) return { filter, update };
     const set = update.$set || {};
     const inc = update.$inc || {};
@@ -169,17 +129,13 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
         args[0] = args[0].map((a) => {
           if (a.updateOne) {
             return {
-              updateOne: updateOne(
-                collectionName,
-                a.updateOne.filter,
-                a.updateOne.update,
-              ),
+              updateOne: updateOne(collectionName, a.updateOne.filter, a.updateOne.update)
             };
           } else if (a.insertOne) {
             return {
               insertOne: {
-                document: createOne(collectionName, a.insertOne.document),
-              },
+                document: createOne(collectionName, a.insertOne.document)
+              }
             };
           }
           return a;
@@ -192,22 +148,11 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   };
 
   // Intercept
-  createTargets.forEach((m: string) =>
-    createInterceptor(Collection, (Collection.prototype as any)[m], m),
-  );
-  updateTargets.forEach((m: string) =>
-    updateInterceptor(Collection, (Collection.prototype as any)[m], m),
-  );
-};
-
-// TODO move out of mongo
-export const AuditFields = {
-  version: Type.Optional(Type.Number({ default: 0 })),
-  createdAt: Type.Optional(Type.String({ format: 'date-time' })),
-  lastModifiedAt: Type.Optional(Type.String({ format: 'date-time' })),
+  createTargets.forEach((m: string) => createInterceptor(Collection, (Collection.prototype as any)[m], m));
+  updateTargets.forEach((m: string) => updateInterceptor(Collection, (Collection.prototype as any)[m], m));
 };
 
 export default fp(mongoPlugin, {
   fastify: '5.x',
-  name: 'mongo-plugin',
+  name: 'mongo-plugin'
 });

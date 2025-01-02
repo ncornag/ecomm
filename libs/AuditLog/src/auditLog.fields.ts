@@ -1,4 +1,4 @@
-import { Type } from '@fastify/type-provider-typebox';
+import { Type } from '@sinclair/typebox';
 
 export const AuditFields = {
   version: Type.Optional(Type.Number({ default: 0 })),

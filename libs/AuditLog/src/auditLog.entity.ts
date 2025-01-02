@@ -1,4 +1,4 @@
-import { AuditFields } from './auditFields.ts';
+import { AuditFields } from './auditLog.fields.ts';
 import { Type, type Static } from '@sinclair/typebox';
 
 // ENTITY

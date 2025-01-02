@@ -1,5 +1,5 @@
 import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '../lib/tree.ts';
-import { AuditFields } from '@ecomm/mongo';
+import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 const keyAttributes = {
