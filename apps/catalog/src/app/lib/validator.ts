@@ -21,7 +21,7 @@ export class Validator {
     this.server = server;
     this.productCategoryRepository = server.db.repo.productCategoryRepository;
     this.classificationCategoryRepository = server.db.repo.classificationCategoryRepository;
-    this.valueidator = new Ajv({
+    this.validator = new Ajv({
       coerceTypes: 'array',
       useDefaults: true,
       addUsedSchema: false
@@ -208,7 +208,7 @@ export class Validator {
   }
 
   validate(schema: any, data: any): Result<any, AppError> {
-    const validateFn = this.valueidator.compile(schema);
+    const validateFn = this.validator.compile(schema);
     const valid = validateFn(data);
     if (!valid) {
       return Err(
