@@ -577,6 +577,7 @@ Classification Categories
 */
 
 export async function up(params) {
+  const projectId = 'test';
   const db = params.context.server.mongo.db;
   await db.collection('Catalog').insertMany(catalogs);
   await db.collection('CatalogSync').insertMany(catalogSyncs);
@@ -598,7 +599,7 @@ export async function up(params) {
     toProductStreamName,
     ProductCommandTypes.CREATE,
     productEntityName,
-    'test',
+    projectId,
     'stage'
   );
 
@@ -610,7 +611,7 @@ export async function up(params) {
     toProductCategoryStreamName,
     ProductCategoryCommandTypes.CREATE,
     productCategoryEntityName,
-    'test'
+    projectId
   );
   await send(
     params.context.server,
@@ -619,7 +620,7 @@ export async function up(params) {
     toProductCategoryStreamName,
     ProductCategoryCommandTypes.CREATE,
     productCategoryEntityName,
-    'test'
+    projectId
   );
   // for await (const record of productShoes) {
   //   const id = nanoid();
