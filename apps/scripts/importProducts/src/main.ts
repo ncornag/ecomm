@@ -12,10 +12,10 @@ const server = {
   config: process.env
 };
 
-const CatalogNames: Record<string, string> = {
+const CatalogNames = {
   STAGE: 'Stage',
   ONLINE: 'Online'
-};
+} as const;
 
 class ProductImporter {
   private server: any;

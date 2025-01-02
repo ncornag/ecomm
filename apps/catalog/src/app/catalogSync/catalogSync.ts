@@ -2,9 +2,9 @@ import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
-export const CatalogSyncUpdateActionType: Record<string, string> = {
+export const CatalogSyncUpdateActionType = {
   CHANGENAME: 'changeName'
-};
+} as const;
 
 // ACTIONS
 

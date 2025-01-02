@@ -583,10 +583,6 @@ export async function up(params) {
   await db.collection('CatalogSync').insertMany(catalogSyncs);
   await db.collection('ClassificationCategory').insertMany(classificationCategories);
   await db.collection('ClassificationCategory').insertMany(classificationCategoriesShoes);
-  // await db.collection('ProductCategory').insertMany(productCategories);
-  // await db.collection('ProductCategory').insertMany(productCategoriesShoes);
-  //await db.collection('ProductStage').insertMany(productShoes);
-  //await db.collection('ProductStage').insertMany(productComposites);
 
   const productService = ProductService.getInstance(params.context.server);
   const productCategoryService = ProductCategoryService.getInstance(params.context.server);
@@ -622,21 +618,6 @@ export async function up(params) {
     productCategoryEntityName,
     projectId
   );
-  // for await (const record of productShoes) {
-  //   const id = nanoid();
-  //   const { _id, version, catalogId, ...product } = record;
-  //   await params.context.server.es.create(productService.create, toProductStreamName(id), {
-  //     type: ProductCommandTypes.CREATE,
-  //     data: {
-  //       product
-  //     },
-  //     metadata: {
-  //       id,
-  //       catalogId: 'stage',
-  //       projectId: 'test'
-  //     }
-  //   });
-  // }
 }
 
 const send = async (
@@ -659,22 +640,17 @@ const send = async (
     await server.es.create(createService, streamNameService(id), {
       type,
       data,
-      metadata: {
-        id,
-        projectId
-      }
+      metadata
     });
   }
 };
 
 export async function down(params) {
   const db = params.context.server.mongo.db;
-  await db.collection('ClassificationCategory').deleteMany({});
-  await db.collection('ClassificationCategory').deleteMany({});
-  await db.collection('ProductCategory').deleteMany({});
-  await db.collection('ProductCategory').deleteMany({});
   await db.collection('Catalog').deleteMany({});
   await db.collection('CatalogSync').deleteMany({});
+  await db.collection('ClassificationCategory').deleteMany({});
+  await db.collection('ProductCategory').deleteMany({});
   await db.collection('ProductStage').deleteMany({});
-  await db.collection('ProductStage').deleteMany({});
+  await db.collection('ProductOnline').deleteMany({});
 }

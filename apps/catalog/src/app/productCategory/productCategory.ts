@@ -9,11 +9,11 @@ const keyAttributes = {
 };
 
 // Action Types
-export const ProductCategoryUpdateActionType: Record<string, string> = {
+export const ProductCategoryUpdateActionType = {
   SETKEY: 'setKey',
   CHANGENAME: 'changeName',
   CHANGEPARENT: 'changeParent'
-};
+} as const;
 
 // ACTIONS
 

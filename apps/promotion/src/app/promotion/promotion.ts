@@ -2,9 +2,9 @@ import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
-const PromotionUpdateActionType: Record<string, string> = {
+const PromotionUpdateActionType = {
   CHANGENAME: 'changeName'
-};
+} as const;
 
 // ACTIONS
 
@@ -25,11 +25,11 @@ export type UpdatePromotionAction = Static<typeof UpdatePromotionAction>;
 // THEN
 
 // Action Types
-const ThenActionType: Record<string, string> = {
+const ThenActionType = {
   CREATELINEDISCOUNT: 'createLineDiscount',
   CREATEORDERDISCOUNT: 'createOrderDiscount',
   TAGASUSED: 'tagAsUsed'
-};
+} as const;
 
 // createLineDiscount action
 export const CreateLineDiscountActionSchema = Type.Object(

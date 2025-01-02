@@ -10,11 +10,11 @@ const keyAttributes = {
 };
 
 // Action Types
-export const ClassificationCategoryUpdateActionType: Record<string, string> = {
+export const ClassificationCategoryUpdateActionType = {
   SETKEY: 'setKey',
   CHANGENAME: 'changeName',
   CHANGEPARENT: 'changeParent'
-};
+} as const;
 // ACTIONS
 
 // setKey action

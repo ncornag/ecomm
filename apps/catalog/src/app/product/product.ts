@@ -2,11 +2,11 @@ import { AuditFields } from '@ecomm/audit-log';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
-export const ProductUpdateActionType: Record<string, string> = {
+export const ProductUpdateActionType = {
   CHANGENAME: 'changeName',
   CHANGEDESCRIPTION: 'changeDescription',
   CHANGEKEYWORDS: 'changeKeywords'
-};
+} as const;
 
 // Localized Strings/Arrays
 // TODO: Refactor
@@ -69,11 +69,11 @@ export const UpdateProductAction = Type.Union([
 export type UpdateProductAction = Static<typeof UpdateProductAction>;
 
 // PRODUCT TYPES
-export const ProductType: Record<string, string> = {
+export const ProductType = {
   BASE: 'base',
   VARIANT: 'variant',
   COMPOSITE: 'composite'
-};
+} as const;
 
 // ENTITY
 export const ProductSchema = Type.Object(
