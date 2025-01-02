@@ -56,6 +56,8 @@ export const postProductSchema: FastifySchema = {
   tags: ['product'],
   summary: 'Creates new product with given values',
   body: CreateProductBodySchema,
+  params: ProjectBasedParamsSchema,
+  querystring: FindProductQueryStringSchema,
   response: {
     201: { ...ProductResponse, description: 'Success' }
   }
@@ -67,6 +69,7 @@ export const updateProductSchema: FastifySchema = {
   summary: 'Updates a product with given values',
   body: UpdateProductBodySchema,
   params: FindProductParmsSchema,
+  querystring: FindProductQueryStringSchema,
   response: {
     201: { ...ProductResponse, description: 'Success' }
   }

@@ -1,14 +1,11 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import {
-  UpdateProductCategoryAction,
-  ProductCategorySchema,
-} from './productCategory.ts';
+import { UpdateProductCategoryAction, ProductCategorySchema } from './productCategory.ts';
 import { ProjectBasedParamsSchema } from '../base.schemas.ts';
 
 const defaultExample = {
   name: 'Root Category',
-  key: 'root',
+  key: 'root'
 };
 
 const ProductCategoryResponse = Type.Composite([ProductCategorySchema], {
@@ -17,9 +14,9 @@ const ProductCategoryResponse = Type.Composite([ProductCategorySchema], {
       id: '63cd0e4be59031edffa39f5c',
       version: 0,
       ...defaultExample,
-      createdAt: '2021-01-01T00:00:00.000Z',
-    },
-  ],
+      createdAt: '2021-01-01T00:00:00.000Z'
+    }
+  ]
 });
 
 // CREATE
@@ -28,34 +25,29 @@ export const CreateProductCategoryBodySchema = Type.Omit(
   ['id', 'ancestors', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
-    additionalProperties: false,
-  },
+    additionalProperties: false
+  }
 );
-export type CreateProductCategoryBody = Static<
-  typeof CreateProductCategoryBodySchema
->;
+export type CreateProductCategoryBody = Static<typeof CreateProductCategoryBodySchema>;
 
 // UPDATE
 export const UpdateProductCategoryBodySchema = Type.Object(
   {
     version: Type.Number(),
-    actions: Type.Array(UpdateProductCategoryAction),
+    actions: Type.Array(UpdateProductCategoryAction)
   },
-  { additionalProperties: false },
+  { additionalProperties: false }
 );
-export type UpdateProductCategoryBody = Static<
-  typeof UpdateProductCategoryBodySchema
->;
+export type UpdateProductCategoryBody = Static<typeof UpdateProductCategoryBodySchema>;
 
+// FIND
 export const FindProductCategoryParmsSchema = Type.Composite([
   ProjectBasedParamsSchema,
   Type.Object({
-    id: Type.String(),
-  }),
+    id: Type.String()
+  })
 ]);
-export type FindProductCategoryParms = Static<
-  typeof FindProductCategoryParmsSchema
->;
+export type FindProductCategoryParms = Static<typeof FindProductCategoryParmsSchema>;
 
 // ROUTE SCHEMAS
 
@@ -64,9 +56,10 @@ export const postProductCategorySchema: FastifySchema = {
   tags: ['productCategory'],
   summary: 'Creates new productCategory with given values',
   body: CreateProductCategoryBodySchema,
+  params: ProjectBasedParamsSchema,
   response: {
-    201: { ...ProductCategoryResponse, description: 'Success' },
-  },
+    201: { ...ProductCategoryResponse, description: 'Success' }
+  }
 };
 
 export const updateProductCategorySchema: FastifySchema = {
@@ -76,6 +69,6 @@ export const updateProductCategorySchema: FastifySchema = {
   body: UpdateProductCategoryBodySchema,
   params: FindProductCategoryParmsSchema,
   response: {
-    201: { ...ProductCategoryResponse, description: 'Success' },
-  },
+    201: { ...ProductCategoryResponse, description: 'Success' }
+  }
 };
