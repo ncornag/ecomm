@@ -6,6 +6,8 @@ import { type ClassificationCategory } from './classificationCategory.ts';
 import { type ClassificationCategoryDAO } from './classificationCategory.dao.schema.ts';
 import { type ClassificationAttributeDAO } from './classificationAttribute.dao.schema.ts';
 import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
+import { type FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/request-context';
 
 export interface IClassificationCategoryRepository {
   create: (category: ClassificationCategory) => Promise<Result<ClassificationCategoryDAO, AppError>>;
@@ -22,16 +24,15 @@ export interface IClassificationCategoryRepository {
   ) => Promise<Result<ClassificationAttributeDAO, AppError>>;
 }
 
-export const getClassificationCategoryCollection = (db: Db): Collection<ClassificationCategoryDAO> => {
-  return db.collection<ClassificationCategoryDAO>('ClassificationCategory');
-};
-
 export class ClassificationCategoryRepository
   implements IClassificationCategoryRepository, ITreeRepo<ClassificationCategoryDAO>
 {
+  private ENTITY = 'classificationCategory';
+  private server: FastifyInstance;
   private col: Collection<ClassificationCategoryDAO>;
 
   constructor(server: any) {
+    this.server = server;
     this.col = server.db.col.classificationCategory;
   }
 
@@ -80,9 +81,10 @@ export class ClassificationCategoryRepository
 
   // FIND ONE CATEGORY
   async findOne(id: string, version?: number): Promise<Result<ClassificationCategoryDAO, AppError>> {
+    const col = this.server.db.getCol(projectId(), this.ENTITY);
     const filter: any = { _id: id };
     if (version !== undefined) filter.version = version;
-    const entity = await this.col.findOne(filter);
+    const entity = await col.findOne(filter);
     if (!entity) {
       return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't find category with id [${id}]`));
     }

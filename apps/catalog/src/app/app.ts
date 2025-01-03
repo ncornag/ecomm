@@ -6,14 +6,6 @@ import queues from '@ecomm/queues';
 import eventStore from '@ecomm/event-store';
 import mongo from '@ecomm/mongo';
 import { Umzug, MongoDBStorage } from 'umzug';
-import {
-  ClassificationCategoryRepository,
-  getClassificationCategoryCollection
-} from './classificationCategory/classificationCategory.repo.ts';
-// import {
-//   getProductCategoryCollection,
-//   ProductCategoryRepository,
-// } from './productCategory/productCategory.repo.ts';
 import { getPriceCollection, PriceRepository } from './price/price.repo.ts';
 import { CatalogRepository, getCatalogCollection } from './catalog/catalog.repo.ts';
 import { CatalogSyncRepository, getCatalogSyncCollection } from './catalogSync/catalogSync.repo.ts';
@@ -22,7 +14,7 @@ import { productsIndexerListener } from './product/productsIndexer.lstnr.ts';
 import { pricesIndexerListener } from './price/pricesIndexer.lstnr.ts';
 import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr.ts';
 import { type CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
-import { projectorListener } from './product/product.projector.ts';
+import { projectorListener } from './lib/aggregator.ts';
 
 /* eslint-disable-next-line */
 export interface AppOptions {}
@@ -59,10 +51,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await migrator.up({});
 
   // Register Collections
-  // server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
-  // server.db.col.productCategory = getProductCategoryCollection(
-  //   server.mongo.db!,
-  // );
   server.db.col.price = await getPriceCollection(server.mongo.db!);
   server.db.col.catalog = getCatalogCollection(server.mongo.db!);
   server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);
@@ -72,11 +60,6 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.repo.auditLogRepository = new AuditLogRepository(server);
   server.db.repo.catalogRepository = new CatalogRepository(server);
   server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
-  // server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
-  // server.db.repo.productCategoryRepository = new ProductCategoryRepository(
-  //   server,
-  // );
-  // server.db.repo.productRepository = new ProductRepository(server);
   server.db.repo.priceRepository = new PriceRepository(server);
 
   // Indexes

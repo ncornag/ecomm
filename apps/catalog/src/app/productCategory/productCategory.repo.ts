@@ -1,7 +1,7 @@
 import { type Result, Ok, Err } from 'ts-results-es';
 import { ErrorCode, AppError } from '@ecomm/app-error';
 import { type ITreeRepo } from '../lib/tree.ts';
-import { Db, Collection } from 'mongodb';
+import { Collection } from 'mongodb';
 import { type ProductCategory } from './productCategory.ts';
 import { type ProductCategoryDAO } from './productCategory.dao.schema.ts';
 import { type FastifyInstance } from 'fastify';
@@ -17,14 +17,8 @@ export interface IProductCategoryRepository {
   aggregate: (pipeline: any[], options?: any) => Promise<Result<any[], AppError>>;
 }
 
-// export const getProductCategoryCollection = (
-//   db: Db,
-// ): Collection<ProductCategoryDAO> => {
-//   return db.collection<ProductCategoryDAO>('ProductCategory');
-// };
-
 export class ProductCategoryRepository implements IProductCategoryRepository, ITreeRepo<ProductCategoryDAO> {
-  private ENTITY = 'productCategory.ts';
+  private ENTITY = 'productCategory';
   private server: FastifyInstance;
   private col: Collection<ProductCategoryDAO>;
 
