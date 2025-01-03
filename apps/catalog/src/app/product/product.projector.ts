@@ -1,7 +1,7 @@
 import { green, magenta, yellow, bold } from 'kolorist';
 import pino from 'pino';
 import type { RecordedEvent } from '@ecomm/event-store';
-import { type IProductService, ProductService } from '../product/product.svc.ts';
+import { type IProductService, ProductService } from './product.svc.ts';
 import { type ProductEvent, ProductEventTypes, type ProductUpdated } from './product.events.ts';
 
 export class ProjectorListener {
