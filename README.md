@@ -32,10 +32,15 @@ It lays the groundwork for an advanced e-commerce platform capable of managing c
 
 - Transparent record versioning
 - Transparent audit fields recording
-- Event Store for audit logs
+- Audit logs
 - Multitenant
 - i18n text fields
 - Events for indexing and auditlogging with NATS
+- CQRS & EventStorming
+
+_The project uses the "classic" CQRS pattern with an event store_
+
+![as](docs/diagram.svg)
 
 **[Catalog System](apps/catalog/README.md)**
 
@@ -51,32 +56,26 @@ It lays the groundwork for an advanced e-commerce platform capable of managing c
 
 # Setup Instructions
 
-1. **Install nx**
-
-   ```bash
-   npm i -g npx
-   ```
-
-2. **Clone the repository**:
+1. **Clone the repository**:
 
    ```bash
    git clone <repository_url>
    cd <repository_directory>
    ```
 
-3. **Install project dependencies**:
+2. **Install project dependencies**:
 
    ```bash
    npm i
    ```
 
-4. **Install Mandatory Infrastructure**
+3. **Install Mandatory Infrastructure**
 
    ```bash
    brew install mongodb/brew/mongodb-community@7.0
    ```
 
-5. **Install Optional Infrastructure**
+4. **Install Optional Infrastructure**
 
    ```bash
    brew install typesense/tap/typesense-server@27.1
@@ -92,13 +91,13 @@ Create `.env` and `.env.test` files using the supplied `.example` files, both in
 ### Catalog
 
 ```bash
-nx run catalog:serve
+npm run dev -w apps/catalog
 ```
 
 ### Promotions
 
 ```bash
-nx run promotions:serve
+npm run dev -w apps/promotion
 ```
 
 ## Using the API
