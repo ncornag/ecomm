@@ -14,7 +14,7 @@ import { productsIndexerListener } from './product/productsIndexer.lstnr.ts';
 import { pricesIndexerListener } from './price/pricesIndexer.lstnr.ts';
 import { updateChildAncestorsForIdListener } from './lib/updateChildAncestorsForId.lstnr.ts';
 import { type CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
-import { projectorListener } from './lib/aggregator.ts';
+import { projectorListener } from './lib/projector.ts';
 
 /* eslint-disable-next-line */
 export interface AppOptions {}

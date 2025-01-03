@@ -21,7 +21,7 @@ export class ProjectorListener {
     this.server = server;
     this.logger = server.log.child(
       {},
-      { level: server.config.LOG_LEVEL_AGGREGATOR ?? server.config.LOG_LEVEL }
+      { level: server.config.LOG_LEVEL_PROJECTOR ?? server.config.LOG_LEVEL }
     ) as pino.Logger;
   }
 
@@ -55,7 +55,7 @@ export class ProjectorListener {
       ).bind(this)
     );
 
-    this.server.log.info(`${yellow('AggregatorService')} ${green('listening to')} [${TOPIC}]`);
+    this.server.log.info(`${yellow('ProjectorService')} ${green('listening to')} [${TOPIC}]`);
   }
   classificationCategoryService<T>(CREATED: string, UPDATED: string, classificationCategoryService: any, arg3: string) {
     throw new Error('Method not implemented.');

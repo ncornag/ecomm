@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 const NodeEnv: Record<string, string> = {
   development: 'development',
   test: 'test',
-  production: 'production',
+  production: 'production'
 };
 
 export const envConfig = Type.Object({
@@ -13,7 +13,7 @@ export const envConfig = Type.Object({
   LOG_LEVEL_DB: Type.Optional(Type.String()),
   LOG_LEVEL_NATS: Type.Optional(Type.String()),
   LOG_LEVEL_AUDITLOG: Type.Optional(Type.String()),
-  LOG_LEVEL_AGGREGATOR: Type.Optional(Type.String()),
+  LOG_LEVEL_PROJECTOR: Type.Optional(Type.String()),
   API_HOST: Type.String(),
   API_PORT: Type.Number(),
   MONGO_URL: Type.String(),
@@ -30,5 +30,5 @@ export const envConfig = Type.Object({
   // Internal
   TOPIC_CREATE_SUFIX: Type.Optional(Type.String({ default: 'create' })),
   TOPIC_UPDATE_SUFIX: Type.Optional(Type.String({ default: 'update' })),
-  TOPIC_DELETE_SUFIX: Type.Optional(Type.String({ default: 'delete' })),
+  TOPIC_DELETE_SUFIX: Type.Optional(Type.String({ default: 'delete' }))
 });
