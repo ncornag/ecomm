@@ -59,7 +59,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   await migrator.up({});
 
   // Register Collections
-  server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
+  // server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
   // server.db.col.productCategory = getProductCategoryCollection(
   //   server.mongo.db!,
   // );
@@ -72,7 +72,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   server.db.repo.auditLogRepository = new AuditLogRepository(server);
   server.db.repo.catalogRepository = new CatalogRepository(server);
   server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
-  server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
+  // server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
   // server.db.repo.productCategoryRepository = new ProductCategoryRepository(
   //   server,
   // );
@@ -82,7 +82,7 @@ export async function app(server: FastifyInstance, opts: AppOptions) {
   // Indexes
   // FIXME Move to migrations
   const indexes: Promise<any>[] = [];
-  indexes.push(server.db.col.classificationCategory.createIndex({ projectId: 1, key: 1 }, { name: 'CC_Key' })); // unique: true
+  //indexes.push(server.db.col.classificationCategory.createIndex({ projectId: 1, key: 1 }, { name: 'CC_Key' })); // unique: true
   // indexes.push(
   //   server.db.col.productCategory.createIndex(
   //     { projectId: 1, 'attributes.name': 1 },

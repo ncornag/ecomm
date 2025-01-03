@@ -1,33 +1,42 @@
 import { type Result, Ok, Err } from 'ts-results-es';
-import { AppError, ErrorCode } from '@ecomm/app-error';
+import { AppError, AppErrorResult, ErrorCode } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
-import { nanoid } from 'nanoid';
-import { type ClassificationCategory, UpdateClassificationCategoryAction } from './classificationCategory.ts';
-import { type ClassificationAttribute, ClassificationAttributeSchema } from './classificationAttribute.ts';
-import { type ClassificationCategoryPayload } from './classificationCategory.schemas.ts';
-import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
+import { type ClassificationCategory } from './classificationCategory.ts';
 import { type ClassificationCategoryDAO } from './classificationCategory.dao.schema.ts';
-import { type IClassificationCategoryRepository } from './classificationCategory.repo.ts';
-import { SetKeyActionHandler } from '../lib/actions/setKey.handler.ts';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
+import { SetKeyActionHandler } from '../lib/actions/setKey.handler.ts';
 import { ChangeParentActionHandler } from '../lib/tree.ts';
-import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
-import { type Config } from '@ecomm/config';
+import { ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
+import {
+  ClassificationCategoryRepository,
+  type IClassificationCategoryRepository
+} from './classificationCategory.repo.ts';
 import { Validator } from '../lib/validator.ts';
-import { type Queues } from '@ecomm/queues';
+import {
+  ClassificationCategoryEventTypes,
+  type CreateClassificationCategory,
+  type ClassificationCategoryCreated,
+  type UpdateClassificationCategory,
+  type ClassificationCategoryUpdated,
+  type ClassificationCategoryEvent,
+  ENTITY_NAME,
+  toStreamName
+} from './classificationCategory.events.ts';
+import { type RecordedEvent, toRecordedEvent } from '@ecomm/event-store';
+import { type FastifyInstance } from 'fastify';
+import { type ClassificationAttribute, ClassificationAttributeSchema } from './classificationAttribute.ts';
+import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
 
 // SERVICE INTERFACE
 export interface IClassificationCategoryService {
-  createClassificationCategory: (
-    payload: ClassificationCategoryPayload
-  ) => Promise<Result<ClassificationCategory, AppError>>;
-  updateClassificationCategory: (
-    id: string,
-    version: number,
-    actions: any
-  ) => Promise<Result<ClassificationCategory, AppError>>;
+  create: (command: CreateClassificationCategory) => Promise<Result<ClassificationCategoryCreated, AppError>>;
+  update: (command: UpdateClassificationCategory) => Promise<Result<ClassificationCategoryUpdated, AppError>>;
+  aggregate: (
+    currentState: ClassificationCategory,
+    event: RecordedEvent<ClassificationCategoryEvent>
+  ) => Promise<Result<{ entity: ClassificationCategory; update?: any }, AppError>>;
+
   findClassificationCategoryById: (id: string) => Promise<Result<ClassificationCategory, AppError>>;
-  saveClassificationCategory: (category: ClassificationCategory) => Promise<Result<ClassificationCategory, AppError>>;
   validate: (id: string, data: any) => Promise<Result<any, AppError>>;
   createClassificationAttribute: (
     id: string,
@@ -47,30 +56,23 @@ const toEntity = ({ _id, ...remainder }: ClassificationCategoryDAO): Classificat
 
 // SERVICE IMPLEMENTATION
 export class ClassificationCategoryService implements IClassificationCategoryService {
-  private ENTITY = 'classificationCategory';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
+  private server: FastifyInstance;
   private static instance: IClassificationCategoryService;
   private repo: IClassificationCategoryRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: ActionsRunner<ClassificationCategoryDAO, IClassificationCategoryRepository>;
-  private config: Config;
-  private queues: Queues;
+  private actionsRunner2: ActionsRunner2<ClassificationCategory, IClassificationCategoryRepository>;
   private validator: Validator;
 
   private constructor(server: any) {
-    this.repo = server.db.repo.classificationCategoryRepository as IClassificationCategoryRepository;
+    this.server = server;
+    this.repo = new ClassificationCategoryRepository(server);
     this.actionHandlers = {
       setKey: new SetKeyActionHandler(server),
       changeName: new ChangeNameActionHandler(server),
       changeParent: new ChangeParentActionHandler(server)
     };
-    this.actionsRunner = new ActionsRunner<ClassificationCategoryDAO, IClassificationCategoryRepository>();
-    this.config = server.config;
-    this.queues = server.queues;
-    this.valueidator = new Validator(server);
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
+    this.actionsRunner2 = new ActionsRunner2<ClassificationCategory, IClassificationCategoryRepository>();
+    this.validator = new Validator(server);
   }
 
   public static getInstance(server: any): IClassificationCategoryService {
@@ -80,100 +82,108 @@ export class ClassificationCategoryService implements IClassificationCategorySer
     return ClassificationCategoryService.instance;
   }
 
-  // CREATE CATEGORY
-  public async createClassificationCategory(
-    payload: ClassificationCategoryPayload
-  ): Promise<Result<ClassificationCategory, AppError>> {
-    // Add ancestors
-    if (payload.parent) {
-      const actionResult = await this.actionHandlers['changeParent'].run(
-        {},
-        payload,
-        { action: 'changeParent', parent: payload.parent },
-        this.repo
-      );
-      if (actionResult.isErr()) return actionResult;
+  // CREATE
+  public create = async (
+    command: CreateClassificationCategory
+  ): Promise<Result<ClassificationCategoryCreated, AppError>> => {
+    const { id, ...remainder } = command.metadata;
+    if (command.data.classificationCategory.parent) {
+      // const actionResult = await this.actionHandlers['changeParent'].run(
+      //   {},
+      //   payload,
+      //   { action: 'changeParent', parent: payload.parent },
+      //   this.repo
+      // );
+      // if (actionResult.isErr()) return actionResult;
     }
-    // Save the entity
-    const result = await this.repo.create({
-      id: nanoid(),
-      ...payload
-    });
-    if (result.isErr()) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.value),
-      metadata: {
-        type: 'entityCreated',
-        entity: this.ENTITY
-      }
-    });
-    return new Ok(toEntity(result.value));
-  }
+    return new Ok({
+      type: ClassificationCategoryEventTypes.CREATED,
+      data: { classificationCategory: { id, ...command.data.classificationCategory } },
+      metadata: { entity: ENTITY_NAME, ...remainder }
+    } as ClassificationCategoryCreated);
+  };
 
-  // UPDATE CATEGORY
-  public async updateClassificationCategory(
-    id: string,
-    version: number,
-    actions: UpdateClassificationCategoryAction[]
-  ): Promise<Result<ClassificationCategory, AppError>> {
-    // Find the Entity
-    const result = await this.repo.findOne(id, version);
-    if (result.isErr()) return result;
-    const entity = result.value;
-    const toUpdateEntity = Value.Clone(entity);
-    // Execute actions
-    const actionRunnerResults = await this.actionsRunner.run(
-      entity,
-      toUpdateEntity,
-      this.repo,
-      this.actionHandlers,
-      actions
+  // UPDATE
+  public update = async (
+    command: UpdateClassificationCategory
+  ): Promise<Result<ClassificationCategoryUpdated, AppError>> => {
+    const aggregateResult = await this.server.es.aggregateStream<ClassificationCategory, ClassificationCategoryEvent>(
+      command.metadata.projectId,
+      toStreamName(command.data.classificationCategoryId),
+      this.aggregate
     );
-    if (actionRunnerResults.isErr()) return actionRunnerResults;
-    // Compute difference, and save if needed
-    const difference = Value.Diff(entity, toUpdateEntity);
-    if (difference.length > 0) {
-      // Save the entity
-      const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
-      if (saveResult.isErr()) return saveResult;
-      toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.value._id },
-        difference,
-        metadata: {
-          type: 'entityUpdated',
-          entity: this.ENTITY
-        }
-      });
-      // Send side effects via messagging
-      actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
-        this.queues.publish(sideEffect.action, {
-          ...sideEffect.data,
-          metadata: {
-            type: sideEffect.action,
-            entity: this.ENTITY
-          }
-        });
-      });
-    }
-    // Return udated entity
-    return Ok(toEntity(toUpdateEntity));
-  }
+    if (aggregateResult.isErr()) return aggregateResult;
 
-  // FIND CATEGORY
+    const expectedResult = await this.aggregate(
+      aggregateResult.value,
+      toRecordedEvent(ClassificationCategoryEventTypes.UPDATED, ENTITY_NAME, command)
+    );
+    if (expectedResult.isErr()) return expectedResult;
+
+    if (!Object.keys(expectedResult.value.update).length) {
+      return new AppErrorResult(ErrorCode.NOT_MODIFIED);
+    }
+
+    return new Ok({
+      type: ClassificationCategoryEventTypes.UPDATED,
+      data: command.data,
+      metadata: {
+        entity: ENTITY_NAME,
+        expected: expectedResult.value.entity,
+        ...command.metadata
+      }
+    } as ClassificationCategoryUpdated);
+  };
+
+  // AGGREGATE
+  public aggregate = async (
+    currentState: ClassificationCategory,
+    event: RecordedEvent<ClassificationCategoryEvent>
+  ): Promise<Result<{ entity: ClassificationCategory; update?: any }, AppError>> => {
+    const e = event as ClassificationCategoryEvent;
+    switch (e.type) {
+      case ClassificationCategoryEventTypes.CREATED: {
+        if (currentState) return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Entity already exists');
+        return new Ok({
+          entity: Object.assign(e.data.classificationCategory, {
+            version: e.metadata.version,
+            createdAt: event.createdAt
+          })
+        });
+      }
+
+      case ClassificationCategoryEventTypes.UPDATED: {
+        if (!currentState) return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Empty entity');
+        // Execute actions
+        const toUpdateEntity = Value.Clone(currentState);
+        const actionRunnerResults = await this.actionsRunner2.run(
+          currentState,
+          toUpdateEntity,
+          this.repo,
+          this.actionHandlers,
+          e.data.actions
+        );
+        if (actionRunnerResults.isErr()) return actionRunnerResults;
+
+        return new Ok({
+          entity: Object.assign(toUpdateEntity, {
+            catalogId: e.metadata.catalogId,
+            version: e.metadata.version,
+            lastModifiedAt: event.createdAt
+          }),
+          update: actionRunnerResults.value.update
+        });
+      }
+
+      default: {
+        return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, `Unknown event type: ${(e as any).type}`);
+      }
+    }
+  };
+
+  // FIND IN THE READ MODEL
   public async findClassificationCategoryById(id: string): Promise<Result<ClassificationCategory, AppError>> {
     const result = await this.repo.findOne(id);
-    if (result.isErr()) return result;
-    return new Ok(toEntity(result.value));
-  }
-
-  // SAVE  CATEGORY
-  public async saveClassificationCategory(
-    category: ClassificationCategory
-  ): Promise<Result<ClassificationCategory, AppError>> {
-    const result = await this.repo.save(category);
     if (result.isErr()) return result;
     return new Ok(toEntity(result.value));
   }

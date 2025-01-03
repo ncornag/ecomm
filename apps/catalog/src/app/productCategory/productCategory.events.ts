@@ -39,8 +39,8 @@ export type UpdateProductCategory = Command<
 /////////
 
 export const ProductCategoryEventTypes = {
-  CREATED: `${ENTITY_NAME}-create`,
-  UPDATED: `${ENTITY_NAME}-update`
+  CREATED: `${ENTITY_NAME}-created`,
+  UPDATED: `${ENTITY_NAME}-updated`
 } as const;
 
 export type ProductCategoryCreated = Event<

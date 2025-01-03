@@ -6,10 +6,9 @@ import { type ProductCategoryDAO } from './productCategory.dao.schema.ts';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
 import { SetKeyActionHandler } from '../lib/actions/setKey.handler.ts';
 import { ChangeParentActionHandler } from '../lib/tree.ts';
-import { ActionsRunner, ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
-import { type IProductCategoryRepository } from './productCategory.repo.ts';
+import { ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
+import { ProductCategoryRepository, type IProductCategoryRepository } from './productCategory.repo.ts';
 import { Validator } from '../lib/validator.ts';
-import { type Queues } from '@ecomm/queues';
 import {
   ProductCategoryEventTypes,
   type CreateProductCategory,
@@ -46,22 +45,18 @@ export class ProductCategoryService implements IProductCategoryService {
   private static instance: IProductCategoryService;
   private repo: IProductCategoryRepository;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: ActionsRunner<ProductCategoryDAO, IProductCategoryRepository>;
   private actionsRunner2: ActionsRunner2<ProductCategory, IProductCategoryRepository>;
-  private queues: Queues;
   private validator: Validator;
 
   private constructor(server: any) {
     this.server = server;
-    this.repo = server.db.repo.productCategoryRepository as IProductCategoryRepository;
+    this.repo = new ProductCategoryRepository(server);
     this.actionHandlers = {
       setKey: new SetKeyActionHandler(server),
       changeName: new ChangeNameActionHandler(server),
       changeParent: new ChangeParentActionHandler(server)
     };
-    this.actionsRunner = new ActionsRunner<ProductCategoryDAO, IProductCategoryRepository>();
     this.actionsRunner2 = new ActionsRunner2<ProductCategory, IProductCategoryRepository>();
-    this.queues = server.queues;
     this.validator = new Validator(server);
   }
 
@@ -167,7 +162,7 @@ export class ProductCategoryService implements IProductCategoryService {
     }
   };
 
-  // FIND CATEGORY IN THE READ MODEL
+  // FIND IN THE READ MODEL
   public async findProductCategoryById(id: string): Promise<Result<ProductCategory, AppError>> {
     const result = await this.repo.findOne(id);
     if (result.isErr()) return result;

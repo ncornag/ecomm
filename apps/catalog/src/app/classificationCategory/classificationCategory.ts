@@ -1,7 +1,7 @@
-import { Type, type Static } from '@sinclair/typebox';
-import { ClassificationAttributeSchema } from './classificationAttribute.ts';
 import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '../lib/tree.ts';
 import { AuditFields } from '@ecomm/audit-log';
+import { Type, type Static } from '@sinclair/typebox';
+import { ClassificationAttributeSchema } from './classificationAttribute.ts';
 
 const keyAttributes = {
   minLength: 2,
@@ -15,6 +15,7 @@ export const ClassificationCategoryUpdateActionType = {
   CHANGENAME: 'changeName',
   CHANGEPARENT: 'changeParent'
 } as const;
+
 // ACTIONS
 
 // setKey action

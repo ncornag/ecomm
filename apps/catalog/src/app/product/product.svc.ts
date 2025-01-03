@@ -1,17 +1,13 @@
 import { type Result, Ok } from 'ts-results-es';
-import { AppErrorResult, AppError, ErrorCode } from '@ecomm/app-error';
+import { AppError, AppErrorResult, ErrorCode } from '@ecomm/app-error';
 import { Value } from '@sinclair/typebox/value';
 import { type Product, ProductType } from './product.ts';
-import { type CartProduct } from '../cart/cart.ts';
 import { type ProductDAO } from './product.dao.schema.ts';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
 import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler.ts';
 import { ChangeKeywordsActionHandler } from '../lib/actions/changeKeywords.handler.ts';
-import { ActionsRunner, ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
+import { ActionsRunner2, type ActionHandlersList } from '@ecomm/actions-runner';
 import { ProductRepository, type IProductRepository } from './product.repo.ts';
-import NodeCache from 'node-cache';
-import { type Queues } from '@ecomm/queues';
-import { type FastifyInstance } from 'fastify';
 import {
   ProductEventTypes,
   type CreateProduct,
@@ -22,7 +18,11 @@ import {
   ENTITY_NAME,
   toStreamName
 } from './product.events.ts';
-import { toRecordedEvent, type RecordedEvent } from '@ecomm/event-store';
+import { type RecordedEvent, toRecordedEvent } from '@ecomm/event-store';
+import { type FastifyInstance } from 'fastify';
+import { projectId } from '@ecomm/request-context';
+import { type CartProduct } from '../cart/cart.ts';
+import NodeCache from 'node-cache';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -50,26 +50,20 @@ export class ProductService implements IProductService {
   private server: FastifyInstance;
   private static instance: IProductService;
   private repo: IProductRepository;
-  private cols;
   private actionHandlers: ActionHandlersList;
-  private actionsRunner: ActionsRunner<ProductDAO, IProductRepository>;
   private actionsRunner2: ActionsRunner2<Product, IProductRepository>;
-  private queues: Queues;
   private cartProductsCache;
   private cacheCartProducts;
 
   private constructor(server: FastifyInstance) {
     this.server = server;
     this.repo = new ProductRepository(server);
-    this.cols = server.db.col.product;
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
       changeDescription: new ChangeDescriptionActionHandler(server),
       changeKeywords: new ChangeKeywordsActionHandler(server)
     };
-    this.actionsRunner = new ActionsRunner<ProductDAO, IProductRepository>();
     this.actionsRunner2 = new ActionsRunner2<Product, IProductRepository>();
-    this.queues = server.queues;
     this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;
     this.cartProductsCache = new NodeCache({
       useClones: false,
@@ -185,12 +179,14 @@ export class ProductService implements IProductService {
       if (result.isErr()) return result;
       return new Ok(toEntity(result.value));
     } else {
+      const collectionName = this.server.db.getCol(projectId(), ENTITY_NAME, catalogId).collectionName;
       // FIXME use right col names
+
       const result = await this.repo.aggregate(catalogId, [
         { $match: { _id: productId } },
         {
           $lookup: {
-            from: this.cols[catalogId].collectionName,
+            from: collectionName,
             localField: '_id',
             foreignField: 'parent',
             as: 'variants'
@@ -198,7 +194,7 @@ export class ProductService implements IProductService {
         },
         {
           $lookup: {
-            from: this.cols[catalogId].collectionName,
+            from: collectionName,
             localField: 'parent',
             foreignField: '_id',
             as: 'base'
@@ -269,6 +265,7 @@ export class ProductService implements IProductService {
     const cachedProducts = this.cartProductsCache.mget(ids);
     ids = ids.filter((id) => !cachedProducts[id]);
     if (ids.length !== 0) {
+      const collectionName = this.server.db.getCol(projectId(), ENTITY_NAME, catalogId).collectionName;
       const result = await this.repo.aggregate(catalogId, [
         {
           $match: {
@@ -277,7 +274,7 @@ export class ProductService implements IProductService {
         },
         {
           $lookup: {
-            from: this.cols[catalogId].collectionName,
+            from: collectionName,
             localField: 'parent',
             foreignField: '_id',
             as: 'base'

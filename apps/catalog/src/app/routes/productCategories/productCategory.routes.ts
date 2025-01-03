@@ -62,7 +62,7 @@ export default async function (server: FastifyInstance, opts: FastifyPluginOptio
     schema: updateProductCategorySchema,
     handler: async (
       request: FastifyRequest<{
-        Params: FindProductCategoryParms;
+        Params: UpdateProductCategoryParms;
         Body: UpdateProductCategoryBody;
       }>,
       reply: FastifyReply
@@ -124,7 +124,7 @@ export default async function (server: FastifyInstance, opts: FastifyPluginOptio
     method: 'POST',
     url: '/:id/validate',
     handler: async (request: FastifyRequest<{ Params: FindProductCategoryParms }>, reply: FastifyReply) => {
-      const result: Result<boolean, AppError> = await service.valueidate(request.params.id, request.body);
+      const result: Result<boolean, AppError> = await service.validate(request.params.id, request.body);
       if (result.isErr()) return reply.sendAppError(result.error);
       return reply.send(result.value);
     }

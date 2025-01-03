@@ -39,6 +39,11 @@ export const UpdateProductCategoryBodySchema = Type.Object(
   { additionalProperties: false }
 );
 export type UpdateProductCategoryBody = Static<typeof UpdateProductCategoryBodySchema>;
+export const UpdateProductCategoryParmsSchema = Type.Composite([
+  ProjectBasedParamsSchema,
+  Type.Object({ id: Type.String() })
+]);
+export type UpdateProductCategoryParms = Static<typeof UpdateProductCategoryParmsSchema>;
 
 // FIND
 export const FindProductCategoryParmsSchema = Type.Composite([
@@ -67,7 +72,7 @@ export const updateProductCategorySchema: FastifySchema = {
   tags: ['productCategory'],
   summary: 'Updates a productCategory with given values',
   body: UpdateProductCategoryBodySchema,
-  params: FindProductCategoryParmsSchema,
+  params: UpdateProductCategoryParmsSchema,
   response: {
     201: { ...ProductCategoryResponse, description: 'Success' }
   }

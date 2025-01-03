@@ -4,10 +4,6 @@ import type { RecordedEvent } from '@ecomm/event-store';
 import { type IProductService, ProductService } from '../product/product.svc.ts';
 import { type ProductEvent, ProductEventTypes, type ProductUpdated } from './product.events.ts';
 
-export const collectionName = (projectId: string, entity: string, catalogId?: string) => {
-  return `${entity}${catalogId ? `_${catalogId}` : ''}`;
-};
-
 export class ProjectorListener {
   private server: any;
   private msgIn = bold(yellow('←')) + yellow('AGR');
@@ -42,8 +38,7 @@ export class ProjectorListener {
 
     const db = await this.server.db.getDb(event.metadata.projectId);
 
-    const colName = collectionName(event.metadata.projectId, event.metadata.entity, event.metadata.catalogId);
-    const col = db.collection(colName);
+    const col = this.server.db.getCol(event.metadata.projectId, event.metadata.entity, event.metadata.catalogId);
 
     if (event.type === ProductEventTypes.CREATED) {
       const entity = await this.productService.aggregate(undefined as any, event);

@@ -32,14 +32,11 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
     return newDb;
   };
 
-  const getCol = (projectId: string, entity: string, catalogId?: string): Collection => {
-    const col: Collection = getDb(projectId).collection(collectionName(projectId, entity, catalogId));
-    return col;
-  };
+  const getCol = (projectId: string, entity: string, catalogId?: string): Collection =>
+    getDb(projectId).collection(collectionName(projectId, entity, catalogId));
 
-  const collectionName = (projectId: string, entity: string, catalogId?: string) => {
-    return `${entity}${catalogId ? `_${catalogId}` : ''}`;
-  };
+  const collectionName = (projectId: string, entity: string, catalogId?: string) =>
+    `${entity}${catalogId ? `_${catalogId}` : ''}`;
 
   server.decorate('db', {
     getDb,
