@@ -1,4 +1,10 @@
 import {
+  ClassificationCategoryCommandTypes,
+  toStreamName as toClassificationCategoryStreamName,
+  ENTITY_NAME as classificationCategoryEntityName
+} from '../../app/classificationCategory/classificationCategory.events.ts';
+import { ClassificationCategoryService } from '../../app/classificationCategory/classificationCategory.svc.ts';
+import {
   ProductCommandTypes,
   toStreamName as toProductStreamName,
   ENTITY_NAME as productEntityName
@@ -578,30 +584,31 @@ Classification Categories
 
 export async function up(params) {
   const projectId = 'test';
-  const db = params.context.server.mongo.db;
+  const catalogId = 'stage';
+  const server = params.context.server;
+  const db = server.mongo.db;
   await db.collection('Catalog').insertMany(catalogs);
   await db.collection('CatalogSync').insertMany(catalogSyncs);
-  await db.collection('ClassificationCategory').insertMany(classificationCategories);
-  await db.collection('ClassificationCategory').insertMany(classificationCategoriesShoes);
 
-  const productService = ProductService.getInstance(params.context.server);
-  const productCategoryService = ProductCategoryService.getInstance(params.context.server);
+  const productService = ProductService.getInstance(server);
+  const productCategoryService = ProductCategoryService.getInstance(server);
+  const classificationCategoryService = ClassificationCategoryService.getInstance(server);
 
   // Product
   await send(
-    params.context.server,
+    server,
     productShoes,
     productService.create,
     toProductStreamName,
     ProductCommandTypes.CREATE,
     productEntityName,
     projectId,
-    'stage'
+    catalogId
   );
 
   // ProductCategory
   await send(
-    params.context.server,
+    server,
     productCategories,
     productCategoryService.create,
     toProductCategoryStreamName,
@@ -610,7 +617,7 @@ export async function up(params) {
     projectId
   );
   await send(
-    params.context.server,
+    server,
     productCategoriesShoes,
     productCategoryService.create,
     toProductCategoryStreamName,
@@ -618,6 +625,41 @@ export async function up(params) {
     productCategoryEntityName,
     projectId
   );
+
+  // ClassificationCategory
+  await send(
+    server,
+    classificationCategories,
+    classificationCategoryService.create,
+    toClassificationCategoryStreamName,
+    ClassificationCategoryCommandTypes.CREATE,
+    classificationCategoryEntityName,
+    projectId
+  );
+  await send(
+    server,
+    classificationCategoriesShoes,
+    classificationCategoryService.create,
+    toClassificationCategoryStreamName,
+    ClassificationCategoryCommandTypes.CREATE,
+    classificationCategoryEntityName,
+    projectId
+  );
+
+  // INDEXES
+  const productCol = server.db.getCol(projectId, productEntityName, catalogId);
+  //const priceCol = server.db.getCol(projectId, priceEntityName, catalogId);
+  const productCategoryCol = server.db.getCol(projectId, productCategoryEntityName);
+  const classificationCategoryCol = server.db.getCol(projectId, classificationCategoryEntityName);
+  //const auditLogCol = server.db.getCol(projectId, auditLogEntityName);
+
+  const indexes: Promise<any>[] = [];
+  indexes.push(classificationCategoryCol.createIndex({ key: 1 }, { name: 'Key' })); // unique: true
+  indexes.push(productCategoryCol.createIndex({ 'attributes.name': 1 }, { name: 'Attribute' }));
+  indexes.push(productCol.createIndex({ parent: 1 }, { name: 'parent' }));
+  // indexes.push(priceCol.createIndex({ sku: 1 }, { name: 'sku' }));
+  // indexes.push(auditLogCol.createIndex({ entity: 1, entityId: 1 }, { name: 'CCA_Key' })); // ?
+  await Promise.all(indexes);
 }
 
 const send = async (
@@ -646,11 +688,8 @@ const send = async (
 };
 
 export async function down(params) {
-  const db = params.context.server.mongo.db;
+  const server = params.context.server;
+  const db = server.mongo.db;
   await db.collection('Catalog').deleteMany({});
   await db.collection('CatalogSync').deleteMany({});
-  await db.collection('ClassificationCategory').deleteMany({});
-  await db.collection('ProductCategory').deleteMany({});
-  await db.collection('ProductStage').deleteMany({});
-  await db.collection('ProductOnline').deleteMany({});
 }
