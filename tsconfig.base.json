@@ -2,10 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     /* Language and Environment */
-    "target": "esnext",
+    "target": "ESNext",
     /* Modules */
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     // "rootDir": "src",
     // "rootDirs": ["src", "tests"],
@@ -25,19 +25,19 @@
     "skipLibCheck": true
   }
   // "paths": {
-  //   "@ecomm/ActionsRunner": ["libs/ActionsRunner/src/index.ts"],
-  //   "@ecomm/AppError": ["libs/AppError/src/index.ts"],
-  //   "@ecomm/AuditLog": ["libs/AuditLog/src/index.ts"],
-  //   "@ecomm/CT": ["libs/CT/src/index.ts"],
-  //   "@ecomm/Config": ["libs/Config/src/index.ts"],
-  //   "@ecomm/Docs": ["libs/Docs/src/index.ts"],
-  //   "@ecomm/Expressions": ["libs/Expressions/src/index.ts"],
-  //   "@ecomm/Mongo": ["libs/Mongo/src/index.ts"],
-  //   "@ecomm/MongoErrors": ["libs/MongoErrors/src/index.ts"],
-  //   "@ecomm/Queues": ["libs/Queues/src/index.ts"],
-  //   "@ecomm/RequestContext": ["libs/RequestContext/src/index.ts"],
-  //   "@ecomm/Search": ["libs/Search/src/index.ts"],
-  //   "@ecomm/Server": ["libs/Server/src/index.ts"],
-  //   "@ecomm/EventStore": ["libs/EventStore/src/index.ts"]
+  //   "@ecomm/actions-runner": ["libs/ActionsRunner/src/index.ts"],
+  //   "@ecomm/app-error": ["libs/AppError/src/index.ts"],
+  //   "@ecomm/audit-log": ["libs/AuditLog/src/index.ts"],
+  //   "@ecomm/ct": ["libs/CT/src/index.ts"],
+  //   "@ecomm/config": ["libs/Config/src/index.ts"],
+  //   "@ecomm/docs": ["libs/Docs/src/index.ts"],
+  //   "@ecomm/expressions": ["libs/Expressions/src/index.ts"],
+  //   "@ecomm/mongo": ["libs/Mongo/src/index.ts"],
+  //   "@ecomm/mongo-errors": ["libs/MongoErrors/src/index.ts"],
+  //   "@ecomm/queues": ["libs/Queues/src/index.ts"],
+  //   "@ecomm/request-context": ["libs/RequestContext/src/index.ts"],
+  //   "@ecomm/search": ["libs/Search/src/index.ts"],
+  //   "@ecomm/server": ["libs/Server/src/index.ts"],
+  //   "@ecomm/event-store": ["libs/EventStore/src/index.ts"]
   // }
 }

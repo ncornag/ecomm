@@ -5,5 +5,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "license": "UNLICENCED"
+  "license": "UNLICENCED",
+  "type": "module",
+  "dependencies": {
+    "@ecomm/app-error": "1.0.0",
+    "@ecomm/config": "1.0.0",
+    "@ecomm/docs": "1.0.0",
+    "@ecomm/request-context": "1.0.0"
+  }
 }
