@@ -1,11 +1,11 @@
+import fp from 'fastify-plugin';
 import { type Result, Ok } from 'ts-results-es';
 import { AppErrorResult, AppError, ErrorCode } from '@ecomm/app-error';
-import fp from 'fastify-plugin';
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { green, yellow } from 'kolorist';
 import { Collection } from 'mongodb';
 import { type Queues } from '@ecomm/queues';
-import { requestId, projectId } from '@ecomm/request-context';
+import { requestId } from '@ecomm/request-context';
 
 const NEW = 'new';
 type ExpectedRevision = typeof NEW | number;
@@ -77,19 +77,25 @@ export type ApplyEvent<Entity, E extends Event> = (
 
 ///////////////////////////////////////////////////////////////////////////////
 
+type Options = {
+  MONGO_URL?: string;
+};
+
 class EventStore {
   private server: FastifyInstance;
   private col: Collection<RecordedEvent>;
   private queues: Queues;
+  private options: Options;
 
-  constructor(server: FastifyInstance) {
+  constructor(server: FastifyInstance, options: Options) {
     this.server = server;
     this.col = server.mongo!.db!.collection('Events');
     this.queues = server.queues;
+    this.options = options;
   }
 
   public start() {
-    this.server.log.info(`${yellow('EventStore')} ${green('listening to')} [${this.server.config.MONGO_URL}]`);
+    this.server.log.info(`${yellow('EventStore')} ${green('listening to')} [${this.options.MONGO_URL}]`);
     return this;
   }
 
@@ -188,8 +194,8 @@ declare module 'fastify' {
   }
 }
 
-const eventStorePlugin: FastifyPluginAsync = async (server) => {
-  server.decorate('es', new EventStore(server).start());
+const eventStorePlugin: FastifyPluginAsync<Options> = async (server, options) => {
+  server.decorate('es', new EventStore(server, options).start());
 };
 
 export default fp(eventStorePlugin, {

@@ -5,11 +5,11 @@ import { MongoDBStorage, Umzug } from 'umzug';
 import assert from 'node:assert';
 import { default as request } from 'supertest';
 import { Value } from '@sinclair/typebox/value';
-import { type ProductDAO } from './product/product.dao.schema.ts';
-import { type Product } from './product/product.ts';
-import { toEntity as toProductEntity } from './product/product.svc.ts';
-import { envConfig } from './lib/env';
-import { app } from './app';
+import { type ProductDAO } from './app/product/product.dao.schema.ts';
+import { type Product } from './app/product/product.ts';
+import { toEntity as toProductEntity } from './app/product/product.svc.ts';
+import { config as config } from './app/lib/config.ts';
+import { app } from './main.ts';
 const productShoes = [
   {
     _id: 'adizeroPrimeX2-base',
@@ -105,7 +105,7 @@ describe('Product', () => {
     //(global as any).__MONGOINSTANCE = memoryMongo;
     mongo = memoryMongo;
     // App up (& Migrations up)
-    server = await serverBuilder(app, envConfig);
+    server = await serverBuilder(app, config);
     listeningApp = server.server;
   }, 20000);
 

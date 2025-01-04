@@ -21,7 +21,13 @@ declare module 'fastify' {
   }
 }
 
-const mongoPlugin: FastifyPluginAsync = async (server) => {
+type Options = {
+  MONGO_URL?: string;
+  LOG_LEVEL_DB?: string;
+  LOG_LEVEL?: string;
+};
+
+const mongoPlugin: FastifyPluginAsync<Options> = async (server, options) => {
   const dbs = new Map<string, Db>();
 
   const getDb = (projectId: string): Db => {
@@ -48,20 +54,19 @@ const mongoPlugin: FastifyPluginAsync = async (server) => {
   });
 
   // Register
-  const { MONGO_URL: mongoUrl } = server.config;
   await server.register(mongo, {
     forceClose: true,
-    url: mongoUrl,
+    url: options.MONGO_URL,
     monitorCommands: true
   });
 
-  server.log.info(`${yellow('MongoDB')} ${green('starting in')} [${mongoUrl}]`);
+  server.log.info(`${yellow('MongoDB')} ${green('starting in')} [${options.MONGO_URL}]`);
 
   // Log
   const dbOut = bold(yellow('→')) + yellow('DB ');
   const dbIn = bold(yellow('←')) + yellow('DB ');
   const ignoredCommandsForLogging = ['createIndexes', 'listCollections', 'currentOp', 'drop'];
-  const logger = server.log.child({}, { level: server.config.LOG_LEVEL_DB ?? server.config.LOG_LEVEL }) as pino.Logger;
+  const logger = server.log.child({}, { level: options.LOG_LEVEL_DB ?? options.LOG_LEVEL }) as pino.Logger;
 
   server.mongo.client.on('commandStarted', (event) => {
     if (ignoredCommandsForLogging.includes(event.commandName)) return;

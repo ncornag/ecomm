@@ -17,15 +17,20 @@ declare module 'fastify' {
   }
 }
 
-const natsPlugin: FastifyPluginAsync = async (server) => {
-  const options: any = {
+type Options = {
+  NATS_URL?: string;
+  LOG_LEVEL_NATS?: string;
+  LOG_LEVEL?: string;
+};
+
+const natsPlugin: FastifyPluginAsync<Options> = async (server, options) => {
+  const natsOptions: any = {
     connection_name: 'catalog',
     drainOnClose: true
   };
   const msgOut = bold(yellow('→')) + yellow('MSG');
-  const { NATS_URL: nats_url } = server.config;
 
-  if (!nats_url) {
+  if (!options.NATS_URL) {
     server.decorate('queues', {
       subscribe: () => {
         return;
@@ -36,16 +41,13 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
     });
     return;
   }
-  const logger = server.log.child(
-    {},
-    { level: server.config.LOG_LEVEL_NATS ?? server.config.LOG_LEVEL }
-  ) as pino.Logger;
-  const connectParams = { name: options.connection_name, servers: nats_url };
+  const logger = server.log.child({}, { level: options.LOG_LEVEL_NATS ?? options.LOG_LEVEL }) as pino.Logger;
+  const connectParams = { name: natsOptions.connection_name, servers: options.NATS_URL };
 
   try {
     const nc = await connect(connectParams);
     server.addHook('onClose', async (instance) => {
-      if (options.drainOnClose === true) {
+      if (natsOptions.drainOnClose === true) {
         await nc.drain();
       } else {
         await nc.flush();
@@ -78,7 +80,7 @@ const natsPlugin: FastifyPluginAsync = async (server) => {
         nc.publish(subject, JSONCodec().encode(payload), options);
       }
     });
-    server.log.info(`${yellow('Queues')} ${green('starting in')} [${nats_url}]`);
+    server.log.info(`${yellow('Queues')} ${green('starting in')} [${options.NATS_URL}]`);
   } catch (err) {
     server.log.warn(`${yellow('Queues')} error connecting to ${JSON.stringify(connectParams)}`);
     server.decorate('queues', {

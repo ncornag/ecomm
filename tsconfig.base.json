@@ -29,7 +29,6 @@
   //   "@ecomm/app-error": ["libs/AppError/src/index.ts"],
   //   "@ecomm/audit-log": ["libs/AuditLog/src/index.ts"],
   //   "@ecomm/ct": ["libs/CT/src/index.ts"],
-  //   "@ecomm/config": ["libs/Config/src/index.ts"],
   //   "@ecomm/docs": ["libs/Docs/src/index.ts"],
   //   "@ecomm/expressions": ["libs/Expressions/src/index.ts"],
   //   "@ecomm/mongo": ["libs/Mongo/src/index.ts"],

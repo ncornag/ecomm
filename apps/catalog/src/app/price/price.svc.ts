@@ -10,7 +10,6 @@ import { green, magenta } from 'kolorist';
 import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
 import { type CreatePriceBody } from './price.schemas.ts';
-import { type Config } from '@ecomm/config';
 import { type Queues } from '@ecomm/queues';
 import { Expressions } from '@ecomm/expressions';
 import { type FastifyInstance } from 'fastify';
@@ -73,13 +72,10 @@ export function createPredicateExpression(data: any) {
 // SERVICE IMPLEMENTATION
 export class PriceService implements IPriceService {
   private ENTITY = 'price';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
   private static instance: IPriceService;
   private repo: IPriceRepository;
   private productService: IProductService;
   private server: FastifyInstance;
-  private config: Config;
   private queues: Queues;
   private expressions: Expressions;
   private promotionsUrl: string;
@@ -90,7 +86,6 @@ export class PriceService implements IPriceService {
     this.server = server;
     this.repo = server.db.repo.priceRepository as IPriceRepository;
     this.productService = ProductService.getInstance(server);
-    this.config = server.config;
     this.queues = server.queues;
     this.expressions = new Expressions(server);
 
@@ -102,8 +97,6 @@ export class PriceService implements IPriceService {
       checkperiod: 60
     });
     this.warmupPricesExpressions(server);
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IPriceService {
@@ -139,15 +132,6 @@ export class PriceService implements IPriceService {
       ...payload
     } as Price);
     if (result.isErr()) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.value),
-      metadata: {
-        catalogId,
-        type: 'entityCreated',
-        entity: this.ENTITY
-      }
-    });
     // Return new entity
     return new Ok(toEntity(result.value));
   }

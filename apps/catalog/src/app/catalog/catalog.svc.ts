@@ -9,7 +9,6 @@ import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
 import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler.ts';
 import { type ICatalogRepository } from './catalog.repo.ts';
 import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
-import { type Config } from '@ecomm/config';
 import { type Queues } from '@ecomm/queues';
 
 // SERVICE INTERFACE
@@ -28,13 +27,10 @@ const toEntity = ({ _id, ...remainder }: CatalogDAO): Catalog => ({
 // SERVICE IMPLEMENTATION
 export class CatalogService implements ICatalogService {
   private ENTITY = 'catalog';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
   private static instance: ICatalogService;
   private repo: ICatalogRepository;
   private actionHandlers: ActionHandlersList;
   private actionsRunner: ActionsRunner<CatalogDAO, ICatalogRepository>;
-  private config: Config;
   private queues: Queues;
 
   private constructor(server: any) {
@@ -44,10 +40,7 @@ export class CatalogService implements ICatalogService {
       changeDescription: new ChangeDescriptionActionHandler(server)
     };
     this.actionsRunner = new ActionsRunner<CatalogDAO, ICatalogRepository>();
-    this.config = server.config;
     this.queues = server.queues;
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): ICatalogService {
@@ -65,14 +58,6 @@ export class CatalogService implements ICatalogService {
       ...payload
     });
     if (result.isErr()) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.value),
-      metadata: {
-        type: 'entityCreated',
-        entity: this.ENTITY
-      }
-    });
     return new Ok(toEntity(result.value));
   }
 
@@ -103,15 +88,6 @@ export class CatalogService implements ICatalogService {
       const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
       if (saveResult.isErr()) return saveResult;
       toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.value._id },
-        difference,
-        metadata: {
-          type: 'entityUpdated',
-          entity: this.ENTITY
-        }
-      });
       // Send side effects via messagging
       actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {

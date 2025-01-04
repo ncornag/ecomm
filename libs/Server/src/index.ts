@@ -7,8 +7,7 @@ import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { AppError, ErrorCode, default as sendAppError } from '@ecomm/app-error';
 import { errorName } from '@ecomm/mongo-errors';
 import { yellow } from 'kolorist';
-import config from '@ecomm/config';
-import docs from '@ecomm/Docs';
+import docs from '@ecomm/docs';
 import { default as requestContextProvider, getRequestIdFastifyAppConfig } from '@ecomm/request-context';
 import authorization from './authorization.ts';
 
@@ -30,7 +29,7 @@ interface BigInt {
   return this.toString();
 };
 
-export default async (app, envConfig): Promise<FastifyInstance> => {
+export default async (app: any): Promise<FastifyInstance> => {
   // Server
   const serverOptions: FastifyServerOptions = {
     ajv: {
@@ -87,9 +86,6 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   });
 
   // Register Plugins
-  await server.register(config, {
-    envType: envConfig
-  });
   await server.register(fastifyRequestLogger);
   await server.register(docs);
   await server.register(sendAppError);
@@ -98,7 +94,7 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
   await server.register(requestContextProvider);
 
   // Print Routes
-  if (server.config.PRINT_ROUTES === true) {
+  if (process.env.PRINT_ROUTES!.toLowerCase() === 'true') {
     const importDynamic = new Function('modulePath', 'return import(modulePath)');
     const fastifyPrintRoutes = await importDynamic('fastify-print-routes');
     await server.register(fastifyPrintRoutes);
@@ -109,8 +105,8 @@ export default async (app, envConfig): Promise<FastifyInstance> => {
 
   // Start listening.
   await server.listen({
-    host: server.config.API_HOST,
-    port: server.config.API_PORT
+    host: process.env.API_HOST,
+    port: parseInt(process.env.API_PORT || '3000')
   });
 
   process.on('unhandledRejection', (err) => {

@@ -8,7 +8,6 @@ import { type PromotionDAO } from './promotion.dao.schema.ts';
 import { type IPromotionRepository } from './promotion.repo.ts';
 import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
 import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
-import { type Config } from '@ecomm/config';
 import { green, magenta } from 'kolorist';
 import { CT } from '@ecomm/ct';
 import { type Queues } from '@ecomm/queues';
@@ -143,13 +142,10 @@ const toEntity = ({ _id, ...remainder }: PromotionDAO): Promotion => ({
 // SERVICE IMPLEMENTATION
 export class PromotionService implements IPromotionService {
   private ENTITY = 'promotion';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
   private static instance: IPromotionService;
   private repo: IPromotionRepository;
   private actionHandlers: ActionHandlersList;
   private actionsRunner: ActionsRunner<PromotionDAO, IPromotionRepository>;
-  private config: Config;
   private queues: Queues;
   private server: FastifyInstance;
   private ctAdapter: CTAdapter;
@@ -162,12 +158,9 @@ export class PromotionService implements IPromotionService {
       changeName: new ChangeNameActionHandler(server)
     };
     this.actionsRunner = new ActionsRunner<PromotionDAO, IPromotionRepository>();
-    this.config = server.config;
     this.queues = server.queues;
     this.ctAdapter = new CTAdapter(server);
     this.promotionsEngine = new PromotionsEngine(server);
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): IPromotionService {
@@ -185,14 +178,6 @@ export class PromotionService implements IPromotionService {
       ...payload
     });
     if (result.isErr()) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.value),
-      metadata: {
-        type: 'entityCreated',
-        entity: this.ENTITY
-      }
-    });
     return new Ok(toEntity(result.value));
   }
 
@@ -223,15 +208,6 @@ export class PromotionService implements IPromotionService {
       const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
       if (saveResult.isErr()) return saveResult;
       toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.value._id },
-        difference,
-        metadata: {
-          type: 'entityUpdated',
-          entity: this.ENTITY
-        }
-      });
       // Send side effects via messagging
       actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {

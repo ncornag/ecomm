@@ -1,9 +1,0 @@
-{
-  "name": "RequestContext",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/RequestContext/src",
-  "projectType": "library",
-  "tags": [],
-  "// targets": "to see all targets run: nx show project RequestContext --web",
-  "targets": {}
-}

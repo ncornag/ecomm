@@ -9,7 +9,6 @@ import { ChangeNameActionHandler } from '../lib/actions/changeName.handler.ts';
 import { ChangeDescriptionActionHandler } from '../lib/actions/changeDescription.handler.ts';
 import { type ICatalogSyncRepository } from './catalogSync.repo.ts';
 import { ActionsRunner, type ActionHandlersList } from '@ecomm/actions-runner';
-import { type Config } from '@ecomm/config';
 import patch from 'mongo-update';
 import { type Queues } from '@ecomm/queues';
 
@@ -57,14 +56,11 @@ const mongoPatch = function (patch: any) {
 // SERVICE IMPLEMENTATION
 export class CatalogSyncService implements ICatalogSyncService {
   private ENTITY = 'catalogSync';
-  private TOPIC_CREATE: string;
-  private TOPIC_UPDATE: string;
   private static instance: ICatalogSyncService;
   private repo: ICatalogSyncRepository;
   private cols;
   private actionHandlers: ActionHandlersList;
   private actionsRunner: ActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>;
-  private config: Config;
   private queues: Queues;
   private log;
   private batchSize = 1000;
@@ -77,11 +73,8 @@ export class CatalogSyncService implements ICatalogSyncService {
       changeDescription: new ChangeDescriptionActionHandler(server)
     };
     this.actionsRunner = new ActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>();
-    this.config = server.config;
     this.queues = server.queues;
     this.log = server.log;
-    this.TOPIC_CREATE = `global.${this.ENTITY}.${server.config.TOPIC_CREATE_SUFIX}`;
-    this.TOPIC_UPDATE = `global.${this.ENTITY}.${server.config.TOPIC_UPDATE_SUFIX}`;
   }
 
   public static getInstance(server: any): ICatalogSyncService {
@@ -99,14 +92,6 @@ export class CatalogSyncService implements ICatalogSyncService {
       ...payload
     });
     if (result.isErr()) return result;
-    // Send new entity via messagging
-    this.queues.publish(this.TOPIC_CREATE, {
-      source: toEntity(result.value),
-      metadata: {
-        type: 'entityCreated',
-        entity: this.ENTITY
-      }
-    });
     return new Ok(toEntity(result.value));
   }
 
@@ -137,15 +122,6 @@ export class CatalogSyncService implements ICatalogSyncService {
       const saveResult = await this.repo.updateOne(id, version, actionRunnerResults.value.update);
       if (saveResult.isErr()) return saveResult;
       toUpdateEntity.version = version + 1;
-      // Send differences via messagging
-      this.queues.publish(this.TOPIC_UPDATE, {
-        source: { id: result.value._id },
-        difference,
-        metadata: {
-          type: 'entityUpdated',
-          entity: this.ENTITY
-        }
-      });
       // Send side effects via messagging
       actionRunnerResults.value.sideEffects?.forEach((sideEffect: any) => {
         this.queues.publish(sideEffect.action, {

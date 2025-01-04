@@ -10,7 +10,7 @@ declare module 'fastify' {
 
 export default async (server: FastifyInstance) => {
   // Read Public Key for decode JWT tokens
-  const publicKey = fs.readFileSync(server.config.PUBLIC_KEY_FILE, 'ascii');
+  const publicKey = fs.readFileSync(process.env.PUBLIC_KEY_FILE!, 'ascii');
 
   // Register the fastify-jwt plugin
   await server.register(fastifyJwt, {
