@@ -2,17 +2,14 @@ import { type FastifySchema } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { ClassificationAttributeSchema } from './classificationAttribute.ts';
 import { type Static } from '@sinclair/typebox';
+import { ProjectBasedParamsSchema } from '../base.schemas.ts';
+import { ClassificationCategoryResponse } from './classificationCategory.schemas.ts';
 
 const defaultExample = {
   name: 'title',
   label: 'Title',
   isRequired: true
 };
-
-export const ClassificationAttributePayloadSchema = Type.Union(ClassificationAttributeSchema.anyOf, {
-  examples: [defaultExample]
-});
-export type ClassificationAttributePayload = Static<typeof ClassificationAttributePayloadSchema>;
 
 export const ClassificationAttributeResponse = Type.Union(ClassificationAttributeSchema.anyOf, {
   examples: [
@@ -23,12 +20,32 @@ export const ClassificationAttributeResponse = Type.Union(ClassificationAttribut
   ]
 });
 
-export const postClassificationAttributeSchema: FastifySchema = {
+// CREATE
+export const CreateClassificationAttributeBodySchema = Type.Composite(
+  [Type.Object({ version: Type.Number() }), Type.Object({ data: ClassificationAttributeSchema })],
+  {
+    examples: [defaultExample]
+  }
+);
+export type CreateClassificationAttributeBody = Static<typeof CreateClassificationAttributeBodySchema>;
+// const CreateClassificationAttributeDataSchema = Type.Pick(CreateClassificationAttributeBodySchema, ['data']);
+// export type CreateClassificationAttributeData = Static<typeof CreateClassificationAttributeDataSchema>;
+
+export const CreateClassificationAttributeParmsSchema = Type.Composite([
+  ProjectBasedParamsSchema,
+  Type.Object({ id: Type.String() })
+]);
+export type CreateClassificationAttributeParms = Static<typeof CreateClassificationAttributeParmsSchema>;
+
+// ROUTE SCHEMAS
+
+export const createClassificationAttributeSchema: FastifySchema = {
   description: 'Create a new classificationAttribute',
   tags: ['classificationAttributes'],
   summary: 'Creates new classificationAttribute with given values',
-  body: ClassificationAttributePayloadSchema,
+  body: CreateClassificationAttributeBodySchema,
+  params: CreateClassificationAttributeParmsSchema,
   response: {
-    201: { ...ClassificationAttributeResponse, description: 'Success' }
+    201: { ...ClassificationCategoryResponse, description: 'Success' }
   }
 };

@@ -14,7 +14,7 @@ import { ClassificationCategoryService } from '../classificationCategory/classif
 
 export class ProjectorListener {
   private server: any;
-  private msgIn = bold(yellow('←')) + yellow('AGR');
+  private msgIn = bold(yellow('←')) + yellow('PRO');
   private logger: pino.Logger;
 
   constructor(server: any) {
@@ -31,7 +31,7 @@ export class ProjectorListener {
       'es.*.product',
       this.createHandler<ProductEvent>(
         ProductEventTypes.CREATED,
-        ProductEventTypes.UPDATED,
+        [ProductEventTypes.UPDATED],
         ProductService.getInstance(this.server),
         'productId'
       ).bind(this)
@@ -40,7 +40,7 @@ export class ProjectorListener {
       'es.*.productCategory',
       this.createHandler<ProductCategoryEvent>(
         ProductCategoryEventTypes.CREATED,
-        ProductCategoryEventTypes.UPDATED,
+        [ProductCategoryEventTypes.UPDATED],
         ProductCategoryService.getInstance(this.server),
         'productCategoryId'
       ).bind(this)
@@ -49,7 +49,7 @@ export class ProjectorListener {
       'es.*.classificationCategory',
       this.createHandler<ClassificationCategoryEvent>(
         ClassificationCategoryEventTypes.CREATED,
-        ClassificationCategoryEventTypes.UPDATED,
+        [ClassificationCategoryEventTypes.UPDATED, ClassificationCategoryEventTypes.ATTRIBUTE_CREATED],
         ClassificationCategoryService.getInstance(this.server),
         'classificationCategoryId'
       ).bind(this)
@@ -70,10 +70,10 @@ export class ProjectorListener {
   });
 
   private createHandler =
-    <T extends Event>(createdType: string, updatedType: string, service: any, idName: string) =>
+    <T extends Event>(createdType: string, updatedType: string[], service: any, idName: string) =>
     async (event: RecordedEvent<T>) => {
       if (this.logger.isLevelEnabled('debug')) {
-        const txt = `${event.metadata.projectId}:${event.metadata.catalogId}:${event.metadata.entity}:${event.streamName}`;
+        const txt = `${event.metadata.projectId}:${event.metadata.catalogId ? event.metadata.catalogId + ':' : ''}${event.metadata.entity}:${event.streamName}`;
         this.logger.debug(`${magenta('#' + (event.requestId || ''))} ${this.msgIn} aggregatting entity ${green(txt)}`);
       }
 
@@ -94,7 +94,7 @@ export class ProjectorListener {
           );
           return;
         }
-      } else if (event.type === updatedType) {
+      } else if (updatedType.includes(event.type)) {
         // Verify the entity exists
         const entity = await col.findOne({
           _id: event.data[idName],
@@ -102,7 +102,7 @@ export class ProjectorListener {
         });
         if (entity === null) {
           this.logger.error(
-            `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error getting entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`
+            `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error getting entity')} [${event.data[idName]}:${event.metadata.expectedVersion}]`
           );
           return;
         }
@@ -122,7 +122,7 @@ export class ProjectorListener {
         );
         if (updateResult.acknowledged === false) {
           this.logger.error(
-            `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error updating entity')} [${e.data.productId}:${event.metadata.expectedVersion}]`
+            `${magenta('#' + (event.requestId || ''))} ${this.msgIn} ${green('Error updating entity')} [${event.data[idName]}:${event.metadata.expectedVersion}]`
           );
           return;
         }

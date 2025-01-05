@@ -56,7 +56,7 @@ export type FindClassificationCategoryParms = Static<typeof FindClassificationCa
 
 // ROUTE SCHEMAS
 
-export const postClassificationCategorySchema: FastifySchema = {
+export const createClassificationCategorySchema: FastifySchema = {
   description: 'Create a new classificationCategory',
   tags: ['classificationCategory'],
   summary: 'Creates new classificationCategory with given values',

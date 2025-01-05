@@ -5,7 +5,7 @@ import { Db, Collection } from 'mongodb';
 import { type ClassificationCategory } from './classificationCategory.ts';
 import { type ClassificationCategoryDAO } from './classificationCategory.dao.schema.ts';
 import { type ClassificationAttributeDAO } from './classificationAttribute.dao.schema.ts';
-import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
+import { type CreateClassificationAttributeBody } from './classificationAttribute.schemas.ts';
 import { type FastifyInstance } from 'fastify';
 import { projectId } from '@ecomm/request-context';
 
@@ -20,7 +20,7 @@ export interface IClassificationCategoryRepository {
   createClassificationAttribute: (
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload
+    payload: CreateClassificationAttributeBody
   ) => Promise<Result<ClassificationAttributeDAO, AppError>>;
 }
 
@@ -114,7 +114,7 @@ export class ClassificationCategoryRepository
   async createClassificationAttribute(
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload
+    payload: CreateClassificationAttributeBody
   ): Promise<Result<ClassificationAttributeDAO, AppError>> {
     // TODO: Rewrite with validations and attribute uniqueness
     const result = await this.col.updateOne(

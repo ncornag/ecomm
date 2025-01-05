@@ -10,66 +10,6 @@
 			"name": "ClassificationAttributes",
 			"item": [
 				{
-					"name": "createAttribute TEST",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastCaId\", jsonData.id);",
-									"}",
-									"if (jsonData.version) {",
-									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
-									"}"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"key\": \"1900\",\n    \"label\": \"Test\",\n    \"isRequired\": false,\n    \"type\": \"list\",\n    \"elementType\": \"text\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes?version={{lastCcVersion}}",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"classificationCategories",
-								"{{lastCcId}}",
-								"attributes"
-							],
-							"query": [
-								{
-									"key": "version",
-									"value": "{{lastCcVersion}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "createAttribute [NUMBER]",
 					"event": [
 						{
@@ -87,9 +27,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -99,7 +36,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"name\": \"number1\",\n        \"label\": \"Number Test\",\n        \"isRequired\": false,\n        \"__t\": \"number\",\n        \"min\": 1,\n        \"max\": 999\n      }",
+							"raw": "{\n    \"version\": {{lastCcVersion}},\n    \"data\": {\n        \"key\": \"number1\",\n        \"label\": \"Number Test\",\n        \"isRequired\": false,\n        \"type\": \"number\",\n        \"min\": 1,\n        \"max\": 999\n      }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -107,11 +44,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/attributes",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"attributes"
@@ -127,10 +65,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastCaId\", jsonData.id);",
-									"}"
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastCcVersion\", data.version);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -138,9 +78,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -150,7 +87,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"name\": \"string1\",\n        \"label\": \"String Test\",\n        \"isRequired\": false,\n        \"__t\": \"text\",\n        \"minLength\": 1,\n        \"maxLength\": 50\n      }",
+							"raw": "{\n    \"version\": {{lastCcVersion}},\n    \"data\": {\n        \"key\": \"string1\",\n        \"label\": \"String Test\",\n        \"isRequired\": false,\n        \"type\": \"text\",\n        \"minLength\": 1,\n        \"maxLength\": 50\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -158,11 +95,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/attributes",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"attributes"
@@ -189,9 +127,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -201,7 +136,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"name\": \"color\",\n        \"label\": \"Color\",\n        \"isRequired\": false,\n        \"__t\": \"enum\",\n        \"options\": [\n          { \"key\": \"Y\", \"label\": \"Yellow\" },\n          { \"key\": \"O\", \"label\": \"Orange\" },\n          { \"key\": \"G\", \"label\": \"Green\" }\n        ]\n      }",
+							"raw": "{\n    \"version\": {{lastCcVersion}},\n    \"data\": {\n        \"name\": \"color\",\n        \"label\": \"Color\",\n        \"isRequired\": false,\n        \"type\": \"enum\",\n        \"options\": [\n          { \"key\": \"Y\", \"label\": \"Yellow\" },\n          { \"key\": \"O\", \"label\": \"Orange\" },\n          { \"key\": \"G\", \"label\": \"Green\" }\n        ]\n      }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -209,11 +144,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/attributes",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"attributes"
@@ -240,9 +176,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -252,7 +185,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"name\": \"fruits\",\n        \"label\": \"Fruits\",\n        \"isRequired\": false,\n        \"__t\": \"list\",\n        \"elementTpe\": \"text\"\n      }",
+							"raw": "{\n    \"version\": {{lastCcVersion}},\n    \"data\": {\n        \"name\": \"fruits\",\n        \"label\": \"Fruits\",\n        \"isRequired\": false,\n        \"type\": \"list\",\n        \"elementTpe\": \"text\"\n      }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -260,11 +193,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/attributes",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"attributes"
@@ -291,9 +225,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -303,7 +234,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n        \"name\": \"machine-properties\",\n        \"label\": \"Machine Properties\",\n        \"isRequired\": false,\n        \"__t\": \"object\",\n        \"ref\": \"machine-properties\"\n      }",
+							"raw": "{\n    \"version\": {{lastCcVersion}},\n    \"data\": {        \"name\": \"machine-properties\",\n        \"label\": \"Machine Properties\",\n        \"isRequired\": false,\n        \"__t\": \"object\",\n        \"ref\": \"machine-properties\"\n      }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -311,93 +242,15 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/attributes",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"attributes"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "findOneAttribute",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes/{{lastCaId}}",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"classificationCategories",
-								"{{lastCcId}}",
-								"attributes",
-								"{{lastCaId}}"
-							],
-							"query": [
-								{
-									"key": "expand",
-									"value": "classificationSystem",
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateAttribute",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"label\": \"Attribute 1 Updated 3\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/attributes/{{lastCaId}}",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"classificationCategories",
-								"{{lastCcId}}",
-								"attributes",
-								"{{lastCaId}}"
 							]
 						}
 					},
@@ -415,12 +268,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id!==undefined) {",
-									"  pm.globals.set(\"lastCcId\", jsonData.id);",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastCcId\", data.id);",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastCcVersion\", data.version);",
 									"}",
 									""
 								],
@@ -430,9 +284,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -450,66 +301,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateCategory",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id!==undefined) {",
-									"  pm.globals.set(\"lastCcId\", jsonData.id);",
-									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
-									"}",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \"version\": {{lastCcVersion}}, \"actions\": [ \n    { \"action\": \"changeName\", \"name\": \"Nea2sws sam23\" },\n    { \"action\": \"setKey\", \"key\": \"root-1\" }\n]}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}",
-							"host": [
-								"{{host}}"
-							],
-							"path": [
-								"classificationCategories",
-								"{{lastCcId}}"
 							]
 						}
 					},
@@ -522,12 +320,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id!==undefined) {",
-									"  pm.globals.set(\"lastCcId\", jsonData.id);",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastCcId\", data.id);",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastCcVersion\", jsonData.version);",
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastCcVersion\", data.version);",
 									"}",
 									""
 								],
@@ -537,9 +336,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -557,11 +353,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories"
 							]
 						}
@@ -569,19 +366,53 @@
 					"response": []
 				},
 				{
-					"name": "findOneCategory",
+					"name": "updateCategory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 304\", function () { pm.response.to.have.status(200) || pm.response.to.have.status(304)});",
+									"if (pm.response.code===200) {",
+									"    var data = pm.response.json();",
+									"    if (data.id!==undefined) {",
+									"        pm.environment.set(\"lastCcId\", data.id);",
+									"    }",
+									"    if (data.version!==undefined) {",
+									"        pm.environment.set(\"lastCcVersion\", data.version);",
+									"    }",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
-						"auth": {
-							"type": "noauth"
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"version\": {{lastCcVersion}}, \"actions\": [ \n    { \"action\": \"changeName\", \"name\": \"Nea2sws sam23\" },\n    { \"action\": \"setKey\", \"key\": \"root-1\" }\n]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
 						},
-						"method": "GET",
-						"header": [],
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}"
 							]
@@ -590,11 +421,47 @@
 					"response": []
 				},
 				{
+					"name": "findOneCategory",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}",
+							"host": [
+								"{{api_host}}"
+							],
+							"path": [
+								"{{project_id}}",
+								"classificationCategories",
+								"{{lastCcId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneCategory EventStore",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/es",
+							"host": [
+								"{{api_host}}"
+							],
+							"path": [
+								"{{project_id}}",
+								"classificationCategories",
+								"{{lastCcId}}",
+								"es"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "validate",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -607,11 +474,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/classificationCategories/{{lastCcId}}/validate",
+							"raw": "{{api_host}}/{{project_id}}/classificationCategories/{{lastCcId}}/validate",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"classificationCategories",
 								"{{lastCcId}}",
 								"validate"
@@ -632,12 +500,13 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPCId\", jsonData.id);",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastPCId\", data.id);",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastPcVersion\", jsonData.version);",
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastPcVersion\", data.version);",
 									"}",
 									""
 								],
@@ -647,9 +516,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -667,11 +533,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/productCategories",
+							"raw": "{{api_host}}/{{project_id}}/productCategories",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"productCategories"
 							]
 						}
@@ -685,13 +552,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPCId\", jsonData.id);",
+									"pm.test(\"Status code is 200 or 304\", function () { pm.response.to.have.status(200) || pm.response.to.have.status(304)});",
+									"if (pm.response.code===200) {",
+									"    var data = pm.response.json();",
+									"    if (data.id!==undefined) {",
+									"        pm.environment.set(\"lastPCId\", data.id);",
+									"    }",
+									"    if (data.version!==undefined) {",
+									"        pm.environment.set(\"lastPcVersion\", data.version);",
+									"    }",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastPcVersion\", jsonData.version);",
-									"}"
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -699,9 +570,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "PATCH",
 						"header": [
 							{
@@ -719,11 +587,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/productCategories/{{lastPCId}}",
+							"raw": "{{api_host}}/{{project_id}}/productCategories/{{lastPCId}}",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"productCategories",
 								"{{lastPCId}}"
 							]
@@ -738,10 +607,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPCId\", jsonData.id);",
-									"}"
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastPCId\", data.id);",
+									"}",
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastPcVersion\", data.version);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -749,9 +623,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -769,11 +640,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/productCategories",
+							"raw": "{{api_host}}/{{project_id}}/productCategories",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"productCategories"
 							]
 						}
@@ -783,19 +655,37 @@
 				{
 					"name": "findOneCategory",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/productCategories/{{lastPCId}}",
+							"raw": "{{api_host}}/{{project_id}}/productCategories/{{lastPCId}}",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"productCategories",
 								"{{lastPCId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "findOneCategory EventStore",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_host}}/{{project_id}}/productCategories/{{lastPCId}}/es",
+							"host": [
+								"{{api_host}}"
+							],
+							"path": [
+								"{{project_id}}",
+								"productCategories",
+								"{{lastPCId}}",
+								"es"
 							]
 						}
 					},
@@ -896,15 +786,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPIdBase\", jsonData.id);",
-									"  pm.globals.set(\"lastPId\", jsonData.id);",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastPIdBase\", data.id);",
+									"  pm.environment.set(\"lastPId\", data.id);",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastPVersionBase\", jsonData.version);",
-									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
-									"}"
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastPVersionBase\", data.version);",
+									"  pm.environment.set(\"lastPVersion\", data.version);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -954,15 +846,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPIdVariant\", jsonData.id);",
-									"  pm.globals.set(\"lastPId\", jsonData.id);",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var data = pm.response.json();",
+									"if (data.id!==undefined) {",
+									"  pm.environment.set(\"lastPIdVariant\", data.id);",
+									"  pm.environment.set(\"lastPId\", data.id);",
 									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastPVersionVariant\", jsonData.version);",
-									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
-									"}"
+									"if (data.version!==undefined) {",
+									"  pm.environment.set(\"lastPVersionVariant\", data.version);",
+									"  pm.environment.set(\"lastPVersion\", data.version);",
+									"}",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -970,9 +864,6 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -990,16 +881,78 @@
 							}
 						},
 						"url": {
-							"raw": "{{host}}/products?catalog=stage",
+							"raw": "{{api_host}}/{{project_id}}/products?catalog=stage",
 							"host": [
-								"{{host}}"
+								"{{api_host}}"
 							],
 							"path": [
+								"{{project_id}}",
 								"products"
 							],
 							"query": [
 								{
 									"key": "catalog",
+									"value": "stage"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateProduct",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 304\", function () { pm.response.to.have.status(200) || pm.response.to.have.status(304)});",
+									"if (pm.response.code===200) {",
+									"    var data = pm.response.json();",
+									"    if (data.id!==undefined) {",
+									"        pm.environment.set(\"lastPId\", data.id);",
+									"    }",
+									"    if (data.version!==undefined) {",
+									"        pm.environment.set(\"lastPVersion\", data.version);",
+									"    }",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"version\": {{lastPVersion}}, \n    \"actions\": [ \n        { \"action\": \"changeName\", \"name\": {\"en\": \"Test-3\"} }\n       ,{ \"action\": \"changeDescription\", \"description\": {\"en\": \"new Description 1\"}}\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{api_host}}/{{project_id}}/products/{{lastPId}}?catalogId=stage",
+							"host": [
+								"{{api_host}}"
+							],
+							"path": [
+								"{{project_id}}",
+								"products",
+								"{{lastPId}}"
+							],
+							"query": [
+								{
+									"key": "catalogId",
 									"value": "stage"
 								}
 							]
@@ -1040,7 +993,7 @@
 					"response": []
 				},
 				{
-					"name": "findOneProductEventStore",
+					"name": "findOneProduct EventStore",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -1061,63 +1014,6 @@
 								"products",
 								"{{lastPIdBase}}",
 								"es"
-							],
-							"query": [
-								{
-									"key": "catalogId",
-									"value": "stage"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateProduct",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.id) {",
-									"  pm.globals.set(\"lastPId\", jsonData.id);",
-									"}",
-									"if (jsonData.version!==undefined) {",
-									"  pm.globals.set(\"lastPVersion\", jsonData.version);",
-									"}"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \n    \"version\": {{lastPVersion}}, \n    \"actions\": [ \n        { \"action\": \"changeName\", \"name\": {\"en\": \"Test-1\"} }\n       ,{ \"action\": \"changeDescription\", \"description\": {\"en\": \"new Description 1\"}}\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{api_host}}/{{project_id}}/products/{{lastPId}}?catalogId=stage",
-							"host": [
-								"{{api_host}}"
-							],
-							"path": [
-								"{{project_id}}",
-								"products",
-								"{{lastPId}}"
 							],
 							"query": [
 								{

@@ -6,12 +6,13 @@ import {
   type FindClassificationCategoryParms,
   type UpdateClassificationCategoryBody,
   type UpdateClassificationCategoryParms,
-  postClassificationCategorySchema,
+  createClassificationCategorySchema,
   updateClassificationCategorySchema
 } from '../../classificationCategory/classificationCategory.schemas.ts';
 import {
-  type ClassificationAttributePayload,
-  postClassificationAttributeSchema
+  type CreateClassificationAttributeBody,
+  type CreateClassificationAttributeParms,
+  createClassificationAttributeSchema
 } from '../../classificationCategory/classificationAttribute.schemas.ts';
 import { ClassificationCategoryService } from '../../classificationCategory/classificationCategory.svc.ts';
 import { type ClassificationCategory } from '../../classificationCategory/classificationCategory.ts';
@@ -21,6 +22,7 @@ import { nanoid } from 'nanoid';
 import {
   ClassificationCategoryCommandTypes,
   type ClassificationCategoryEvent,
+  type CreateClassificationAttribute,
   toStreamName
 } from '../../classificationCategory/classificationCategory.events.ts';
 import { projectId } from '@ecomm/request-context';
@@ -33,7 +35,7 @@ export default async function (server: FastifyInstance, opts: FastifyPluginOptio
     method: 'POST',
     url: '/',
     config: { scopes: ['catalog:write'] },
-    schema: postClassificationCategorySchema,
+    schema: createClassificationCategorySchema,
     handler: async (
       request: FastifyRequest<{
         Params: ProjectBasedParams;
@@ -143,30 +145,39 @@ export default async function (server: FastifyInstance, opts: FastifyPluginOptio
   server.route({
     method: 'POST',
     url: '/:id/attributes',
-    schema: postClassificationAttributeSchema,
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      const result: Result<ClassificationAttribute, AppError> = await service.createClassificationAttribute(
-        (request.params as any).id,
-        (request.params as any).version,
-        request.body as ClassificationAttributePayload
+    config: { scopes: ['catalog:write'] },
+    schema: createClassificationAttributeSchema,
+    handler: async (
+      request: FastifyRequest<{
+        Params: CreateClassificationAttributeParms;
+        Body: CreateClassificationAttributeBody;
+      }>,
+      reply: FastifyReply
+    ) => {
+      const id = request.params.id;
+      const eventStoreResult = await server.es.update<CreateClassificationAttribute>(
+        service.createAttribute,
+        toStreamName(id),
+        request.body.version,
+        {
+          type: ClassificationCategoryCommandTypes.CREATE_ATTRIBUTE,
+          data: {
+            classificationCategoryId: request.params.id,
+            classificationAttribute: request.body.data
+          },
+          metadata: {
+            projectId: projectId(),
+            expectedVersion: request.body.version
+          }
+        }
       );
-      if (result.isErr()) return reply.sendAppError(result.error);
-      return reply.code(201).send(result.value);
+      if (eventStoreResult.isErr()) return reply.sendAppError(eventStoreResult.error);
+      return reply.code(201).send({
+        ...eventStoreResult.value.metadata.expected,
+        version: eventStoreResult.value.metadata.version
+      });
     }
   });
 
-  // GET ATTRIBUTE
-  server.route({
-    method: 'GET',
-    url: '/:id/attributes/:attributeId',
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      const result: Result<ClassificationAttribute, AppError> = await service.findClassificationAttributeById(
-        (request.params as any).id,
-        (request.params as any).attributeId
-      );
-
-      if (result.isErr()) return reply.sendAppError(result.error);
-      return reply.send(result.value);
-    }
-  });
+  // TODO UPDATE ATTRIBUTE
 }

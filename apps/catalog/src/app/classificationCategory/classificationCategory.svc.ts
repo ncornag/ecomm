@@ -20,12 +20,14 @@ import {
   type ClassificationCategoryUpdated,
   type ClassificationCategoryEvent,
   ENTITY_NAME,
-  toStreamName
+  toStreamName,
+  type ClassificationAttributeCreated,
+  type CreateClassificationAttribute
 } from './classificationCategory.events.ts';
 import { type RecordedEvent, toRecordedEvent } from '@ecomm/event-store';
 import { type FastifyInstance } from 'fastify';
 import { type ClassificationAttribute, ClassificationAttributeSchema } from './classificationAttribute.ts';
-import { type ClassificationAttributePayload } from './classificationAttribute.schemas.ts';
+import { type CreateClassificationAttributeBody } from './classificationAttribute.schemas.ts';
 
 // SERVICE INTERFACE
 export interface IClassificationCategoryService {
@@ -35,13 +37,15 @@ export interface IClassificationCategoryService {
     currentState: ClassificationCategory,
     event: RecordedEvent<ClassificationCategoryEvent>
   ) => Promise<Result<{ entity: ClassificationCategory; update?: any }, AppError>>;
-
   findClassificationCategoryById: (id: string) => Promise<Result<ClassificationCategory, AppError>>;
   validate: (id: string, data: any) => Promise<Result<any, AppError>>;
+  createAttribute: (
+    command: CreateClassificationAttribute
+  ) => Promise<Result<ClassificationAttributeCreated, AppError>>;
   createClassificationAttribute: (
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload
+    payload: CreateClassificationAttributeBody
   ) => Promise<Result<ClassificationAttribute, AppError>>;
   findClassificationAttributeById: (
     id: string,
@@ -175,6 +179,22 @@ export class ClassificationCategoryService implements IClassificationCategorySer
         });
       }
 
+      case ClassificationCategoryEventTypes.ATTRIBUTE_CREATED: {
+        if (!currentState) return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Empty entity');
+        if (currentState.attributes?.find((a) => a.key === e.data.classificationAttribute.key))
+          return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, 'Attribute already exists');
+        const toUpdateEntity = Value.Clone(currentState);
+        toUpdateEntity.attributes?.push(e.data.classificationAttribute);
+        return new Ok({
+          entity: Object.assign(toUpdateEntity, {
+            catalogId: e.metadata.catalogId,
+            version: e.metadata.version,
+            lastModifiedAt: event.createdAt
+          }),
+          update: { $push: { attributes: e.data.classificationAttribute } }
+        });
+      }
+
       default: {
         return new AppErrorResult(ErrorCode.UNPROCESSABLE_ENTITY, `Unknown event type: ${(e as any).type}`);
       }
@@ -198,10 +218,38 @@ export class ClassificationCategoryService implements IClassificationCategorySer
   }
 
   // CREATE ATTRIBUTE
+  public createAttribute = async (
+    command: CreateClassificationAttribute
+  ): Promise<Result<ClassificationAttributeCreated, AppError>> => {
+    const aggregateResult = await this.server.es.aggregateStream<ClassificationCategory, ClassificationCategoryEvent>(
+      command.metadata.projectId,
+      toStreamName(command.data.classificationCategoryId),
+      this.aggregate
+    );
+    if (aggregateResult.isErr()) return aggregateResult;
+
+    const expectedResult = await this.aggregate(
+      aggregateResult.value,
+      toRecordedEvent(ClassificationCategoryEventTypes.ATTRIBUTE_CREATED, ENTITY_NAME, command)
+    );
+    if (expectedResult.isErr()) return expectedResult;
+
+    return new Ok({
+      type: ClassificationCategoryEventTypes.ATTRIBUTE_CREATED,
+      data: command.data,
+      metadata: {
+        entity: ENTITY_NAME,
+        expected: expectedResult.value.entity,
+        ...command.metadata
+      }
+    } as ClassificationAttributeCreated);
+  };
+
+  // CREATE ATTRIBUTE
   public async createClassificationAttribute(
     id: string,
     categoryVersion: number,
-    payload: ClassificationAttributePayload
+    payload: CreateClassificationAttributeBody
   ): Promise<Result<ClassificationAttribute, AppError>> {
     // Find the Category
     const result = await this.repo.createClassificationAttribute(id, categoryVersion, payload);
