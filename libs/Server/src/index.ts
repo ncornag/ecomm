@@ -10,6 +10,7 @@ import { yellow } from 'kolorist';
 import docs from '@ecomm/docs';
 import { default as requestContextProvider, getRequestIdFastifyAppConfig } from '@ecomm/request-context';
 import authorization from './authorization.ts';
+import { stacktrace } from 'stacktrace-parser-node';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -19,6 +20,18 @@ declare module 'fastify' {
     scopes: string[];
   }
 }
+
+// Patch console.log
+const origLog = console.log;
+console.log = async function () {
+  try {
+    throw new Error();
+  } catch (error: Error) {
+    const stack = await stacktrace.parse(error);
+    const date = new Date().toISOString().slice(0, 23).replace('T', ' ');
+    origLog(`${date}  cons: ${stack.traces[1].filename}:${stack.traces[1].lineNo}`, ...arguments);
+  }
+};
 
 // Patch Bigint.toJSON
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
